@@ -1,0 +1,952 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>וורד לאוצריא</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{overflow-x:hidden;font-family:var(--font-main);font-size:var(--font-size-base);}
+:root{
+  --font-main:'Segoe UI',Arial,sans-serif;
+  --font-doc:'Times New Roman',serif;
+  --font-size-base:14px;--line-height:1.5;
+  --radius-xs:2px;--radius-sm:4px;--radius-md:8px;--radius-lg:12px;--radius-pill:999px;
+  --wb:var(--color-primary);--wb-dk:var(--color-secondary);
+  --wb-lt:var(--color-primary-subtle);--bh:var(--color-primary-subtle);
+  --ba:var(--color-secondary-subtle);--rb:var(--color-surface);
+  --rbb:var(--color-outline);
+}
+body{display:flex;flex-direction:column;background:var(--canvas);}
+
+/* TITLE BAR */
+#tb{background:var(--wb);height:36px;display:flex;align-items:center;padding:0 6px;gap:2px;flex-shrink:0;color:var(--color-white);user-select:none;}
+.tbl{background:var(--color-white);color:var(--wb);font-weight:900;font-style:italic;font-size:.95em;padding:1px 7px;border-radius:var(--radius-sm);margin-left:6px;cursor:default;}
+.tbb{background:none;border:none;color:var(--color-white);cursor:pointer;padding:3px 7px;border-radius:var(--radius-sm);font-size:.78em;font-family:var(--font-main);display:flex;align-items:center;gap:3px;transition:background .1s;}
+.tbb:hover{background:var(--color-on-primary-20);}
+.tbb svg{width:14px;height:14px;fill:currentColor;flex-shrink:0;}
+.tb-mid{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;}
+#doc-title{background:transparent;border:none;color:var(--color-white);font-family:var(--font-main);font-size:.86em;font-weight:600;text-align:center;width:200px;outline:none;border-bottom:1px solid transparent;transition:border-color .15s;}
+#doc-title:hover,#doc-title:focus{border-bottom-color:var(--color-on-primary-55);}
+.tb-srch{display:flex;align-items:center;background:var(--color-on-primary-15);border-radius:var(--radius-md);padding:3px 10px;gap:5px;}
+.tb-srch input{background:none;border:none;color:var(--color-white);font-family:var(--font-main);font-size:.78em;outline:none;width:120px;}
+.tb-srch input::placeholder{color:var(--color-on-primary-60);}
+.tb-srch svg{width:13px;height:13px;fill:var(--color-on-primary-70);}
+
+/* REC INDICATOR */
+#rec-ind{display:none;align-items:center;gap:4px;background:var(--color-rec-bg);padding:1px 8px;border-radius:var(--radius-sm);font-size:.74em;cursor:pointer;}
+#rec-ind span{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TAB BAR */
+#tab-bar{background:var(--wb);display:flex;align-items:flex-end;padding:0 6px;flex-shrink:0;}
+.rtab{padding:6px 13px 5px;font-size:.79em;color:var(--color-on-primary-88);cursor:pointer;border:none;background:none;font-family:var(--font-main);border-radius:var(--radius-sm) var(--radius-sm) 0 0;position:relative;top:1px;white-space:nowrap;transition:background .1s,color .1s;}
+.rtab:hover{background:var(--color-on-primary-15);color:var(--color-white);}
+.rtab.on{background:var(--rb);color:var(--wb);font-weight:600;border:1px solid var(--rbb);border-bottom:1px solid var(--rb);}
+.alt-tip{position:absolute;top:-6px;right:50%;transform:translateX(50%);background:var(--color-alt-tip-bg);color:var(--color-text-primary);font-size:.65em;font-weight:700;padding:0 3px;border-radius:var(--radius-xs);border:1px solid var(--color-alt-tip-border);line-height:1.4;pointer-events:none;}
+.rtab.otz-tab{color:var(--color-otz-tab);}
+.rtab.otz-tab.on{color:var(--wb);}
+#rib-tog{margin-right:auto;background:none;border:none;color:var(--color-on-primary-65);cursor:pointer;padding:3px 8px;font-size:.9em;align-self:center;line-height:1;transition:color .1s;}
+#rib-tog:hover{color:var(--color-white);}
+
+/* RIBBON */
+#ribbon{background:var(--rb);border-bottom:2px solid var(--rbb);flex-shrink:0;overflow:hidden;transition:max-height .18s ease;max-height:115px;}
+#ribbon.closed{max-height:0;border-bottom:none;}
+.rp{display:none;padding:4px 6px 0;gap:0;align-items:stretch;}
+.rp.on{display:flex;}
+.rg{display:flex;flex-direction:column;border-right:1px solid var(--color-border-mid);padding:0 6px;min-width:0;}
+.rg:last-child{border-right:none;}
+.rgb{display:flex;align-items:center;gap:2px;flex:1;padding-bottom:1px;}
+.rgb.col{flex-direction:column;gap:2px;align-items:stretch;justify-content:center;}
+.rgt{font-size:.6em;color:var(--color-text-muted);text-align:center;padding:2px 0 3px;white-space:nowrap;}
+.rb{background:none;border:1px solid transparent;cursor:pointer;color:var(--color-text-primary);font-family:var(--font-main);padding:2px 5px;border-radius:var(--radius-xs);display:flex;flex-direction:column;align-items:center;gap:1px;font-size:.68em;white-space:nowrap;min-width:30px;transition:background .08s,border-color .08s;line-height:1.3;}
+.rb:hover{background:var(--bh);border-color:var(--color-border-hover);}
+.rb:active,.rb.on{background:var(--ba);border-color:var(--color-border-active);}
+.rb svg{width:18px;height:18px;fill:currentColor;flex-shrink:0;}
+.rb.lg{padding:3px 8px;min-width:50px;}
+.rb.lg svg{width:28px;height:28px;}
+.rb.sm{flex-direction:row;padding:2px 7px;min-width:unset;font-size:.7em;gap:3px;}
+.rb.sm svg{width:13px;height:13px;}
+.rb.ico{min-width:26px;padding:3px 4px;}
+.rb.ico svg{width:17px;height:17px;}
+.rv{display:flex;flex-direction:column;gap:1px;}
+.rv .rb{flex-direction:row;padding:1px 7px;font-size:.7em;min-width:unset;gap:3px;}
+.rv .rb svg{width:13px;height:13px;}
+.rsep{width:1px;background:var(--rbb);align-self:stretch;margin:2px 4px;}
+.rsel{border:1px solid var(--color-border-mid);background:var(--color-white);color:var(--color-text-primary);font-family:var(--font-main);padding:2px 4px;border-radius:var(--radius-xs);font-size:.74em;outline:none;cursor:pointer;}
+.rsel:hover,.rsel:focus{border-color:var(--wb);}
+.swatch{height:3px;border-radius:var(--radius-xs);width:16px;margin-top:1px;}
+input[type=color].hc{opacity:0;width:0;height:0;position:absolute;pointer-events:none;}
+.sty-gal{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:2px 0;}
+.sty-scroll-gal{display:flex;flex-direction:column;gap:1px;max-height:90px;overflow-y:auto;padding:1px 2px;width:100%;}
+.sty-scroll-gal::-webkit-scrollbar{width:4px;}
+.sty-scroll-gal::-webkit-scrollbar-thumb{background:var(--rbb);border-radius:var(--radius-xs);}
+.sty-btn{border:1px solid var(--color-border-light);cursor:pointer;padding:2px 8px;border-radius:var(--radius-xs);background:var(--color-white);font-size:.8em;white-space:nowrap;transition:border-color .1s,background .1s;font-family:var(--font-doc);}
+.sty-btn:hover{border-color:var(--wb);background:var(--wb-lt);}
+.sty-scroll-gal .sty-btn{width:100%;text-align:right;}
+
+/* MAIN */
+#main{display:flex;flex:1;overflow-y:auto;}
+
+/* NAV PANE */
+#nav-pane{width:240px;flex-shrink:0;background:var(--color-white);border-right:1px solid var(--color-border-light);display:flex;flex-direction:column;overflow:hidden;transition:width .2s;}
+#nav-pane.hide{width:0;border-right:none;}
+.nav-head{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--color-border-light);flex-shrink:0;}
+.nav-head span{font-size:.8em;font-weight:600;color:var(--color-text-primary);}
+.nav-xbtn{background:none;border:none;cursor:pointer;color:var(--color-text-muted);font-size:1em;padding:1px 5px;border-radius:var(--radius-xs);}
+.nav-xbtn:hover{background:var(--color-bg-light);}
+.nav-srch{padding:5px 8px;border-bottom:1px solid var(--color-border-light);flex-shrink:0;}
+.nav-srch input{width:100%;border:1px solid var(--color-outline);border-radius:var(--radius-sm);padding:3px 7px;font-family:var(--font-main);font-size:.78em;outline:none;}
+.nav-srch input:focus{border-color:var(--wb);}
+.nav-tabs{display:flex;border-bottom:1px solid var(--color-border-light);flex-shrink:0;}
+.nav-tab{flex:1;padding:4px;font-size:.7em;cursor:pointer;border:none;background:none;font-family:var(--font-main);border-bottom:2px solid transparent;color:var(--color-text-muted);transition:border-color .1s,color .1s;}
+.nav-tab.on{border-bottom-color:var(--wb);color:var(--wb);font-weight:600;}
+#nav-body{flex:1;padding:2px 0;}
+.nav-item{padding:4px 10px;font-size:.77em;cursor:pointer;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .08s;}
+.nav-item:hover{background:var(--color-bg-light);}
+.nav-item.h1{font-weight:700;}
+.nav-item.h2{padding-right:20px;color:var(--color-h2);}
+.nav-item.h3{padding-right:32px;color:var(--color-text-secondary);}
+.nav-item.cur{background:var(--wb-lt);color:var(--wb);}
+.nav-empty{padding:16px;text-align:center;color:var(--color-text-lighter);font-size:.78em;}
+
+/* DOC AREA */
+#dw{flex:1;overflow-y:auto;background:var(--canvas);padding:24px;display:flex;flex-direction:column;align-items:center;position:relative;}
+
+/* RULER */
+#ruler{width:794px;max-width:calc(100% - 20px);height:20px;background:var(--color-border-light);border:1px solid var(--color-outline);border-bottom:2px solid var(--color-border-mid);flex-shrink:0;margin-bottom:6px;position:relative;font-size:0;display:none;}
+#ruler::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 9px,var(--color-text-lighter) 9px,var(--color-text-lighter) 10px);opacity:.5;}
+
+/* DOCUMENT */
+#dp{display:flex;flex-direction:column;align-items:center;gap:32px;width:100%;padding:0;}
+.page{background:var(--color-page-bg);box-shadow:0 1px 6px var(--color-shadow-lg);width:794px;max-width:calc(100vw - 48px);height:1122px;padding:96px 90px;outline:none;font-family:var(--font-doc);font-size:12pt;line-height:1.5;direction:rtl;text-align:right;overflow:hidden;overflow-y:clip;position:relative;flex-shrink:0;box-sizing:border-box;}
+.page:focus{box-shadow:0 1px 6px var(--color-shadow-lg),0 0 0 2px var(--color-focus-ring);}
+.page p{margin:0;min-height:1.5em;}
+.page p:empty::before{content:'​';}
+.page:not(:focus) p:only-child:empty::before{content:'התחל לכתוב כאן...';color:var(--color-text-lighter);pointer-events:none;}
+.page h1{font-size:2em;font-weight:700;margin:.4em 0 .3em;border-bottom:2px solid var(--color-on-surface);padding-bottom:.15em;}
+.page h2{font-size:1.5em;font-weight:700;margin:.35em 0 .25em;color:var(--color-h2);}
+.page h3{font-size:1.17em;font-weight:700;margin:.3em 0 .2em;color:var(--color-h3);}
+.page blockquote{border-right:3px solid var(--color-outline);margin:8px 0;padding:4px 14px;color:var(--color-text-secondary);font-style:italic;}
+.page table{border-collapse:collapse;width:100%;margin:8px 0;}
+.page td,.page th{border:1px solid var(--color-border-mid);padding:5px 8px;min-width:40px;vertical-align:top;}
+.page th{background:var(--color-surface);font-weight:700;}
+.page a{color:var(--wb);}
+.page pre{background:var(--color-bg-subtle);border:1px solid var(--color-border-light);padding:8px 12px;border-radius:var(--radius-sm);font-family:var(--font-main);font-size:.9em;}
+.page .fn-area{margin-top:40px;padding-top:10px;border-top:1px solid var(--color-border-mid);font-size:.85em;color:var(--color-text-secondary);}
+.page .en-area{margin-top:40px;padding-top:10px;border-top:2px solid var(--color-text-muted);font-size:.85em;color:var(--color-text-primary);}
+.pg-num{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:9pt;color:var(--color-text-lighter);pointer-events:none;user-select:none;font-family:var(--font-main);}
+mark.fhl{background:var(--color-yellow-hl);}
+mark.fhl.cur{background:var(--color-orange-hl);color:var(--color-white);}
+mark.spell-err{background:none;text-decoration:underline wavy var(--color-error);text-decoration-thickness:1px;cursor:pointer;}
+body.dark-mode mark.spell-err{text-decoration-color:var(--color-error-light);}
+body.focus-mode #tb,body.focus-mode #tab-bar,body.focus-mode #ribbon,body.focus-mode #sb{opacity:0;pointer-events:none;transition:opacity .4s;}
+body.focus-mode #nav-pane{width:0!important;}
+body.focus-mode #dw{padding:0;background:var(--color-white);}
+body.focus-mode #dp{gap:0;}
+body.focus-mode .page{width:100%;height:auto;max-height:none;overflow:visible;box-shadow:none;padding:80px 120px;zoom:100%!important;}
+body.focus-mode:hover #tb,body.focus-mode:hover #tab-bar,body.focus-mode:hover #ribbon,body.focus-mode:hover #sb{opacity:1;pointer-events:auto;}
+body.cursor-paint{cursor:crosshair!important;}
+body.cursor-paint *{cursor:crosshair!important;}
+
+/* FIND BAR */
+#fb{position:absolute;top:6px;left:8px;z-index:60;background:var(--color-white);border:1px solid var(--color-border-mid);border-radius:var(--radius-sm);box-shadow:0 3px 10px var(--color-shadow-sm);padding:6px 8px;display:none;flex-direction:column;gap:5px;min-width:300px;}
+#fb input{border:1px solid var(--color-outline);border-radius:var(--radius-xs);padding:3px 7px;font-family:var(--font-main);font-size:.8em;outline:none;flex:1;}
+#fb input:focus{border-color:var(--wb);}
+.fb-row{display:flex;align-items:center;gap:4px;}
+#fb button{background:var(--color-white);border:1px solid var(--color-outline);cursor:pointer;padding:2px 8px;border-radius:var(--radius-xs);font-size:.75em;font-family:var(--font-main);white-space:nowrap;}
+#fb button:hover{background:var(--bh);}
+.fb-x{border:none!important;font-size:1.1em;color:var(--color-text-muted)!important;padding:0 4px!important;}
+#fc{font-size:.72em;color:var(--color-text-muted);min-width:70px;text-align:center;}
+
+/* STATUS BAR */
+#sb{background:var(--wb);color:var(--color-white);height:24px;display:flex;align-items:center;padding:0 10px;flex-shrink:0;font-size:.72em;gap:0;user-select:none;}
+.sb-r{display:flex;align-items:center;}
+.sb-l{margin-right:auto;display:flex;align-items:center;gap:2px;}
+.sbi{padding:1px 8px;cursor:default;border-radius:var(--radius-xs);white-space:nowrap;}
+.sbi:hover{background:var(--color-on-primary-18);cursor:pointer;}
+.sbsep{opacity:.35;padding:0 2px;}
+.sv{background:none;border:none;color:var(--color-on-primary-60);cursor:pointer;padding:2px 5px;border-radius:var(--radius-xs);display:flex;transition:color .1s,background .1s;}
+.sv:hover,.sv.on{color:var(--color-white);background:var(--color-on-primary-18);}
+.sv svg{width:14px;height:14px;fill:currentColor;}
+.za{display:flex;align-items:center;gap:3px;padding:0 4px;}
+.zb{background:none;border:none;color:var(--color-on-primary-75);cursor:pointer;font-size:1em;padding:0 2px;line-height:1;}
+.zb:hover{color:var(--color-white);}
+#zsl{-webkit-appearance:none;width:72px;height:3px;background:var(--color-slider-track);border-radius:var(--radius-xs);outline:none;cursor:pointer;}
+#zsl::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:var(--radius-pill);background:var(--color-white);cursor:pointer;}
+#zpct{min-width:34px;text-align:left;cursor:pointer;}
+#tt-btn{background:var(--color-on-primary-15);border:none;cursor:pointer;color:var(--color-white);font-family:var(--font-main);font-size:.78em;padding:1px 8px;border-radius:var(--radius-md);margin-left:4px;transition:background .15s;}
+#tt-btn:hover{background:var(--color-on-primary-35);}
+
+/* CONTEXT MENU */
+#ctx{position:fixed;z-index:500;background:var(--color-white);border:1px solid var(--color-outline);border-radius:var(--radius-sm);box-shadow:0 4px 16px var(--color-shadow-md);padding:4px 0;min-width:160px;display:none;}
+.ctx-item{padding:5px 16px;font-size:.82em;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--color-text-primary);}
+.ctx-item:hover{background:var(--bh);}
+.ctx-sep{height:1px;background:var(--color-border-light);margin:3px 0;}
+
+/* DIALOGS */
+.dlg-back{position:fixed;inset:0;background:var(--color-scrim);z-index:300;display:flex;align-items:center;justify-content:center;}
+.dlg{background:var(--color-white);border-radius:var(--radius-sm);box-shadow:0 8px 32px var(--color-shadow-lg);min-width:340px;max-width:90vw;font-family:var(--font-main);}
+.dlg-hd{background:var(--wb);color:var(--color-white);padding:8px 14px;font-size:.86em;font-weight:600;display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius-sm) var(--radius-sm) 0 0;}
+.dlg-hd button{background:none;border:none;color:var(--color-white);cursor:pointer;font-size:1.1em;padding:0 5px;}
+.dlg-bd{padding:14px 16px;}
+.dlg-bd label{display:block;font-size:.8em;color:var(--color-text-secondary);margin-bottom:3px;margin-top:10px;}
+.dlg-bd label:first-child{margin-top:0;}
+.dlg-bd input,.dlg-bd select,.dlg-bd textarea{width:100%;border:1px solid var(--color-outline);border-radius:var(--radius-xs);padding:4px 8px;font-family:var(--font-main);font-size:.82em;outline:none;transition:border-color .1s;}
+.dlg-bd input:focus,.dlg-bd select:focus,.dlg-bd textarea:focus{border-color:var(--wb);}
+.dlg-bd textarea{min-height:90px;resize:vertical;}
+.dlg-ft{padding:8px 16px 12px;display:flex;gap:7px;justify-content:flex-end;}
+.dbtn{padding:5px 18px;border-radius:var(--radius-xs);border:1px solid transparent;cursor:pointer;font-family:var(--font-main);font-size:.82em;font-weight:600;transition:background .1s;}
+.dbtn.p{background:var(--wb);color:var(--color-white);border-color:var(--wb);}
+.dbtn.p:hover{background:var(--wb-dk);}
+.dbtn.s{background:var(--color-white);color:var(--color-text-secondary);border-color:var(--color-border-mid);}
+.dbtn.s:hover{background:var(--color-bg-light);}
+.tbl-grid{display:grid;grid-template-columns:repeat(10,22px);gap:2px;padding:4px;}
+.tbl-cell{width:22px;height:18px;border:1px solid var(--color-outline);cursor:pointer;background:var(--color-white);border-radius:var(--radius-xs);}
+.tbl-cell.hi{background:var(--wb-lt);border-color:var(--wb);}
+.list-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--color-border-light);border-radius:var(--radius-xs);margin-bottom:4px;}
+.list-item span{flex:1;font-size:.8em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* DARK MODE */
+#outline-panel{width:180px;flex-shrink:0;background:var(--rb);border-left:1px solid var(--rbb);display:flex;flex-direction:column;overflow:hidden;}
+#outline-panel.hide{width:0;border-left:none;}
+#outline-body{flex:1;padding:4px 0;}
+.outline-item{padding:3px 10px;cursor:pointer;font-size:.8em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:var(--radius-xs);color:var(--wb);}
+.outline-item:hover{background:var(--bh);}
+body.dark-mode{--canvas:var(--color-dark-canvas);--rb:var(--color-dark-surface);--rbb:var(--color-dark-border);}
+body.dark-mode .rg{border-right-color:var(--color-dark-border);}
+body.dark-mode #nav-pane,body.dark-mode #cp{background:var(--color-dark-canvas);border-color:var(--color-dark-surface-high);color:var(--color-dark-text);}
+body.dark-mode .nav-item{color:var(--color-dark-text-dim);}
+body.dark-mode .nav-head span,body.dark-mode .cp-head{color:var(--color-dark-text-head);}
+body.dark-mode #fb,body.dark-mode .dlg{background:var(--color-dark-surface);color:var(--color-dark-text);}
+body.dark-mode .dlg-bd input,body.dark-mode .dlg-bd select,body.dark-mode .dlg-bd textarea{background:var(--color-dark-surface-high);color:var(--color-dark-text);border-color:var(--color-dark-border);}
+body.dark-mode #ctx{background:var(--color-dark-surface);}
+body.dark-mode .ctx-item{color:var(--color-dark-text);}
+body.dark-mode .rsel{background:var(--color-text-primary);color:var(--color-dark-text-head);border-color:var(--color-dark-border);}
+body.dark-mode .sty-btn{background:var(--color-text-primary);color:var(--color-dark-text-head);border-color:var(--color-dark-border);}
+body.dark-mode .sty-scroll-gal::-webkit-scrollbar-thumb{background:var(--color-dark-border);}
+body.dark-mode .cm-card{background:var(--color-dark-surface);border-color:var(--color-dark-border);}
+body.dark-mode .list-item{border-color:var(--color-dark-border);background:var(--color-dark-surface);}
+body.dark-mode #dw{background:var(--color-dark-deep);}
+body.dark-mode .page{background:var(--color-page-bg);color:var(--color-on-surface);box-shadow:0 2px 12px var(--color-shadow-xl);}
+body.dark-mode .page h2{color:var(--color-h2);}
+body.dark-mode .page h3{color:var(--color-h3);}
+body.dark-mode .page blockquote{border-right-color:var(--color-outline);color:var(--color-text-secondary);}
+body.dark-mode .page pre{background:var(--color-bg-light);border-color:var(--color-border-light);}
+body.dark-mode .page td,body.dark-mode .page th{border-color:var(--color-border-mid);}
+body.dark-mode .page th{background:var(--color-surface);}
+/* FULLSCREEN FAKE */
+#app.fake-fs{position:fixed!important;inset:0!important;z-index:9998!important;}
+/* CURSOR */
+.page{caret-color:currentColor;}
+/* FONT PICKER KEYBOARD FOCUS */
+.fp-item.fp-focus{background:var(--bh);outline:none;}
+/* TAGS */
+.tag{padding:1px 5px;border-radius:var(--radius-sm);font-size:.85em;font-weight:600;white-space:nowrap;cursor:default;display:inline;}
+.tag-chidush{background:var(--tag-chidush-bg);color:var(--tag-chidush-color);}
+.tag-kushia{background:var(--tag-kushia-bg);color:var(--tag-kushia-color);}
+.tag-tiruts{background:var(--tag-tiruts-bg);color:var(--tag-tiruts-color);}
+.tag-makor{background:var(--tag-makor-bg);color:var(--tag-makor-color);}
+.tag-chashuv{background:var(--tag-chashuv-bg);color:var(--tag-chashuv-color);}
+.tag-liun{background:var(--tag-liun-bg);color:var(--tag-liun-color);}
+/* STICKIES */
+.sticky{position:absolute;width:164px;min-height:124px;border-radius:var(--radius-sm);box-shadow:2px 3px 8px var(--sticky-shadow);z-index:40;display:flex;flex-direction:column;}
+.sticky-yellow{background:var(--sticky-yellow-bg);}
+.sticky-blue{background:var(--sticky-blue-bg);}
+.sticky-green{background:var(--sticky-green-bg);}
+.sticky-pink{background:var(--sticky-pink-bg);}
+.sticky-hd{display:flex;align-items:center;justify-content:space-between;padding:4px 7px;font-size:.72em;font-weight:600;cursor:move;border-radius:var(--radius-sm) var(--radius-sm) 0 0;background:var(--sticky-hd-overlay);}
+.sticky-body{flex:1;padding:6px 8px;font-size:.78em;font-family:var(--font-main);resize:none;border:none;background:transparent;outline:none;line-height:1.5;color:var(--color-text-primary);min-height:80px;width:100%;}
+.sticky-del{background:none;border:none;cursor:pointer;color:var(--color-text-muted);font-size:1em;padding:0 2px;line-height:1;}
+.sticky-del:hover{color:var(--color-error);}
+@media print{#tb,#tab-bar,#ribbon,#doc-tabbar,#nav-pane,#sb,#fb,#ctx{display:none!important;}#main{display:block!important;}#dw{background:var(--color-white)!important;padding:0!important;overflow:visible!important;}#dp{gap:0!important;}.page{box-shadow:none!important;width:100%!important;height:auto!important;overflow:visible!important;padding:60px 80px!important;zoom:100%!important;page-break-after:always;}.pg-num{display:none!important;}mark{background:none!important}}
+
+/* COMMENTS PANEL */
+#cp{width:260px;flex-shrink:0;background:var(--color-white);border-left:1px solid var(--color-border-light);display:flex;flex-direction:column;overflow:hidden;transition:width .2s;}
+#cp.hide{width:0;border-left:none;}
+.cp-head{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--color-border-light);font-size:.8em;font-weight:600;flex-shrink:0;}
+#cp-body{flex:1;padding:4px;}
+.cm-card{border:1px solid var(--color-border-light);border-radius:var(--radius-sm);padding:6px 8px;margin-bottom:6px;font-size:.78em;background:var(--color-comment-bg);cursor:pointer;position:relative;}
+.cm-card:hover{border-color:var(--wb);}
+.cm-card.resolved{background:var(--color-bg-light);color:var(--color-text-lighter);}
+.cm-card .cm-author{font-weight:600;color:var(--wb);font-size:.85em;}
+.cm-card .cm-text{margin-top:3px;}
+.cm-card .cm-del{position:absolute;top:4px;left:6px;background:none;border:none;cursor:pointer;color:var(--color-text-lighter);font-size:.85em;line-height:1;}
+.cm-card .cm-del:hover{color:var(--color-error);}
+mark.cm-ref{background:var(--color-comment-ref);cursor:pointer;border-bottom:2px solid var(--color-comment-ref-border);}
+mark.cm-ref:hover{background:var(--color-comment-ref-hover);}
+
+/* TRACK CHANGES */
+ins.tc-ins{background:var(--color-tc-ins-bg);text-decoration:underline;text-decoration-color:var(--color-tc-ins-border);color:var(--color-tc-ins-text);}
+del.tc-del{background:var(--color-tc-del-bg);text-decoration:line-through;text-decoration-color:var(--color-error);color:var(--color-tc-del-text);}
+
+/* WORD STYLES */
+.ws-alef{font-size:26pt;text-align:center;font-weight:700;line-height:1.3;margin:10px 0;}
+.ws-bet{font-size:24pt;font-weight:700;line-height:1.4;margin-top:60px;margin-bottom:30px;page-break-before:always;}
+.ws-gimel{font-size:20pt;font-weight:400;text-align:right;margin:18px 0 12px;}
+.ws-shefa{font-size:10pt;line-height:1.1;text-align:justify;direction:rtl;margin-bottom:8px;}
+.ws-iyun{font-weight:700;text-decoration:underline;font-size:12pt;}
+.ws-zitut{background:var(--color-bg-light);border:1px solid var(--color-border-light);padding:8px 12px;margin:8px 0;border-radius:var(--radius-xs);}
+.ws-sikum{text-decoration:underline;font-size:12pt;margin:6px 0;}
+.ws-red{color:var(--color-error);}
+.ws-listpara{padding-right:32px;margin:2px 0;}
+.ws-quote{border-right:3px solid var(--color-primary);padding-right:14px;color:var(--color-text-secondary);font-style:italic;margin:10px 0;}
+.ws-intense-quote{border-top:2px solid var(--color-h3);border-bottom:2px solid var(--color-h3);padding:12px 48px;text-align:center;font-style:italic;color:var(--color-h3);margin:16px 0;}
+
+/* WATERMARK */
+#watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:1;overflow:hidden;}
+#watermark span{font-size:5em;color:var(--color-watermark);transform:rotate(-35deg);white-space:nowrap;font-weight:900;user-select:none;letter-spacing:.1em;}
+
+/* FONT PICKER */
+.fp-wrap{position:relative;display:inline-block;}
+.fp-inp{width:130px!important;}
+.fp-dd{position:fixed;background:var(--color-white);border:1px solid var(--color-border-mid);border-radius:var(--radius-xs);box-shadow:0 4px 14px var(--color-shadow-sm);max-height:320px;overflow-y:auto;z-index:9000;width:220px;display:none;}
+.fp-dd.open{display:block;}
+.fp-item{padding:4px 10px;cursor:pointer;font-size:.82em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fp-item:hover,.fp-item.sel{background:var(--bh);}
+body.dark-mode .fp-dd{background:var(--color-dark-surface);border-color:var(--color-dark-border);}
+body.dark-mode .fp-item:hover{background:var(--color-on-primary-15);}
+
+/* DOC TAB BAR */
+#doc-tabbar{background:var(--rb);border-bottom:2px solid var(--rbb);display:flex;align-items:center;padding:3px 6px 0;gap:2px;flex-shrink:0;overflow-x:auto;min-height:30px;}
+.doc-tab{display:flex;align-items:center;gap:4px;padding:3px 8px;font-size:.75em;cursor:pointer;background:var(--color-doc-tab-bg);border:1px solid var(--rbb);border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;min-width:70px;max-width:180px;position:relative;top:2px;transition:background .1s;user-select:none;white-space:nowrap;}
+.doc-tab:hover{background:var(--color-doc-tab-hover);}
+.doc-tab.on{background:var(--color-white);color:var(--wb);font-weight:600;border-bottom-color:var(--color-white);}
+.dt-title{flex:1;overflow:hidden;text-overflow:ellipsis;}
+.dt-x{background:none;border:none;cursor:pointer;font-size:1em;color:var(--color-text-lighter);padding:0 2px;border-radius:var(--radius-xs);line-height:1;flex-shrink:0;margin-right:0;}
+.dt-x:hover{color:var(--color-error);}
+.dt-new{background:none;border:1px solid transparent;cursor:pointer;font-size:1.15em;padding:1px 6px;color:var(--color-text-muted);border-radius:var(--radius-sm);line-height:1.3;align-self:center;flex-shrink:0;}
+.dt-new:hover{background:var(--bh);color:var(--wb);border-color:var(--rbb);}
+body.dark-mode .doc-tab.on{background:var(--color-dark-deep);border-bottom-color:var(--color-dark-deep);color:var(--color-dark-accent);}
+body.dark-mode .doc-tab{color:var(--color-dark-text-dim);}
+</style>
+</head>
+<script src="jszip.min.js"></script>
+<script src="mammoth.min.js"></script>
+<body id="app">
+
+<!-- TITLE BAR -->
+<div id="tb">
+  <span class="tbl">W</span>
+  <button class="tbb" onclick="saveDoc()" title="שמור Ctrl+S"><svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg></button>
+  <button class="tbb" onclick="doUndo()" title="בטל Ctrl+Z"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62A7 7 0 0 1 19 16l2-2a9 9 0 0 0-8.5-6z"/></svg></button>
+  <button class="tbb" onclick="doRedo()" title="חזור Ctrl+Y"><svg viewBox="0 0 24 24"><path d="M18.4 10.6A9 9 0 0 0 5 16l2 2a7 7 0 0 1 11.62-2.62L15 18h9V9l-5.6 1.6z"/></svg></button>
+  <div class="tb-mid">
+    <input id="doc-title" type="text" value="מסמך חדש" spellcheck="false" onchange="schedSave()"/>
+    <div class="tb-srch">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 14 15.5l.27.28v.79l5 5 1.49-1.49-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+      <input type="text" id="qsrch" placeholder="חיפוש מהיר" onkeydown="if(event.key==='Enter'){openFB();document.getElementById('fi').value=this.value;hlFind(this.value);}"/>
+    </div>
+  </div>
+  <div id="rec-ind" onclick="stopRecording()" title="מקליט — לחץ לעצירה">&#9679; <span id="rec-ind-name">מקליט...</span> <span id="rec-count" style="opacity:.75">(0)</span> עצור</div>
+  <button class="tbb" onclick="exportDocx()" title="ייצוא .docx"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> .docx</button>
+  <button class="tbb" onclick="printDoc()" title="הדפסה Ctrl+P"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg></button>
+</div>
+
+<!-- TAB BAR -->
+<div id="tab-bar">
+  <button class="rtab" onclick="swTab('file',this)" ondblclick="togRib()">קובץ</button>
+  <button class="rtab on" onclick="swTab('home',this)" ondblclick="togRib()">בית</button>
+  <button class="rtab" onclick="swTab('insert',this)" ondblclick="togRib()">הוספה</button>
+  <button class="rtab" onclick="swTab('layout',this)" ondblclick="togRib()">פריסה</button>
+  <button class="rtab" onclick="swTab('refs',this)" ondblclick="togRib()">הפניות</button>
+  <button class="rtab" onclick="swTab('view',this)" ondblclick="togRib()">תצוגה</button>
+  <button class="rtab" onclick="swTab('design',this)" ondblclick="togRib()">עיצוב</button>
+  <button class="rtab" onclick="swTab('review',this)" ondblclick="togRib()">סקירה</button>
+  <button class="rtab" onclick="swTab('books',this)" ondblclick="togRib()">עריכת ספרים</button>
+  <button class="rtab otz-tab" onclick="swTab('otz',this)" ondblclick="togRib()">✦ אוצריא</button>
+  <button class="rtab" onclick="swTab('notes',this)" ondblclick="togRib()">📝 פתקים</button>
+  <button id="rib-tog" onclick="togRib()" title="הצג/הסתר רצועה">∧</button>
+</div>
+
+<!-- RIBBON -->
+<div id="ribbon">
+
+<!-- FILE -->
+<div class="rp" id="rp-file">
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" onclick="newDocTab()"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-3 5h7v2H9v-2zm0-4h3v2H9v-2z"/></svg> מסמך חדש</button>
+      <button class="rb sm" onclick="openDocFile()"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg> פתח קובץ</button>
+    </div></div>
+    <div class="rgt">קובץ</div>
+  </div>
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" onclick="saveDocAs()"><svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg> שמור בשם...</button>
+      <button class="rb sm" onclick="saveDoc()"><svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg> שמור Ctrl+S</button>
+    </div></div>
+    <div class="rgt">שמירה</div>
+  </div>
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" onclick="exportDocx()"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> ייצוא .docx</button>
+      <button class="rb sm" onclick="printDoc()"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> הדפסה</button>
+    </div></div>
+    <div class="rgt">ייצוא</div>
+  </div>
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" onclick="showPluginInfo()"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> אודות</button>
+      <button class="rb sm" onclick="clearAllData()" style="color:#c00"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg> נקה נתונים</button>
+    </div></div>
+    <div class="rgt">מידע</div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="rp on" id="rp-home">
+  <div class="rg" style="min-width:68px">
+    <div class="rgb">
+      <button class="rb lg" onclick="doPaste()" title="הדבק Ctrl+V"><svg viewBox="0 0 24 24"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg>הדבק</button>
+      <div class="rv">
+        <button class="rb sm" onclick="ex('cut')" title="גזור Ctrl+X"><svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64z"/></svg>גזור</button>
+        <button class="rb sm" onclick="ex('copy')" title="העתק Ctrl+C"><svg viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>העתק</button>
+        <button class="rb sm" id="fp-btn" onclick="fmtPainter()" title="מברשת עיצוב"><svg viewBox="0 0 24 24"><path d="M7 6V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6H2v4h5V8h10v.268A2 2 0 0 1 19 12v1h-2v-1a2 2 0 0 0-2-2H8a1 1 0 0 1-1-1V6H2v4h5zm5 6v10h-2V12h2z"/></svg>מברשת</button>
+        <button class="rb sm" onclick="pasteMatchFormat()" title="הדבק ומזג עיצוב Ctrl+Shift+V"><svg viewBox="0 0 24 24"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm3 14H7v-2h8v2zm3-4H7v-2h10v2zm0-4H7V6h10v2z"/></svg>מזג</button>
+      </div>
+    </div>
+    <div class="rgt">לוח</div>
+  </div>
+
+  <div class="rg">
+    <div class="rgb col">
+      <div style="display:flex;gap:3px;align-items:center">
+        <div class="fp-wrap" id="fp-wrap">
+          <input type="text" id="sf" class="rsel fp-inp" placeholder="גופן..." autocomplete="off"
+            oninput="filterFontPicker(this.value)"
+            onfocus="openFontPicker()"
+            onblur="setTimeout(closeFontPicker,220)"
+            onkeydown="fpKeyDown(event)"
+            value="Times New Roman"/>
+          <div id="fp-dd" class="fp-dd"></div>
+        </div>
+        <select class="rsel" id="ss" onchange="applySize(+this.value)" style="width:44px">
+          <option>8</option><option>9</option><option>10</option><option>11</option>
+          <option selected>12</option><option>14</option><option>16</option><option>18</option>
+          <option>20</option><option>24</option><option>28</option><option>36</option><option>48</option><option>72</option>
+        </select>
+        <button class="rb ico" onclick="growFont(1)" title="הגדל Ctrl+]"><svg viewBox="0 0 24 24"><path d="M9 4v3h5v12h3V7h5V4H9zm-6 8h3v7h3v-7h3V9H3v3z"/></svg></button>
+        <button class="rb ico" onclick="growFont(-1)" title="הקטן Ctrl+["><svg viewBox="0 0 24 24"><path d="M3 7h6v2H3V7zm0 4h9v2H3v-2zm0 4h12v2H3v-2zm14-6h2v10h-2zm5 0v12h-8V9h8z"/></svg></button>
+        <button class="rb ico" onclick="ex('removeFormat')" title="נקה עיצוב"><svg viewBox="0 0 24 24"><path d="M6 5v.18L8.82 8h2.4l-.72 1.68 2.1 2.1L14.21 8H20V5H6zm14 13.59L18.59 17l-2.09-2.09L14.41 13 8.09 6.68 6.68 5.27 5.27 3.86 3.86 5.27l3.4 3.4L5 13h4.37L8.09 16H4v3h9.27l2.14 2.14L16.73 20l1.41 1.41L19.55 20 20 19.55z"/></svg></button>
+      </div>
+      <div style="display:flex;gap:2px;align-items:center">
+        <button class="rb ico" id="bb" onclick="fmt('bold')" title="מודגש Ctrl+B"><strong>B</strong></button>
+        <button class="rb ico" id="bi" onclick="fmt('italic')" title="נטוי Ctrl+I"><em>I</em></button>
+        <button class="rb ico" id="bu" onclick="fmt('underline')" title="קו תחתון Ctrl+U"><u>U</u></button>
+        <button class="rb ico" id="bs" onclick="fmt('strikeThrough')" title="קו חוצה"><s>S</s></button>
+        <button class="rb ico" onclick="fmt('subscript')" title="תחתי">x<sub style="font-size:.65em">2</sub></button>
+        <button class="rb ico" onclick="fmt('superscript')" title="עליון">x<sup style="font-size:.65em">2</sup></button>
+        <div class="rsep"></div>
+        <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center">
+          <button class="rb ico" onclick="document.getElementById('pc').click()" title="צבע טקסט">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M11 2L5.5 16h2.25l1.12-3h6.25l1.12 3h2.25L13 2h-2zm-1.38 9L12 4.67 14.38 11H9.62z"/></svg>
+            <div class="swatch" id="bc" style="background:#000"></div>
+          </button>
+          <input type="color" id="pc" class="hc" value="#000000" onchange="applyColor(this.value)"/>
+        </div>
+        <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center">
+          <button class="rb ico" onclick="document.getElementById('ph').click()" title="סימון">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 22H2v-5l9.06-9.06 4.94 4.94L7 22zm14.41-14.41a1 1 0 0 0 0-1.42l-3.58-3.58a1 1 0 0 0-1.42 0L14.6 4.4l5 5 1.81-1.81z"/></svg>
+            <div class="swatch" id="bh" style="background:#FFFF00"></div>
+          </button>
+          <input type="color" id="ph" class="hc" value="#FFFF00" onchange="applyHL(this.value)"/>
+        </div>
+        <div style="display:flex;gap:2px;align-items:center;margin-top:1px">
+          <button class="rb sm" onclick="saveAsDefault()" title="שמור גופן, גודל, ריווח שורות ושוליים כברירת מחדל למסמכים חדשים" style="width:100%">★ ברירת מחדל</button>
+        </div>
+      </div>
+    </div>
+    <div class="rgt">גופן</div>
+  </div>
+
+  <div class="rg">
+    <div class="rgb col">
+      <div style="display:flex;gap:2px;align-items:center">
+        <button class="rb ico" onclick="fmt('insertUnorderedList')" title="נקודות"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg></button>
+        <button class="rb ico" onclick="fmt('insertOrderedList')" title="ממוספרת"><svg viewBox="0 0 24 24"><path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-9v2h14V2H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg></button>
+        <button class="rb ico" onclick="fmt('outdent')" title="הפחת הזחה"><svg viewBox="0 0 24 24"><path d="M11 17h10v-2H11v2zm-8-5 4 4V8l-4 4zm0 9h18v-2H3v2zM3 3v2h18V3H3zm8 6h10V7H11v2zm0 4h10v-2H11v2z"/></svg></button>
+        <button class="rb ico" onclick="fmt('indent')" title="הגדל הזחה"><svg viewBox="0 0 24 24"><path d="M3 21h18v-2H3v2zM3 8v8l4-4-4-4zm8 9h10v-2H11v2zM3 3v2h18V3H3zm8 6h10V7H11v2zm0 4h10v-2H11v2z"/></svg></button>
+        <div class="rsep"></div>
+        <select class="rsel" onchange="applySpacing(this.value)" style="width:50px" title="רווח שורות">
+          <option value="1">1.0</option><option value="1.15">1.15</option>
+          <option value="1.5" selected>1.5</option><option value="2">2.0</option><option value="2.5">2.5</option><option value="3">3.0</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:2px;align-items:center">
+        <button class="rb ico" id="bar" onclick="sa('Right')" title="ימין Ctrl+R"><svg viewBox="0 0 24 24"><path d="M3 21h18v-2H3v2zm6-4h12v-2H9v2zm-6-4h18v-2H3v2zm6-4h12V7H9v2zM3 3v2h18V3H3z"/></svg></button>
+        <button class="rb ico" id="bac" onclick="sa('Center')" title="מרכז Ctrl+E"><svg viewBox="0 0 24 24"><path d="M7 15v2h10v-2H7zm-4 6h18v-2H3v2zm0-8h18v-2H3v2zm4-6v2h10V7H7zM3 3v2h18V3H3z"/></svg></button>
+        <button class="rb ico" id="bal" onclick="sa('Left')" title="שמאל Ctrl+L"><svg viewBox="0 0 24 24"><path d="M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm0 8h18v-2H3v2zM3 3v2h18V3H3z"/></svg></button>
+        <button class="rb ico" id="baj" onclick="sa('Full')" title="מלא Ctrl+J"><svg viewBox="0 0 24 24"><path d="M3 21h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V7H3v2zm0-6v2h18V3H3z"/></svg></button>
+      </div>
+    </div>
+    <div class="rgt">פסקה</div>
+  </div>
+
+  <div class="rg" style="min-width:72px">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" onclick="openFB()"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 14 15.5l.27.28v.79l5 5 1.49-1.49-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg> חפש Ctrl+F</button>
+      <button class="rb sm" onclick="openReplace()"><svg viewBox="0 0 24 24"><path d="M11 6C9.55 6 8.22 6.56 7.22 7.5L10 10H3V3l2.77 2.77C7.16 4.1 8.97 3 11 3c3.92 0 7.09 3.06 7.42 6.9l-2.01.2C16.14 7.37 13.8 6 11 6zm.99 11c1.45 0 2.78-.56 3.78-1.5L13 13h7v7l-2.77-2.77c-1.39 1.67-3.19 2.77-5.23 2.77-3.92 0-7.09-3.06-7.42-6.9l2.01-.2c.28 2.73 2.62 4.1 5.4 4.1z"/></svg> החלף Ctrl+H</button>
+      <button class="rb sm" onclick="selectAllPages()">הכל Ctrl+A</button>
+    </div></div>
+    <div class="rgt">עריכה</div>
+  </div>
+
+  <div class="rg" style="flex:1;max-width:210px">
+    <div class="rgb"><div class="sty-scroll-gal">
+      <button class="sty-btn" onclick="applyBlock('p')">רגיל</button>
+      <button class="sty-btn" onclick="applyBlock('h1')" style="font-weight:800">כותרת 1</button>
+      <button class="sty-btn" onclick="applyBlock('h2')" style="color:#2e74b5;font-weight:700">כותרת 2</button>
+      <button class="sty-btn" onclick="applyBlock('h3')" style="color:#1f3763">כותרת 3</button>
+      <button class="sty-btn" onclick="applyBlock('blockquote')" style="font-style:italic;color:#555">ציטוט HTML</button>
+      <button class="sty-btn" onclick="applyBlock('pre')" style="font-family:monospace;font-size:.78em">קוד</button>
+      <button class="sty-btn" onclick="insChidush()" style="color:var(--wb);font-weight:700">&#10022; חידוש</button>
+      <button class="sty-btn" onclick="applyWStyle('alef')" style="font-size:1em;font-weight:800">כותרת ראשית</button>
+      <button class="sty-btn" onclick="applyWStyle('bet')" style="font-size:.95em;font-weight:700">פרק חדש</button>
+      <button class="sty-btn" onclick="applyWStyle('gimel')" style="font-weight:700">כותרת משנית</button>
+      <button class="sty-btn" onclick="applyWStyle('shefa')" style="font-size:.78em">כתב שפע</button>
+      <button class="sty-btn" onclick="applyWStyle('iyun')" style="font-weight:700;text-decoration:underline">כותרת עיון</button>
+      <button class="sty-btn" onclick="applyWStyle('zitut')" style="background:#f5f0e8;border-color:#c8b89a">ציטוט חוברות</button>
+      <button class="sty-btn" onclick="applyWStyle('sikum')" style="text-decoration:underline">סיכום הדף</button>
+      <button class="sty-btn" onclick="applyWStyle('listpara')" style="padding-right:14px">פסקת רשימה</button>
+      <button class="sty-btn" onclick="applyWStyle('quote')" style="border-right:3px solid #888;padding-right:5px">ציטוט</button>
+      <button class="sty-btn" onclick="applyWStyle('intense-quote')" style="border:1px solid #aaa;text-align:center;font-style:italic">ציטוט חזק</button>
+      <button class="sty-btn" onclick="applyWStyle('red')" style="color:#c00">אדום</button>
+    </div></div>
+    <div class="rgt">סגנונות</div>
+  </div>
+</div>
+
+<!-- INSERT -->
+<div class="rp" id="rp-insert">
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="insertPageBreak()">מעבר עמוד</button>
+    <button class="rb sm" onclick="insertBlankPage()">עמוד ריק</button>
+  </div></div><div class="rgt">עמודים</div></div>
+
+  <div class="rg"><div class="rgb">
+    <button class="rb" onclick="openTableDlg()"><svg viewBox="0 0 24 24"><path d="M10 10.02h5V21h-5zM17 21h3a2 2 0 0 0 2-2v-9h-5v11zm3-18H5a2 2 0 0 0-2 2v3h19V5a2 2 0 0 0-2-2zM3 19a2 2 0 0 0 2 2h3V10H3v9z"/></svg><br>טבלה</button>
+    <button class="rb" onclick="insImageBtn()" title="הוסף תמונה"><svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg><br>תמונה</button>
+  </div><div class="rgt">מדיה</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="insLink()">קישור Ctrl+K</button>
+    <button class="rb sm" onclick="insBookmark()">סימניה</button>
+  </div></div><div class="rgt">קישורים</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="insDate()">תאריך</button>
+    <button class="rb sm" onclick="insHebDate()">תאריך עברי</button>
+    <button class="rb sm" onclick="insFootnote()">הערת שוליים</button>
+    <button class="rb sm" onclick="insHR()">קו מפריד</button>
+    <button class="rb sm" onclick="insSpecialChar()">תו מיוחד</button>
+  </div></div><div class="rgt">טקסט</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="insHeader()">כותרת עליונה</button>
+    <button class="rb sm" onclick="insFooterArea()">כותרת תחתונה</button>
+    <button class="rb sm" onclick="insPageNum()">מספר עמוד</button>
+  </div></div><div class="rgt">כותרת/רגל</div></div>
+</div>
+
+<!-- LAYOUT -->
+<div class="rp" id="rp-layout">
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="setMargins('normal')">שוליים רגיל</button>
+    <button class="rb sm" onclick="setMargins('narrow')">שוליים צר</button>
+    <button class="rb sm" onclick="setMargins('wide')">שוליים רחב</button>
+  </div></div><div class="rgt">שוליים</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="setPageDir('portrait')">לאורך</button>
+    <button class="rb sm" onclick="setPageDir('landscape')">לרוחב</button>
+  </div></div><div class="rgt">כיוון</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="setPageSize('A4')">A4</button>
+    <button class="rb sm" onclick="setPageSize('letter')">Letter</button>
+    <button class="rb sm" onclick="setPageSize('legal')">Legal</button>
+  </div></div><div class="rgt">גודל</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="setCols(1)">עמודה אחת</button>
+    <button class="rb sm" onclick="setCols(2)">שתי עמודות</button>
+    <button class="rb sm" onclick="setCols(3)">שלוש עמודות</button>
+  </div></div><div class="rgt">עמודות</div></div>
+</div>
+
+<!-- REFS -->
+<div class="rp" id="rp-refs">
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="genTOC()">הוסף תוכן עניינים</button>
+    <button class="rb sm" onclick="updTOC()">עדכן תוכן עניינים</button>
+  </div></div><div class="rgt">תוכן עניינים</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="insFootnote()">הוסף הערת שוליים</button>
+    <button class="rb sm" onclick="insEndnote()">הוסף הערת סיום</button>
+  </div></div><div class="rgt">הערות</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="insCitation()">הוסף ציטוט</button>
+    <button class="rb sm" onclick="insBib()">ביבליוגרפיה</button>
+  </div></div><div class="rgt">ציטוטים</div></div>
+</div>
+
+<!-- VIEW -->
+<div class="rp" id="rp-view">
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="togRead()" id="vread-btn">מצב קריאה</button>
+    <button class="rb sm" onclick="togFocus()">מצב פוקוס</button>
+  </div></div><div class="rgt">תצוגה</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" id="nav-btn" onclick="togNav()">✓ חלונית ניווט</button>
+    <button class="rb sm" id="ruler-btn" onclick="togRuler()">סרגל</button>
+  </div></div><div class="rgt">הצג</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="setZoom(100)">100%</button>
+    <button class="rb sm" onclick="setZoom(75)">75%</button>
+    <button class="rb sm" onclick="promptZoom()">זום מותאם...</button>
+  </div></div><div class="rgt">זום</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" id="rec-btn" onclick="toggleRecording()" style="color:#c00">● הקלט מאקרו</button>
+    <button class="rb sm" onclick="openMacroDlg()">נהל מאקרואים</button>
+    <button class="rb sm" onclick="openTemplates()">תבניות</button>
+  </div></div><div class="rgt">מאקרואים</div></div>
+</div>
+
+<!-- DESIGN -->
+<div class="rp" id="rp-design">
+  <div class="rg">
+    <div class="rgb col">
+      <div style="display:flex;gap:3px;flex-wrap:wrap">
+        <button class="rb sm" onclick="applyTheme('default')">ברירת מחדל</button>
+        <button class="rb sm" onclick="applyTheme('modern')">מודרני</button>
+        <button class="rb sm" onclick="applyTheme('classic')">קלאסי</button>
+        <button class="rb sm" onclick="applyTheme('minimal')">מינימלי</button>
+        <button class="rb sm" onclick="applyTheme('elegant')">אלגנטי</button>
+      </div>
+    </div>
+    <div class="rgt">ערכות נושא</div>
+  </div>
+  <div class="rg">
+    <div class="rgb col">
+      <div style="display:flex;gap:4px;align-items:center">
+        <label style="font-size:.72em;color:#555">צבע עמוד:</label>
+        <input type="color" id="pgcolor" value="#ffffff" onchange="setPageColor(this.value)" style="width:36px;height:22px;border:1px solid #ccc;cursor:pointer;border-radius:2px;padding:1px 2px"/>
+        <button class="rb sm" onclick="setPageColor('#ffffff')">לבן</button>
+      </div>
+      <div style="display:flex;gap:3px;margin-top:3px">
+        <button class="rb sm" id="pgborder-btn" onclick="togPageBorder()">מסגרת עמוד</button>
+      </div>
+    </div>
+    <div class="rgt">רקע</div>
+  </div>
+  <div class="rg">
+    <div class="rgb col">
+      <div style="display:flex;gap:3px;flex-wrap:wrap">
+        <button class="rb sm" onclick="openWatermarkDlg()">הוסף סימן מים</button>
+        <button class="rb sm" onclick="removeWatermark()">הסר סימן מים</button>
+      </div>
+    </div>
+    <div class="rgt">סימן מים</div>
+  </div>
+  <div class="rg">
+    <div class="rgb col">
+      <button class="rb sm" onclick="openParaDlg()">פסקה...</button>
+      <button class="rb sm" onclick="openFontDlg()">גופן...</button>
+    </div>
+    <div class="rgt">עיצוב</div>
+  </div>
+</div>
+
+<!-- REVIEW -->
+<div class="rp" id="rp-review">
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" onclick="addComment()"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg> הוסף הערה</button>
+      <button class="rb sm" onclick="togCommentPanel()"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg> חלונית הערות</button>
+    </div></div>
+    <div class="rgt">הערות</div>
+  </div>
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" id="tc-btn" onclick="togTrackChanges()"><svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> מעקב שינויים</button>
+      <button class="rb sm" onclick="acceptAllChanges()" style="color:#070"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> אשר הכל</button>
+      <button class="rb sm" onclick="rejectAllChanges()" style="color:#c00"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> דחה הכל</button>
+    </div></div>
+    <div class="rgt">מעקב שינויים</div>
+  </div>
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" id="spell-btn" onclick="togSpellCheck()"><svg viewBox="0 0 24 24"><path d="M12.45 16h2.09L9.43 3H7.57L2.46 16h2.09l1.12-3h5.64l1.14 3zm-6.02-5L8.5 5.48 10.57 11H6.43zm15.16.59-8.09 8.09L9.83 16l-1.41 1.41 5.09 5.09L23 13l-1.41-1.41z"/></svg> בדיקת איות</button>
+    </div></div>
+    <div class="rgt">איות</div>
+  </div>
+  <div class="rg">
+    <div class="rgb"><div class="rv">
+      <button class="rb sm" id="protect-btn" onclick="togDocProtect()"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg> הגנת מסמך</button>
+    </div></div>
+    <div class="rgt">הגנה</div>
+  </div>
+</div>
+
+<!-- OTZARIA -->
+<div class="rp" id="rp-otz">
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="insHebDate()"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg> תאריך עברי</button>
+    <button class="rb sm" onclick="insDate()"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg> תאריך לועזי</button>
+    <button class="rb sm" onclick="insLoc()"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> הכנס מיקום</button>
+    <button class="rb sm" onclick="insPasuk()"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4zm0 16V14l5-3 5 3v6H6zm12 0h-1V4h1v16z"/></svg> הכנס פסוק</button>
+  </div></div><div class="rgt">הכנסה</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="openInReader()"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg> פתח בקורא</button>
+    <button class="rb sm" onclick="searchInLib()"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 14 15.5l.27.28v.79l5 5 1.49-1.49-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg> חפש בספרייה</button>
+    <button class="rb sm" onclick="insChidushBox()"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg> מסגרת חידוש</button>
+  </div></div><div class="rgt">ספרייה</div></div>
+
+  <div class="rg"><div class="rgb"><div class="rv">
+    <button class="rb sm" onclick="saveToArchive()"><svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg> שמור לארכיון</button>
+    <button class="rb sm" onclick="openArchiveDlg()"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg> פתח ארכיון</button>
+  </div></div><div class="rgt">ארכיון</div></div>
+</div>
+
+<!-- BOOKS -->
+<div class="rp" id="rp-books">
+  <div class="rg">
+    <div class="rgb">
+      <button class="rb" onclick="importDocxForBooks()" title="ייבוא קובץ Word לעריכה"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> ייבוא .docx</button>
+      <button class="rb" onclick="exportDocx()" title="ייצוא חזרה לקובץ Word"><svg viewBox="0 0 24 24"><path d="M4 15h2v3h12v-3h2v3c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2v-3zm8-13L8 6h3v7h2V6h3l-4-4z"/></svg> ייצוא .docx</button>
+      <button class="rb" onclick="exportOtzaria()" title="ייצוא לפורמט אוצריא TXT"><svg viewBox="0 0 24 24"><path d="M4 15h2v3h12v-3h2v3c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2v-3zm8-13L8 6h3v7h2V6h3l-4-4z"/></svg> ייצוא .txt</button>
+      <button class="rb" onclick="repairHTMLTags()" title="מסתיר את תגיות הHTML מהטקסט - לצורך עבודה נוחה"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> תקן HTML</button>
+    </div>
+    <div class="rgt">קובץ</div>
+  </div>
+  <div class="rg">
+    <div class="rgb">
+      <button class="rb" onclick="setBookHeading(1)" title="כותרת 1"><b>כ1</b></button>
+      <button class="rb" onclick="setBookHeading(2)" title="כותרת 2"><b style="font-size:.95em">כ2</b></button>
+      <button class="rb" onclick="setBookHeading(3)" title="כותרת 3">כ3</button>
+      <button class="rb" onclick="setBookHeading(4)" title="כותרת 4" style="font-size:.9em">כ4</button>
+      <button class="rb" onclick="setBookHeading(5)" title="כותרת 5" style="font-size:.85em">כ5</button>
+      <button class="rb" onclick="setBookHeading(6)" title="כותרת 6" style="font-size:.8em">כ6</button>
+      <button class="rb" onclick="restoreSel();document.execCommand('formatBlock',false,'p');schedSave();" title="פסקה רגילה">¶</button>
+    </div>
+    <div class="rgt">תגיות</div>
+  </div>
+  <div class="rg">
+    <div class="rgb">
+      <button class="rb sty-btn" id="bk-bold" onclick="fmt('bold')" title="מודגש"><b>ב</b></button>
+      <button class="rb sty-btn" id="bk-ital" onclick="fmt('italic')" title="נטוי"><i>נ</i></button>
+      <button class="rb sty-btn" id="bk-und" onclick="fmt('underline')" title="קו תחתי"><u>ק</u></button>
+    </div>
+    <div class="rgt">עיצוב</div>
+  </div>
+  <div class="rg">
+    <div class="rgb col">
+      <button class="rb sm" onclick="togOutlinePanel()" id="outline-btn"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg> מבנה</button>
+      <button class="rb sm" onclick="replaceHeadingLvl()"><svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> החלף רמה</button>
+    </div>
+    <div class="rgt">מבנה</div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div class="rp" id="rp-notes">
+  <div class="rg">
+    <div class="rgb col">
+      <div style="display:flex;gap:2px">
+        <button class="rb sm" onclick="addTag('chidush')"><span class="tag tag-chidush" style="font-size:.78em;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg> חידוש</span></button>
+        <button class="rb sm" onclick="addTag('kushia')"><span class="tag tag-kushia" style="font-size:.78em;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg> קושיה</span></button>
+      </div>
+      <div style="display:flex;gap:2px">
+        <button class="rb sm" onclick="addTag('tiruts')"><span class="tag tag-tiruts" style="font-size:.78em;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> תירוץ</span></button>
+        <button class="rb sm" onclick="addTag('makor')"><span class="tag tag-makor" style="font-size:.78em;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg> מקור</span></button>
+      </div>
+      <div style="display:flex;gap:2px">
+        <button class="rb sm" onclick="addTag('chashuv')"><span class="tag tag-chashuv" style="font-size:.78em;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> חשוב</span></button>
+        <button class="rb sm" onclick="addTag('liun')"><span class="tag tag-liun" style="font-size:.78em;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg> לעיון</span></button>
+      </div>
+    </div>
+    <div class="rgt">תגיות</div>
+  </div>
+  <div class="rg">
+    <div class="rgb">
+      <div class="rv">
+        <button class="rb sm" onclick="removeTag()"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> הסר תגית</button>
+        <button class="rb sm" onclick="showTagNav()"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 0 0 14 15.5l.27.28v.79l5 5 1.49-1.49-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg> נווט תגיות</button>
+      </div>
+    </div>
+    <div class="rgt">תגיות</div>
+  </div>
+  <div class="rg">
+    <div class="rgb">
+      <button class="rb sm" onclick="addSticky('yellow')" title="פתקית צהובה" style="background:var(--sticky-yellow-bg)"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12l6-6V5c0-1.1-.9-2-2-2zm-5 13v4l4-4h-4zM7 8h10v2H7V8zm0 4h7v2H7v-2z"/></svg></button>
+      <button class="rb sm" onclick="addSticky('blue')" title="פתקית כחולה" style="background:var(--sticky-blue-bg)"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12l6-6V5c0-1.1-.9-2-2-2zm-5 13v4l4-4h-4zM7 8h10v2H7V8zm0 4h7v2H7v-2z"/></svg></button>
+      <button class="rb sm" onclick="addSticky('green')" title="פתקית ירוקה" style="background:var(--sticky-green-bg)"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12l6-6V5c0-1.1-.9-2-2-2zm-5 13v4l4-4h-4zM7 8h10v2H7V8zm0 4h7v2H7v-2z"/></svg></button>
+      <button class="rb sm" onclick="addSticky('pink')" title="פתקית ורודה" style="background:var(--sticky-pink-bg)"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12l6-6V5c0-1.1-.9-2-2-2zm-5 13v4l4-4h-4zM7 8h10v2H7V8zm0 4h7v2H7v-2z"/></svg></button>
+    </div>
+    <div class="rgt">פתקיות</div>
+  </div>
+  <div class="rg">
+    <div class="rgb">
+      <div class="rv">
+        <button class="rb sm" onclick="togStickies()"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg> הצג/הסתר</button>
+        <button class="rb sm" onclick="clearStickies()"><svg viewBox="0 0 24 24"><path d="M15 16h4v2h-4zm0-8h7v2h-7zm0 4h6v2h-6zM3 18c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2V8H3v10zM14 5h-3l-1-1H6L5 5H2v2h12z"/></svg> נקה הכל</button>
+      </div>
+    </div>
+    <div class="rgt">פתקיות</div>
+  </div>
+  <div class="rg">
+    <div class="rgb">
+      <div class="rv">
+        <button class="rb sm" onclick="saveClip()"><svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0 10c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z"/></svg> שמור גזרייה</button>
+        <button class="rb sm" onclick="showClipsPanel()"><svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg> גזרים שמורים</button>
+      </div>
+    </div>
+    <div class="rgt">גזרייה</div>
+  </div>
+</div>
+
+</div><!-- /ribbon -->
+
+<!-- DOC TAB BAR -->
+<div id="doc-tabbar">
+  <div class="doc-tab on" id="dt-0" onclick="swDoc(0)"><span class="dt-title">מסמך חדש</span><button class="dt-x" onclick="event.stopPropagation();closeDoc(0)">&times;</button></div>
+  <button class="dt-new" onclick="newDocTab()" title="מסמך חדש">+</button>
+  <div style="flex:1"></div>
+  <button id="tb-nav-btn" onclick="togNav()" title="חלונית ניווט" style="background:none;border:none;cursor:pointer;padding:2px 8px;color:#777;font-size:.78em;align-self:center;border-radius:3px;flex-shrink:0;" onmouseover="this.style.background='var(--bh)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;fill:currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg> ניווט</button>
+  <button onclick="importFromReader()" title="ייבוא מהקורא" style="background:none;border:none;cursor:pointer;padding:2px 8px;color:#777;font-size:.78em;align-self:center;border-radius:3px;flex-shrink:0;" onmouseover="this.style.background='var(--bh)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;fill:currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L11 14.17V7h2v7.17l2.59-2.59L17 13l-5 5z"/></svg> מהקורא</button>
+  <button onclick="toggleFullscreen()" id="tb-fs-btn" title="מסך מלא (F11)" style="background:none;border:none;cursor:pointer;padding:2px 8px;color:#777;font-size:.78em;align-self:center;border-radius:3px;flex-shrink:0;" onmouseover="this.style.background='var(--bh)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;fill:currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg> מסך מלא</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="nav-pane">
+    <div class="nav-head"><span>ניווט</span><button class="nav-xbtn" onclick="togNav()">✕</button></div>
+    <div class="nav-srch"><input type="text" id="nav-si" placeholder="חיפוש במסמך..." oninput="navSearch(this.value)"/></div>
+    <div class="nav-tabs">
+      <button class="nav-tab on" onclick="swNavTab('h',this)">כותרות</button>
+      <button class="nav-tab" onclick="swNavTab('p',this)">עמודים</button>
+      <button class="nav-tab" onclick="swNavTab('r',this)">תוצאות</button>
+    </div>
+    <div id="nav-body"><div class="nav-empty">אין כותרות</div></div>
+  </div>
+
+  <div id="cp" class="hide">
+    <div class="cp-head"><span>💬 הערות</span><button class="nav-xbtn" onclick="togCommentPanel()">✕</button></div>
+    <div id="cp-body"><p style="font-size:.78em;color:#999;padding:10px">אין הערות</p></div>
+  </div>
+
+  <div id="outline-panel" class="hide">
+    <div class="cp-head"><span>📋 מבנה הספר</span><button class="nav-xbtn" onclick="togOutlinePanel()">✕</button></div>
+    <div id="outline-body"></div>
+  </div>
+
+  <div id="dw" onscroll="updPageNum()">
+    <div id="fb">
+      <div class="fb-row">
+        <input type="text" id="fi" placeholder="חפש..." oninput="hlFind(this.value)" onkeydown="fbKey(event)"/>
+        <span id="fc"></span>
+        <button onclick="findPrev()">‹</button>
+        <button onclick="findNext()">›</button>
+        <button onclick="togReplace()">החלף</button>
+        <button class="fb-x" onclick="closeFB()">✕</button>
+      </div>
+      <div class="fb-row" id="rr" style="display:none">
+        <input type="text" id="ri" placeholder="החלף ב..."/>
+        <button onclick="doRep()">החלף</button>
+        <button onclick="doRepAll()">הכל</button>
+      </div>
+    </div>
+    <div id="ruler"></div>
+    <div id="dp"
+         onkeydown="onKey(event)"
+         onkeyup="updFmt();schedCount();"
+         onmouseup="updFmt();onDocClick(event);"
+         oninput="schedSave();schedNav();schedRepaginate(true);schedSpellCheck();"
+         oncontextmenu="showCtx(event)">
+      <div class="page" contenteditable="true" spellcheck="true" dir="rtl"><p><br></p></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="sb">
+  <div class="sb-r">
+    <span class="sbi" id="sbpg">עמוד 1</span>
+    <span class="sbsep">|</span>
+    <span class="sbi" id="sbw" onclick="openWordCountDlg()">0 מילים</span>
+    <span class="sbsep">|</span>
+    <span class="sbi" id="sbch">0 תווים</span>
+    <span class="sbsep">|</span>
+    <span class="sbi">עברית</span>
+    <span class="sbsep">|</span>
+    <span class="sbi" id="sbs">✓ שמור</span>
+    <span class="sbsep" id="sb-cm-sep" style="display:none">|</span>
+    <span class="sbi" id="sb-cm" style="display:none;color:#ffd54f;cursor:pointer" onclick="togCommentPanel()" title="לחץ לפתיחת חלונית הערות">0 הערות</span>
+  </div>
+  <div class="sb-l">
+    <button id="tt-btn" onclick="togTheme()">Word</button>
+    <div style="display:flex;gap:1px;margin-right:4px">
+      <button class="sv on" id="sv-pr" onclick="svClick('pr',this)" title="פריסת הדפסה"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg></button>
+      <button class="sv" id="sv-rd" onclick="svClick('rd',this)" title="מצב קריאה"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></button>
+      <button class="sv" id="sv-fc" onclick="togFocus()" title="פוקוס"><svg viewBox="0 0 24 24"><path d="M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2z"/></svg></button>
+    </div>
+    <div class="za">
+      <button class="zb" onclick="chZoom(-10)">−</button>
+      <input type="range" id="zsl" min="50" max="200" value="100" oninput="setZoom(+this.value)"/>
+      <button class="zb" onclick="chZoom(10)">+</button>
+      <span id="zpct" class="sbi" onclick="promptZoom()">100%</span>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx">
+  <!-- עיצוב -->
+  <div class="ctx-item" onclick="fmt('bold');hideCtx()"><strong>B</strong> מודגש</div>
+  <div class="ctx-item" onclick="fmt('italic');hideCtx()"><em>I</em> נטוי</div>
+  <div class="ctx-item" onclick="fmt('underline');hideCtx()"><u>U</u> קו תחתון</div>
+  <div class="ctx-item" onclick="ex('removeFormat');hideCtx()">נקה עיצוב</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctx-add-dict" style="display:none;color:#1a7a1a" onclick="ctxAddToDict();hideCtx()">&#10003; הוסף למילון</div>
+  <div class="ctx-sep" id="ctx-dict-sep" style="display:none"></div>
+  <!-- כותרות -->
+  <div class="ctx-item" onclick="applyBlock('h1');hideCtx()">כותרת 1</div>
+  <div class="ctx-item" onclick="applyBlock('h2');hideCtx()">כותרת 2</div>
+  <div class="ctx-item" onclick="applyBlock('h3');hideCtx()">כותרת 3</div>
+  <div class="ctx-item" onclick="applyBlock('p');hideCtx()">פסקה רגילה</div>
+  <div class="ctx-sep"></div>
+  <!-- עריכה -->
+  <div class="ctx-item" onclick="ex('cut');hideCtx()">גזור</div>
+  <div class="ctx-item" onclick="ex('copy');hideCtx()">העתק</div>
+  <div class="ctx-item" onclick="doPaste();hideCtx()">הדבק</div>
+  <div class="ctx-sep"></div>
+  <!-- יישור -->
+  <div class="ctx-item" onclick="sa('Right');hideCtx()">יישור ימין</div>
+  <div class="ctx-item" onclick="sa('Center');hideCtx()">מרכז</div>
+  <div class="ctx-item" onclick="sa('Left');hideCtx()">יישור שמאל</div>
+  <div class="ctx-sep"></div>
+  <!-- אוצריא -->
+  <div class="ctx-item" onclick="openInReader();hideCtx()">פתח בקורא אוצריא</div>
+  <div class="ctx-item" onclick="insHebDate();hideCtx()">תאריך עברי</div>
+  <div class="ctx-item" onclick="insLink();hideCtx()">הוסף קישור</div>
+  <!-- טבלה — מוצג רק כשהסמן בתוך טבלה -->
+  <div class="ctx-sep" id="ctx-tbl-sep" style="display:none"></div>
+  <div class="ctx-item" id="ctx-tbl-ins-above" style="display:none" onclick="ctxTblRow('above');hideCtx()">הוסף שורה מעל</div>
+  <div class="ctx-item" id="ctx-tbl-ins-below" style="display:none" onclick="ctxTblRow('below');hideCtx()">הוסף שורה מתחת</div>
+  <div class="ctx-item" id="ctx-tbl-ins-col-r" style="display:none" onclick="ctxTblCol('right');hideCtx()">הוסף עמודה לימין</div>
+  <div class="ctx-item" id="ctx-tbl-ins-col-l" style="display:none" onclick="ctxTblCol('left');hideCtx()">הוסף עמודה לשמאל</div>
+  <div class="ctx-item" id="ctx-tbl-del-row" style="display:none" onclick="ctxTblDelRow();hideCtx()">מחק שורה</div>
+  <div class="ctx-item" id="ctx-tbl-del-col" style="display:none" onclick="ctxTblDelCol();hideCtx()">מחק עמודה</div>
+  <div class="ctx-item" id="ctx-tbl-del-tbl" style="display:none" onclick="ctxTblDelTable();hideCtx()">מחק טבלה</div>
+</div>
+
+<script src="js/dictionary.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

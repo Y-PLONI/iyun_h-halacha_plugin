@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>עיון הפרשה</title>
+<style>
+:root {
+  --color-primary:#6750A4;--color-on-primary:#FFF;--color-secondary:#625B71;
+  --color-on-secondary:#FFF;--color-surface:#FFFBFE;--color-on-surface:#1C1B1F;
+  --color-surface-container-highest:#E6E0E9;--color-error:#B3261E;
+  --color-on-error:#FFF;--color-outline:#79747E;
+  --color-primary-subtle:rgba(103,80,164,.12);--color-secondary-subtle:rgba(98,91,113,.12);
+  --font-main:'Frank Ruhl Libre','David',serif;--font-size-base:18px;
+  --line-height:1.5;--r-sm:8px;--r-md:12px;--r-lg:16px;--r-pill:999px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-main);font-size:var(--font-size-base);line-height:var(--line-height);
+  background:var(--color-surface);color:var(--color-on-surface);direction:rtl;height:100vh;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* Header */
+#hdr{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--color-outline);flex-shrink:0}
+#hdr img{height:38px;object-fit:contain}
+#hdr-title{font-size:1rem;font-weight:700;color:var(--color-primary);flex:1}
+#hdr-actions{display:flex;gap:6px}
+
+/* Nav */
+#nav{display:flex;border-bottom:2px solid var(--color-outline);flex-shrink:0;overflow-x:auto}
+.nav-tab{padding:7px 14px;cursor:pointer;font-size:.88rem;font-family:var(--font-main);font-weight:600;
+  color:var(--color-secondary);border:none;background:none;border-bottom:3px solid transparent;
+  margin-bottom:-2px;white-space:nowrap;transition:color .15s,border-color .15s}
+.nav-tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary)}
+.nav-tab:hover{color:var(--color-primary)}
+
+/* Content */
+#content{flex:1;overflow:hidden;position:relative}
+.tab-panel{display:none;height:100%;overflow-y:auto;padding:14px}
+.tab-panel.active{display:block}
+
+/* Cards */
+.card{background:var(--color-surface);border:1px solid var(--color-outline);
+  border-radius:var(--r-md);padding:12px 14px;margin-bottom:10px}
+.card-title{font-size:.95rem;font-weight:700;color:var(--color-primary);margin-bottom:8px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r-pill);
+  border:none;font-family:var(--font-main);font-size:.88rem;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--color-primary);color:var(--color-on-primary)}
+.btn-secondary{background:var(--color-secondary-subtle);color:var(--color-secondary);border:1px solid var(--color-outline)}
+.btn-sm{padding:4px 10px;font-size:.8rem}
+.btn-icon{padding:6px;border-radius:var(--r-sm);background:var(--color-primary-subtle);
+  color:var(--color-primary);border:none;cursor:pointer;font-size:1rem;transition:background .15s}
+.btn-icon:hover{background:var(--color-secondary-subtle)}
+
+/* Schedule table */
+.sch-table{width:100%;border-collapse:collapse;font-size:.84rem}
+.sch-table th{background:var(--color-primary-subtle);color:var(--color-primary);font-weight:700;
+  padding:7px 8px;border:1px solid var(--color-outline);text-align:right}
+.sch-table td{padding:6px 8px;border:1px solid var(--color-outline);vertical-align:top;line-height:1.35}
+.sch-table tr.cur{background:var(--color-primary-subtle);font-weight:700}
+.sch-table tr:hover{background:var(--color-secondary-subtle)}
+
+/* Exam — חלוקה למחזורים */
+.cycle-header{font-size:.88rem;font-weight:700;color:var(--color-secondary);
+  padding:6px 0 4px;border-bottom:1px solid var(--color-outline);margin-bottom:6px;margin-top:10px}
+.cycle-header:first-child{margin-top:0}
+
+/* Question accordion */
+.q-item{border:1px solid var(--color-outline);border-radius:var(--r-sm);margin-bottom:6px;overflow:hidden}
+.q-hdr{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--color-primary-subtle);cursor:pointer}
+.q-num{background:var(--color-primary);color:var(--color-on-primary);border-radius:var(--r-pill);
+  padding:1px 7px;font-size:.76rem;font-weight:700;flex-shrink:0}
+.q-title{flex:1;font-weight:600;font-size:.88rem}
+.q-status{font-size:.72rem;padding:2px 7px;border-radius:var(--r-pill)}
+.s-done{background:#D4EDDA;color:#155724}.s-todo{background:#FFF3CD;color:#856404}
+.q-body{padding:8px 10px;display:none}
+.q-body.open{display:block}
+.q-ta{width:100%;min-height:70px;border:1px solid var(--color-outline);border-radius:var(--r-sm);
+  padding:7px;font-family:var(--font-main);font-size:.88rem;background:var(--color-surface);
+  color:var(--color-on-surface);resize:vertical}
+.q-ta:focus{outline:2px solid var(--color-primary);border-color:var(--color-primary)}
+
+/* MB Viewer — iframe מובנה */
+#mb-viewer{width:100%;height:100%;border:none;border-radius:var(--r-md)}
+#mb-tab-panel{padding:0;display:flex;flex-direction:column}
+#mb-toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border-bottom:1px solid var(--color-outline);flex-shrink:0}
+#mb-toolbar .mb-ref-label{font-size:.85rem;color:var(--color-secondary);flex:1}
+#mb-frame-wrap{flex:1;overflow:hidden;position:relative}
+#mb-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:10px;color:var(--color-secondary);font-size:.9rem;text-align:center;padding:20px}
+
+/* Upload area */
+.upload-area{border:2px dashed var(--color-outline);border-radius:var(--r-md);padding:18px;
+  text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:10px}
+.upload-area:hover{border-color:var(--color-primary);background:var(--color-primary-subtle)}
+.upload-area input{display:none}
+.upload-icon{font-size:1.8rem;margin-bottom:6px}
+.upload-text{font-size:.88rem;color:var(--color-secondary)}
+
+/* File preview */
+#file-preview-wrap{margin-top:10px}
+.file-preview-pdf{width:100%;height:400px;border:1px solid var(--color-outline);
+  border-radius:var(--r-md);background:var(--color-surface)}
+.file-preview-img{max-width:100%;border-radius:var(--r-md);border:1px solid var(--color-outline)}
+
+/* Settings */
+.s-row{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 0;border-bottom:1px solid var(--color-outline)}
+.s-row:last-child{border-bottom:none}
+.s-label{font-weight:600;font-size:.9rem}
+.s-desc{font-size:.78rem;color:var(--color-secondary);margin-top:2px}
+.s-input{border:1px solid var(--color-outline);border-radius:var(--r-sm);padding:5px 9px;
+  font-family:var(--font-main);font-size:.88rem;background:var(--color-surface);
+  color:var(--color-on-surface);min-width:110px}
+.s-input:focus{outline:2px solid var(--color-primary)}
+.days-grid{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.day-chip{padding:3px 10px;border-radius:var(--r-pill);border:1px solid var(--color-outline);
+  background:var(--color-surface);cursor:pointer;font-size:.82rem;font-family:var(--font-main)}
+.day-chip.sel{background:var(--color-primary);color:var(--color-on-primary);border-color:var(--color-primary)}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--color-on-surface);color:var(--color-surface);padding:9px 18px;
+  border-radius:var(--r-pill);font-size:.88rem;opacity:0;transition:opacity .2s,transform .2s;z-index:999;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Send overlay */
+.ov-scrim{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s;z-index:100}
+.ov-scrim.open{opacity:1;pointer-events:auto}
+.ov-panel{position:fixed;top:10px;bottom:12px;right:10px;width:330px;
+  background:color-mix(in srgb,var(--color-secondary) 15%,var(--color-surface));
+  border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:18px;overflow-y:auto;
+  z-index:101;opacity:0;transform:translateX(30px);pointer-events:none;
+  transition:opacity .2s,transform .25s cubic-bezier(.4,0,.2,1)}
+.ov-panel.open{opacity:1;transform:translateX(0);pointer-events:auto}
+.ov-title{font-size:.95rem;font-weight:700;color:var(--color-primary);margin-bottom:12px;
+  padding-bottom:7px;border-bottom:1px solid var(--color-outline);
+  display:flex;justify-content:space-between;align-items:center}
+
+/* Bulb btn */
+#bulb-btn{position:fixed;bottom:14px;left:14px;background:var(--color-secondary-subtle);
+  border:1px solid var(--color-outline);border-radius:var(--r-pill);padding:6px 12px;
+  font-size:.8rem;cursor:pointer;font-family:var(--font-main);color:var(--color-secondary);
+  display:flex;align-items:center;gap:4px;z-index:500;transition:background .15s}
+#bulb-btn:hover{background:var(--color-primary-subtle)}
+
+/* Disclosure */
+.disclosure{font-size:.72rem;color:var(--color-secondary);margin-top:4px}
+
+/* Utils */
+.flex{display:flex}.gap-6{gap:6px}.mt-8{margin-top:8px}.mt-10{margin-top:10px}.w-full{width:100%}
+.text-sm{font-size:.84rem}.text-muted{color:var(--color-secondary)}.bold{font-weight:700}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<div id="hdr">
+  <img src="logo.png" alt="" onerror="this.style.display='none'">
+  <div id="hdr-title">עיון הפרשה — עיון ההלכה</div>
+  <div id="hdr-actions">
+    <button class="btn btn-primary btn-sm" onclick="openSendOv()">📤 שלח תשובות</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div id="nav">
+  <button class="nav-tab active" onclick="showTab('t-schedule',this)">📅 לוח הספק</button>
+  <button class="nav-tab" onclick="showTab('t-mb',this)">📖 משנה ברורה</button>
+  <button class="nav-tab" onclick="showTab('t-exam',this)">📝 מבחן ותשובות</button>
+  <button class="nav-tab" onclick="showTab('t-upload',this)">📂 חומרים</button>
+  <button class="nav-tab" onclick="showTab('t-settings',this)">⚙️ הגדרות</button>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+  <!-- לוח הספק -->
+  <div id="t-schedule" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">לוח הספק — כסני דפי משנ"ב</div>
+      <p class="text-sm text-muted mt-8">השבוע הנוכחי מסומן. לחץ על 📖 לפתיחת המשנה ברורה בטאב המשנ"ב.</p>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table class="sch-table">
+          <thead><tr>
+            <th>שבוע / פרשה</th><th>תאריך עברי</th><th>הלכות</th><th>סימנים</th><th>פתח</th>
+          </tr></thead>
+          <tbody id="sch-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- משנה ברורה viewer -->
+  <div id="t-mb" class="tab-panel" style="padding:0;display:flex;flex-direction:column">
+    <div id="mb-toolbar">
+      <span class="mb-ref-label" id="mb-ref-label">לחץ על 📖 בלוח הספק לפתיחת המשנה ברורה</span>
+      <button class="btn btn-secondary btn-sm" onclick="openMBCurrent()">📖 השבוע הנוכחי</button>
+      <button class="btn btn-secondary btn-sm" onclick="openMBInOtzaria()">🔗 פתח באוצריא</button>
+    </div>
+    <div id="mb-frame-wrap" style="flex:1;overflow:hidden">
+      <div id="mb-placeholder">
+        <div style="font-size:2.5rem">📖</div>
+        <div>בחר שבוע מלוח הספק לפתיחת המשנה ברורה כאן</div>
+        <button class="btn btn-primary btn-sm mt-8" onclick="openMBCurrent()">פתח שבוע נוכחי</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- מבחן ותשובות -->
+  <div id="t-exam" class="tab-panel">
+    <div class="card">
+      <div class="card-title" id="exam-title">מבחן ותשובות</div>
+      <p class="text-sm text-muted">התשובות נשמרות אוטומטית. <span class="bold">יש לענות על לפחות 4 מתוך 5 שאלות.</span></p>
+      <div id="cycles-container" class="mt-8"></div>
+      <div class="flex gap-6 mt-10" style="flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="saveAnswers()">💾 שמור</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportDoc()">📄 ייצא</button>
+        <button class="btn btn-secondary btn-sm" onclick="openSendOv()">📤 שלח</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- העלאת חומרים -->
+  <div id="t-upload" class="tab-panel">
+    <div class="card">
+      <div class="card-title">העלאת קובץ מבחן / גליון</div>
+      <div class="upload-area" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFile(this)">
+        <div class="upload-icon">📋</div>
+        <div class="upload-text">לחץ להעלאת קובץ (PDF או תמונה)</div>
+        <div id="file-name" class="text-sm text-muted mt-8"></div>
+      </div>
+      <div id="file-preview-wrap"></div>
+    </div>
+    <div class="card mt-10">
+      <div class="card-title">קישורים שימושיים</div>
+      <p class="text-sm text-muted">שיעורי חזרה על הספק השבועי: <span class="bold">073-3718200</span></p>
+      <button class="btn btn-secondary btn-sm mt-8" onclick="window.open('https://iyun.co.il','_blank')">🌐 אתר עיון הפרשה</button>
+    </div>
+  </div>
+
+  <!-- הגדרות -->
+  <div id="t-settings" class="tab-panel">
+    <div class="card">
+      <div class="card-title">פרטים אישיים</div>
+      <div class="s-row">
+        <div class="s-label">שם מלא</div>
+        <input class="s-input" id="s-name" placeholder="שמך המלא">
+      </div>
+      <div class="s-row">
+        <div class="s-label">מייל</div>
+        <input class="s-input" id="s-email" placeholder="your@email.com" dir="ltr">
+      </div>
+    </div>
+    <div class="card mt-10">
+      <div class="card-title">תזכורות</div>
+      <div class="s-row">
+        <div><div class="s-label">תזכורת לימוד יומי</div><div class="s-desc">שעת תזכורת</div></div>
+        <input type="time" class="s-input" id="s-time" value="20:00">
+      </div>
+      <div class="s-row">
+        <div><div class="s-label">ימי לימוד</div></div>
+      </div>
+      <div class="days-grid" id="days-grid">
+        <button class="day-chip sel" data-day="0" onclick="toggleDay(this)">ראשון</button>
+        <button class="day-chip sel" data-day="1" onclick="toggleDay(this)">שני</button>
+        <button class="day-chip sel" data-day="2" onclick="toggleDay(this)">שלישי</button>
+        <button class="day-chip sel" data-day="3" onclick="toggleDay(this)">רביעי</button>
+        <button class="day-chip sel" data-day="4" onclick="toggleDay(this)">חמישי</button>
+        <button class="day-chip" data-day="5" onclick="toggleDay(this)">שישי</button>
+        <button class="day-chip" data-day="6" onclick="toggleDay(this)">שבת</button>
+      </div>
+      <div class="s-row mt-8">
+        <div><div class="s-label">תזכורת מוצ"ש 21:00</div></div>
+        <input type="checkbox" id="s-m21" checked style="width:16px;height:16px">
+      </div>
+      <div class="s-row">
+        <div><div class="s-label">תזכורת מוצ"ש 23:30</div></div>
+        <input type="checkbox" id="s-m23" checked style="width:16px;height:16px">
+      </div>
+      <button class="btn btn-primary btn-sm mt-8" onclick="saveSettings()">שמור הגדרות</button>
+    </div>
+    <div class="card mt-10">
+      <p class="disclosure">גילוי נאות: נוצר באמצעות Claude ע"י חד בדרא</p>
+    </div>
+  </div>
+
+</div><!-- end content -->
+</div><!-- end app -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- SEND OVERLAY -->
+<div class="ov-scrim" id="ov-scrim" onclick="closeSendOv()"></div>
+<div class="ov-panel" id="ov-panel">
+  <div class="ov-title">📤 שליחת תשובות <button class="btn-icon" onclick="closeSendOv()">✕</button></div>
+  <p class="text-sm">לכתובת: <span class="bold">iyun1@iyun.co.il</span></p>
+  <div class="card mt-8">
+    <div class="text-sm bold">נושא:</div>
+    <input class="s-input w-full mt-8" id="ov-subject" placeholder="תשובות לעיון ההלכה — פרשה — שמך">
+  </div>
+  <div class="card mt-8">
+    <div class="text-sm bold">תוכן:</div>
+    <textarea class="q-ta w-full mt-8" id="ov-body" rows="7"></textarea>
+  </div>
+  <button class="btn btn-primary w-full mt-8" onclick="sendEmail()">📧 פתח תוכנת מייל</button>
+  <p class="disclosure mt-8">* יפתח את תוכנת המייל שלך עם הנתונים מלאים</p>
+</div>
+
+<!-- BULB -->
+<button id="bulb-btn" onclick="sendFeedback()">💡 הארות</button>
+
+<script src="otzaria_plugin.js"></script>
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+// לוח הספק: כל פריט כולל: week, date, halachot, simanim, mbRef (לפתיחה מדויקת), cycleIdx (מחזור 0-3), isReview
+const SCHEDULE = [
+  // מחזור א — חול המועד
+  {week:"פרשת צו",date:"ד–י ניסן",halachot:"דיני גילוח ונטילת צפרניים בחוה\"מ",simanim:"תקל–תקלב",mbRef:"תקל",cycleIdx:0},
+  {week:"שבת חוה\"מ פסח",date:"יא–יז ניסן",halachot:"מלאכות ודיני כבוס בחוה\"מ",simanim:"תקלג–תקלד",mbRef:"תקלג",cycleIdx:0},
+  {week:"פרשת שמיני",date:"יח–כד ניסן",halachot:"מלאכת דבר האבד (א)",simanim:"תקלה–תקלז ז",mbRef:"תקלה",cycleIdx:0},
+  {week:"פרשת תזרו\"מ",date:"כה ניסן–א אייר",halachot:"מלאכת דבר האבד (ב) ודיני סחורה",simanim:"תקלז ח–תקלט א",mbRef:"תקלז",cycleIdx:0},
+  {week:"פרשת אחמו\"ק",date:"ב–ח אייר",halachot:"דיני סחורה ובנין בחוה\"מ",simanim:"תקלט ב–תקמ א",mbRef:"תקלט",cycleIdx:0},
+  {week:"פרשת אמור",date:"ט–טו אייר",halachot:"בנין ואריגה ועשיית מלאכה לאחרים",simanim:"תקמ ב–תקמב א",mbRef:"תקמ",cycleIdx:0},
+  // מחזור ב — המשך חוה"מ
+  {week:"פרשת בה\"ב",date:"טז–כב אייר",halachot:"עשיית מלאכה לאחרים ודיני כתיבה",simanim:"תקמב ב–תקמה ב",mbRef:"תקמב",cycleIdx:1},
+  {week:"פרשת במדבר",date:"כג–כט אייר",halachot:"דיני כתיבה בחוה\"מ",simanim:"תקמה ג–סוף תקמה",mbRef:"תקמה",cycleIdx:1},
+  {week:"פרשת נשא — חזרה",date:"א–ז סיון",halachot:"חזרה כללית — תקל–תקלד",simanim:"תקל–תקלד",mbRef:"תקל",cycleIdx:1,isReview:true},
+  {week:"פרשת בהעלותך — חזרה",date:"ח–יד סיון",halachot:"חזרה כללית — תקלה–תקלט",simanim:"תקלה–תקלט",mbRef:"תקלה",cycleIdx:1,isReview:true},
+  {week:"פרשת שלח — חזרה",date:"טו–כא סיון",halachot:"חזרה כללית — תקלט–תקמב",simanim:"תקלט–תקמב",mbRef:"תקלט",cycleIdx:1,isReview:true},
+  {week:"פרשת קרח — חזרה",date:"כב–כח סיון",halachot:"חזרה כללית — תקמב–תקמה",simanim:"תקמב–תקמה",mbRef:"תקמב",cycleIdx:1,isReview:true},
+  // מחזור ג — אבלות בחוה"מ ור"ה
+  {week:"פרשת חקת",date:"כט סיון–ה תמוז",halachot:"אירוסין ונישואין, מת בחוה\"מ, אבלות",simanim:"תקמו–תקמח ג",mbRef:"תקמו",cycleIdx:2},
+  {week:"פרשת בלק",date:"ו–יב תמוז",halachot:"אבלות בחוה\"מ",simanim:"תקמח ד–סוף תקמח",mbRef:"תקמח",cycleIdx:2},
+  {week:"פרשת פינחס — חזרה",date:"יג–יט תמוז",halachot:"חזרה — תקמו–תקמח",simanim:"תקמו–תקמח",mbRef:"תקמו",cycleIdx:2,isReview:true},
+  {week:"פרשת מטו\"מ",date:"כ–כה תמוז",halachot:"ימי תחנונים, ערב ר\"ה, לאכול בלילה, קריאת התורה",simanim:"תקפא–תקפד א",mbRef:"תקפא",cycleIdx:2},
+  {week:"פרשת דברים",date:"כז תמוז–ד אב",halachot:"קריאת התורה ודיני שופר (א)",simanim:"תקפד ב–תקפו ב",mbRef:"תקפד",cycleIdx:2},
+  // מחזור ד — שופר ור"ה
+  {week:"פרשת ואתחנן",date:"ה–יא אב",halachot:"דיני שופר (ב)",simanim:"תקפו ב–תקפו ב",mbRef:"תקפו",cycleIdx:3},
+  {week:"פרשת עקב",date:"יב–יח אב",halachot:"דיני שופר (ג)",simanim:"תקפו ג–תקפו ח",mbRef:"תקפו",cycleIdx:3},
+  {week:"פרשת ראה",date:"יט–כה אב",halachot:"דיני שופר (ד) ודין הבור",simanim:"תקפו ט–תקפז א",mbRef:"תקפז",cycleIdx:3},
+  {week:"פרשת שופטים",date:"כו אב–ב אלול",halachot:"דין הבור, זמן תקיעה, מוסף ביחיד",simanim:"תקפז ב–תקפח ח",mbRef:"תקפז",cycleIdx:3},
+  {week:"פרשת תצא",date:"ג–ט אלול",halachot:"יחיד בלא תקיעות, מריעים, קידוש, שני ימי ר\"ה",simanim:"תקצד–תרג",mbRef:"תקצד",cycleIdx:3},
+  {week:"שבת ר\"ה — חזרה",date:"כד אלול–א תשרי",halachot:"חזרה — תקפא–תקפד",simanim:"תקפא–תקפד",mbRef:"תקפא",cycleIdx:3,isReview:true}
+];
+
+const CYCLE_NAMES = ["מחזור א — חול המועד","מחזור ב — חול המועד (המשך)","מחזור ג — אבלות ור\"ה","מחזור ד — שופר ור\"ה"];
+
+// 5 שאלות לכל מחזור (ניתן לעריכה)
+const CYCLE_QUESTIONS = [
+  ["מהם הדברים המותרים בחוה\"מ?","מה הם דיני גילוח בחול המועד?","מהו דין כביסה בחוה\"מ?","מהו דבר האבד — הגדרה ודוגמאות?","מה מותר לבנות בחוה\"מ?"],
+  ["מה מותר לכתוב בחוה\"מ?","מה אסור לסחור בחוה\"מ?","מה דין עשיית מלאכה לאחרים בחינם?","מהו דין גוי העושה מלאכה ליהודי בחוה\"מ?","מה הם דיני כתיבה לצרכי מצווה?"],
+  ["מה דין עריכת חתונה בחוה\"מ?","מה דין מי שמת לו קרוב בחוה\"מ?","מהם דיני אבלות בחוה\"מ?","מה ההבדל בין אבל שמת קרובו לפני חוה\"מ לאחריו?","מה מותר לאבל בחוה\"מ?"],
+  ["מה צורת השופר הכשר לתקיעה?","מה הם הקולות שצריך לתקוע?","מה דין תוקע לתוך הבור?","מה דין שמע חצי תקיעה?","מה ברכות השופר?"]
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────
+let S = {
+  answers:{},       // cycleIdx -> {q0:"", q1:"", ...}
+  settings:{dailyTime:"20:00",days:[0,1,2,3,4],m21:true,m23:true},
+  name:"",email:"",
+  curWeekIdx:0,
+  curMBRow:null,    // השורה הנוכחית שנפתחה במ"ב
+  uploadedFile:null // {name, dataUrl, type}
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────
+function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML}
+function localDateStr(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function hexToRgba(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgba(${r},${g},${b},${a})`}
+
+// ── THEME ─────────────────────────────────────────────────────────────
+function applyTheme(theme){
+  if(!theme?.colorScheme)return;
+  const cs=theme.colorScheme,r=document.documentElement;
+  r.style.setProperty('--color-primary',cs.primary);r.style.setProperty('--color-on-primary',cs.onPrimary);
+  r.style.setProperty('--color-secondary',cs.secondary);r.style.setProperty('--color-on-secondary',cs.onSecondary);
+  r.style.setProperty('--color-surface',cs.surface);r.style.setProperty('--color-on-surface',cs.onSurface);
+  r.style.setProperty('--color-surface-container-highest',cs.surfaceContainerHighest);
+  r.style.setProperty('--color-error',cs.error);r.style.setProperty('--color-on-error',cs.onError);
+  r.style.setProperty('--color-outline',cs.outline);
+  r.style.setProperty('--color-primary-subtle',hexToRgba(cs.primary,.12));
+  r.style.setProperty('--color-secondary-subtle',hexToRgba(cs.secondary,.12));
+  document.body.classList.toggle('dark-mode',theme.mode==='dark');
+  if(theme.typography){
+    const t=theme.typography;
+    r.style.setProperty('--font-main',`'${t.fontFamily}','David',serif`);
+    r.style.setProperty('--font-size-base',`${t.fontSize}px`);
+    r.style.setProperty('--line-height',String(t.lineHeight));
+  }
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────
+function showTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── CURRENT WEEK ──────────────────────────────────────────────────────
+function detectCurrentWeek(){
+  // מחשב לפי התאריך הנוכחי — מחפש שבוע קרוב
+  // מכיוון שאין לנו תאריכים לועזיים מדויקים בנתונים, משתמשים בstorage
+  return S.curWeekIdx||0;
+}
+
+async function loadCurrentWeekFromCalendar(){
+  try{
+    if(typeof Otzaria==='undefined')return;
+    const {data}=await Otzaria.call('calendar.getJewishDate');
+    // מתאם חודש+יום עברי לשורת לוח — לוגיקה פשוטה לפי החודש
+    const m=data.month, day=data.day;
+    // ניסן=1, אייר=2, סיון=3, תמוז=4, אב=5, אלול=6
+    const idx=m<=1&&day<=10?0:m<=1&&day<=17?1:m<=1&&day<=24?2:m<=1?3:m<=2&&day<=8?4:m<=2&&day<=15?5:
+              m<=2&&day<=22?6:m<=2?7:m<=3&&day<=7?8:m<=3&&day<=14?9:m<=3&&day<=21?10:m<=3?11:
+              m<=4&&day<=5?12:m<=4&&day<=12?13:m<=4&&day<=19?14:m<=4&&day<=25?15:m<=5&&day<=4?16:
+              m<=5&&day<=11?17:m<=5&&day<=18?18:m<=5&&day<=25?19:m<=6&&day<=2?20:m<=6&&day<=9?21:22;
+    S.curWeekIdx=Math.min(idx,SCHEDULE.length-1);
+  }catch(e){}
+}
+
+// ── SCHEDULE TABLE ────────────────────────────────────────────────────
+function buildSchedule(){
+  const cur=detectCurrentWeek();
+  document.getElementById('sch-body').innerHTML=SCHEDULE.map((row,i)=>`
+    <tr class="${i===cur?'cur':''}">
+      <td class="bold">${esc(row.week)}${row.isReview?' <span style="font-size:.72rem;opacity:.7">(חזרה)</span>':''}</td>
+      <td>${esc(row.date)}</td>
+      <td class="text-sm">${esc(row.halachot)}</td>
+      <td class="text-sm">${esc(row.simanim)}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openMBRow(${i})">📖</button></td>
+    </tr>`).join('');
+}
+
+// ── MB VIEWER ─────────────────────────────────────────────────────────
+function openMBRow(idx){
+  const row=SCHEDULE[idx];
+  S.curWeekIdx=idx;
+  S.curMBRow=row;
+  // עדכן label
+  document.getElementById('mb-ref-label').textContent=`${row.week} — סימן ${row.mbRef}`;
+  // פתח טאב משנה ברורה
+  const navBtns=document.querySelectorAll('.nav-tab');
+  showTab('t-mb',navBtns[1]);
+  // פתח באוצריא בטאב הקורא (לא ב-viewer הפנימי — האפליקציה תפתח בטאב עיון)
+  openMBInOtzaria();
+  showToast('פותח: משנה ברורה סימן '+row.mbRef);
+}
+
+async function openMBInOtzaria(){
+  if(!S.curMBRow)return;
+  const row=S.curMBRow;
+  try{
+    if(typeof Otzaria!=='undefined'){
+      // reader.openBookAtRef — פתיחה במיקום המדויק לפי הסימן
+      await Otzaria.call('reader.openBookAtRef',{bookId:'משנה ברורה',ref:row.mbRef});
+    }
+  }catch(e){
+    try{await Otzaria.call('reader.openBook',{bookId:'משנה ברורה',searchQuery:row.mbRef});}catch(e2){}
+  }
+}
+
+function openMBCurrent(){
+  openMBRow(detectCurrentWeek());
+}
+
+// ── EXAM / CYCLES ─────────────────────────────────────────────────────
+function buildExam(){
+  const container=document.getElementById('cycles-container');
+  const weekIdx=detectCurrentWeek();
+  const row=SCHEDULE[weekIdx];
+  document.getElementById('exam-title').textContent='מבחן — '+( row?row.week:'');
+
+  // מציג את המחזור הנוכחי + אפשרות לכל המחזורים
+  let html='';
+  // שמיים — 4 מחזורים, כל אחד עם 5 שאלות
+  for(let c=0;c<4;c++){
+    // מחזורים 3-4 (indices 2,3) הם אופציונליים — מצוינים כ"שנים אחרונות"
+    const optional=c>=2;
+    const isCur=row&&row.cycleIdx===c;
+    html+=`<div class="cycle-header">
+      ${CYCLE_NAMES[c]}${optional?' <span style="font-size:.72rem;opacity:.7">(אופציונלי — שנים אחרונות)</span>':''}
+      ${isCur?' ← <span style="color:var(--color-primary);font-size:.78rem">מחזור נוכחי</span>':''}
+    </div>`;
+    const saved=S.answers[c]||{};
+    CYCLE_QUESTIONS[c].forEach((q,qi)=>{
+      const ans=saved['q'+qi]||'';
+      const done=!!ans.trim();
+      html+=`<div class="q-item">
+        <div class="q-hdr" onclick="toggleQ(this)">
+          <span class="q-num">שאלה ${qi+1}</span>
+          <span class="q-title">${esc(q)}</span>
+          <span class="q-status ${done?'s-done':'s-todo'}">${done?'✓ נענה':'ממתין'}</span>
+        </div>
+        <div class="q-body ${qi===0&&isCur?'open':''}">
+          <textarea class="q-ta" data-cycle="${c}" data-q="${qi}" oninput="autoSave(this)" placeholder="כתוב תשובתך...">${esc(ans)}</textarea>
+          <button class="btn btn-secondary btn-sm mt-8" onclick="markDone(this,${qi})">✓ סמן כנענה</button>
+        </div>
+      </div>`;
+    });
+  }
+  container.innerHTML=html;
+}
+
+function toggleQ(hdr){hdr.nextElementSibling.classList.toggle('open')}
+
+function autoSave(ta){
+  const c=ta.dataset.cycle,q=ta.dataset.q;
+  if(!S.answers[c])S.answers[c]={};
+  S.answers[c]['q'+q]=ta.value;
+  const chip=ta.closest('.q-item').querySelector('.q-status');
+  const done=!!ta.value.trim();
+  chip.textContent=done?'✓ נענה':'ממתין';
+  chip.className='q-status '+(done?'s-done':'s-todo');
+}
+
+function markDone(btn,qi){
+  const ta=btn.previousElementSibling;
+  if(!ta.value.trim()){ta.value='[נענה]';autoSave(ta);}
+  showToast('שאלה '+(qi+1)+' סומנה');
+}
+
+// ── SAVE / LOAD ───────────────────────────────────────────────────────
+async function saveAnswers(){
+  try{
+    if(typeof Otzaria!=='undefined')await Otzaria.call('storage.set',{key:'iyun_answers',value:S.answers});
+    showToast('✓ נשמר');
+  }catch(e){showToast('שגיאה בשמירה')}
+}
+
+async function loadAnswers(){
+  try{
+    if(typeof Otzaria!=='undefined'){const{data}=await Otzaria.call('storage.get',{key:'iyun_answers'});if(data)S.answers=data;}
+  }catch(e){}
+}
+
+async function saveSettings(){
+  S.settings.dailyTime=document.getElementById('s-time').value;
+  S.settings.m21=document.getElementById('s-m21').checked;
+  S.settings.m23=document.getElementById('s-m23').checked;
+  S.settings.days=Array.from(document.querySelectorAll('.day-chip.sel')).map(c=>parseInt(c.dataset.day));
+  S.name=document.getElementById('s-name').value;
+  S.email=document.getElementById('s-email').value;
+  try{
+    if(typeof Otzaria!=='undefined')await Otzaria.call('storage.set',{key:'iyun_settings',value:{settings:S.settings,name:S.name,email:S.email}});
+    showToast('✓ הגדרות נשמרו');
+    scheduleReminders();
+  }catch(e){showToast('שגיאה')}
+}
+
+async function loadSettings(){
+  try{
+    if(typeof Otzaria!=='undefined'){
+      const{data}=await Otzaria.call('storage.get',{key:'iyun_settings'});
+      if(data){S.settings=data.settings||S.settings;S.name=data.name||'';S.email=data.email||'';}
+    }
+  }catch(e){}
+  document.getElementById('s-time').value=S.settings.dailyTime||'20:00';
+  document.getElementById('s-m21').checked=S.settings.m21!==false;
+  document.getElementById('s-m23').checked=S.settings.m23!==false;
+  document.querySelectorAll('.day-chip').forEach(c=>c.classList.toggle('sel',(S.settings.days||[0,1,2,3,4]).includes(parseInt(c.dataset.day))));
+  document.getElementById('s-name').value=S.name;
+  document.getElementById('s-email').value=S.email;
+}
+
+// ── REMINDERS ─────────────────────────────────────────────────────────
+function scheduleReminders(){
+  clearInterval(window._ri);
+  window._ri=setInterval(checkReminders,60000);
+  checkReminders();
+}
+
+async function checkReminders(){
+  const now=new Date(),hh=now.getHours(),mm=now.getMinutes(),day=now.getDay();
+  // Daily
+  if(S.settings.dailyTime&&(S.settings.days||[]).includes(day)){
+    const[rh,rm]=S.settings.dailyTime.split(':').map(Number);
+    if(hh===rh&&mm===rm)await notify('עיון הפרשה','זמן ללמוד את חומר הספק השבועי!');
+  }
+  // Motzei Shabbat
+  if(day===6){
+    if(S.settings.m21&&hh===21&&mm===0)await notify('עיון הפרשה — מוצ"ש','זמן לכתוב תשובות!');
+    if(S.settings.m23&&hh===23&&mm===30)await notify('עיון הפרשה — מוצ"ש','תזכורת אחרונה לכתיבת תשובות!');
+  }
+}
+
+async function notify(title,body){
+  try{if(typeof Otzaria!=='undefined')await Otzaria.call('notifications.showInApp',{message:title+' — '+body,type:'info'});}catch(e){}
+}
+
+// ── FILE UPLOAD + PREVIEW ─────────────────────────────────────────────
+function handleFile(input){
+  const file=input.files[0];if(!file)return;
+  document.getElementById('file-name').textContent='✓ '+esc(file.name);
+  const reader=new FileReader();
+  reader.onload=e=>{
+    S.uploadedFile={name:file.name,dataUrl:e.target.result,type:file.type};
+    renderFilePreview();
+    showToast('קובץ נטען: '+file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderFilePreview(){
+  if(!S.uploadedFile)return;
+  const wrap=document.getElementById('file-preview-wrap');
+  if(S.uploadedFile.type==='application/pdf'){
+    // מציג PDF עם הmציג הקיים של הדפדפן
+    wrap.innerHTML=`<object class="file-preview-pdf" data="${S.uploadedFile.dataUrl}" type="application/pdf">
+      <p class="text-sm text-muted mt-8">לא ניתן להציג PDF — <a href="${S.uploadedFile.dataUrl}" download="${esc(S.uploadedFile.name)}">הורד</a></p>
+    </object>`;
+  } else {
+    // תמונה
+    wrap.innerHTML=`<img class="file-preview-img" src="${S.uploadedFile.dataUrl}" alt="${esc(S.uploadedFile.name)}">`;
+  }
+}
+
+// ── SEND EMAIL ────────────────────────────────────────────────────────
+function openSendOv(){
+  const row=SCHEDULE[detectCurrentWeek()]||{};
+  document.getElementById('ov-subject').value=`תשובות לעיון ההלכה — ${row.week||''} — ${S.name||'[שמך]'}`;
+  let body=`שלום,\nמצ"ב תשובותי לעיון ההלכה — ${row.week||''}.\n\n`;
+  const c=row.cycleIdx??0;
+  (CYCLE_QUESTIONS[c]||[]).forEach((q,qi)=>{
+    body+=`שאלה ${qi+1}: ${q}\n${(S.answers[c]||{})['q'+qi]||'—'}\n\n`;
+  });
+  body+=`\nבברכה,\n${S.name||''}`;
+  document.getElementById('ov-body').value=body;
+  document.getElementById('ov-scrim').classList.add('open');
+  document.getElementById('ov-panel').classList.add('open');
+}
+function closeSendOv(){
+  document.getElementById('ov-scrim').classList.remove('open');
+  document.getElementById('ov-panel').classList.remove('open');
+}
+function sendEmail(){
+  const sub=encodeURIComponent(document.getElementById('ov-subject').value);
+  const bod=encodeURIComponent(document.getElementById('ov-body').value);
+  window.location.href=`mailto:iyun1@iyun.co.il?subject=${sub}&body=${bod}`;
+  closeSendOv();
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────
+function exportDoc(){
+  const row=SCHEDULE[detectCurrentWeek()]||{};
+  const c=row.cycleIdx??0;
+  let html=`<html dir="rtl"><head><meta charset="UTF-8"><title>${row.week||''}</title>
+  <style>body{font-family:David,serif;font-size:14pt;direction:rtl}h1{font-size:18pt}
+  .q{margin:18px 0}.ans{border-bottom:1px solid #ccc;min-height:50px;padding:4px}</style></head><body>
+  <h1>עיון הפרשה — ${row.week||''}</h1><p>${row.halachot||''}</p><hr>`;
+  (CYCLE_QUESTIONS[c]||[]).forEach((q,qi)=>{
+    const ans=(S.answers[c]||{})['q'+qi]||'';
+    html+=`<div class="q"><b>שאלה ${qi+1}:</b> ${q}<div class="ans">${ans.replace(/\n/g,'<br>')}</div></div>`;
+  });
+  html+=`<p>נשלח ע"י: ${S.name||''}</p></body></html>`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'}));
+  a.download=`עיון_הפרשה_${row.week||'תשובות'}.doc`;
+  a.click();
+  showToast('קובץ הורד');
+}
+
+// ── SETTINGS UI ───────────────────────────────────────────────────────
+function toggleDay(chip){chip.classList.toggle('sel')}
+
+// ── FEEDBACK ──────────────────────────────────────────────────────────
+async function sendFeedback(){
+  try{
+    if(typeof Otzaria!=='undefined'){
+      await Otzaria.call('feedback.sendEmail',{to:'e0548433917@gmail.com',subject:'הארות לתוסף עיון הפרשה',body:'',includeSystemInfo:true});
+    } else {
+      window.location.href='mailto:e0548433917@gmail.com?subject=הארות לתוסף עיון הפרשה';
+    }
+  }catch(e){window.location.href='mailto:e0548433917@gmail.com?subject=הארות לתוסף עיון הפרשה';}
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+async function init(){
+  await loadCurrentWeekFromCalendar();
+  await loadAnswers();
+  await loadSettings();
+  buildSchedule();
+  buildExam();
+  scheduleReminders();
+}
+
+if(typeof Otzaria!=='undefined'){
+  Otzaria.on('plugin.boot',p=>{if(p.theme)applyTheme(p.theme);init();});
+  Otzaria.on('theme.changed',applyTheme);
+}else{init();}
+</script>
+</body>
+</html>

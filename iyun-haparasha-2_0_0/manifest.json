@@ -1,0 +1,30 @@
+{
+  "id": "com.chadbedera.iyun-haparasha",
+  "name": "עיון הפרשה",
+  "version": "2.0.0",
+  "description": "תוסף לניהול לימוד עיון הפרשה — עיון הלכה שבועי, כתיבת תשובות ושליחתן",
+  "author": "חד בדרא",
+  "type": "webapp",
+  "category": "Utilities",
+  "stability": "beta",
+  "minAppVersion": "0.9.91",
+  "entrypoint": "index.html",
+  "permissions": [
+    "plugin.storage.read",
+    "plugin.storage.write",
+    "reader.open",
+    "notifications.send",
+    "notifications.system",
+    "feedback.send_email",
+    "calendar.read",
+    "events.subscribe:theme.changed"
+  ],
+  "contributes": {
+    "toolTab": {
+      "title": "עיון הפרשה",
+      "order": 50,
+      "defaultPinned": true,
+      "iconName": "book_open_24_regular"
+    }
+  }
+}
