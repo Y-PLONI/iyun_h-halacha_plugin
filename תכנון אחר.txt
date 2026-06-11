@@ -1,0 +1,499 @@
+# מסמך אפיון טכני: תוסף "עיון הפרשה" לאוצריא
+**גרסה:** 1.0.0  
+**תאריך:** יוני 2026  
+
+---
+
+## 1. זיהוי התוסף
+
+| שדה | ערך |
+|-----|-----|
+| **id** | `com.iyun-haparasha.newplugin` |
+| **name** | עיון הפרשה |
+| **version** | 1.0.0 |
+| **minAppVersion** | 2.0.0 |
+| **entrypoint** | `index.html` |
+
+---
+
+## 2. מבנה קבצים
+
+```
+iyun-haparasha/
+├── manifest.json
+├── index.html
+├── css/
+│   └── style.css
+├── js/
+│   ├── app.js              # לוגיקה ראשית, אתחול, ניהול theme
+│   ├── pdf-panel.js        # רכיב מציג ה-PDF
+│   ├── library-panel.js    # רכיב מאגר הספרים
+│   └── editor-panel.js     # רכיב עורך התשובות
+└── data/
+    └── parasha_index.json  # מיפוי פרשה → עמוד PDF
+```
+
+---
+
+## 3. manifest.json
+
+```json
+{
+  "id": "com.iyun-haparasha.newplugin",
+  "name": "עיון הפרשה",
+  "version": "1.0.0",
+  "description": "סביבת לימוד משולשת: שאלות עיון ההלכה, צורת הדף, ועורך תשובות",
+  "author": "",
+  "minAppVersion": "2.0.0",
+  "entrypoint": "index.html",
+  "permissions": [
+    "app.getTheme",
+    "events.subscribe:theme.changed",
+    "events.subscribe:plugin.boot",
+    "calendar.getCurrentParasha",
+    "library.findBooks",
+    "library.getBookContent",
+    "plugin.storage.read",
+    "plugin.storage.write",
+    "notifications.send"
+  ],
+  "contributes": {
+    "toolTab": {
+      "icon": "menu_book",
+      "label": "עיון הפרשה",
+      "order": 10
+    }
+  }
+}
+```
+
+---
+
+## 4. ארכיטקטורת ה-UI
+
+### פריסה: 3 פאנלים ניתנים לגרירה
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  עיון הפרשה                                            [⚙]  │
+├──────────────────┬───────────────────┬──────────────────────┤
+│                  │                   │                      │
+│  שאלות           │  צורת הדף          │  עורך תשובות         │
+│  (PDF Viewer)    │  (Library)        │  (Rich Text Editor)  │
+│                  │                   │                      │
+│  עמודה ימנית     │  עמודה אמצעית      │  עמודה שמאלית        │
+│  ~30%            │  ~40%             │  ~30%                │
+│                  │                   │                      │
+└──────────────────┴───────────────────┴──────────────────────┘
+```
+
+### עקרונות UI — חובה לעמוד בכולם
+
+- **CSS variables בלבד** — אסור להשתמש בצבעים מקודדים. כל צבע נשלף מ-`app.getTheme()`.
+- **Frank Ruhl Libre** — פונט ברירת מחדל לכל הטקסטים העבריים.
+- **RTL מלא** — `dir="rtl"` על `<html>`, `<body>`, וכל פאנל. סרגלי כלים מיושרים מימין.
+- **Dark/Light mode** — מנוי על `theme.changed` ועדכון CSS variables בזמן אמת.
+- **Splitters** — `<div class="splitter">` בין הפאנלים, גרירה עם `mousedown/mousemove/mouseup`.
+- **Responsive** — הפאנלים מתכווצים לרוחב מינימלי של 200px.
+
+---
+
+## 5. מחזור החיים של התוסף
+
+```javascript
+// app.js — אתחול
+
+window.addEventListener('message', async (event) => {
+  if (event.data?.type === 'plugin.boot') {
+    const { theme, appVersion, permissions } = event.data.payload;
+    applyTheme(theme);
+    await initPdfPanel();
+    await initLibraryPanel();
+    initEditorPanel();
+  }
+
+  if (event.data?.type === 'theme.changed') {
+    applyTheme(event.data.payload);
+  }
+});
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.style.setProperty('--color-primary',    theme.primary);
+  root.style.setProperty('--color-secondary',  theme.secondary);
+  root.style.setProperty('--color-surface',    theme.surface);
+  root.style.setProperty('--color-background', theme.background);
+  root.style.setProperty('--color-on-surface', theme.onSurface);
+  root.style.setProperty('--color-outline',    theme.outline);
+  root.style.setProperty('--color-error',      theme.error);
+  root.style.setProperty('--font-family',      theme.fontFamily ?? 'Frank Ruhl Libre, serif');
+  root.style.setProperty('--font-size-base',   theme.baseFontSize ?? '16px');
+}
+```
+
+---
+
+## 6. פאנל א': מציג PDF + לוגיקת פרשה
+
+### 6.1 — parasha_index.json (סכמה מלאה)
+
+```json
+{
+  "version": "1.0",
+  "fallbackPage": 1,
+  "mappings": {
+    "בראשית":        { "startPage": 12, "endPage": 14 },
+    "נח":            { "startPage": 15, "endPage": 17 },
+    "לך לך":         { "startPage": 18, "endPage": 21 },
+    "וירא":          { "startPage": 22, "endPage": 25 },
+    "חיי שרה":       { "startPage": 26, "endPage": 2
+
+8 },
+    "תולדות":        { "startPage": 29, "endPage": 31 },
+    "ויצא":          { "startPage": 32, "endPage": 34 },
+    "וישלח":         { "startPage": 35, "endPage": 37 },
+    "וישב":          { "startPage": 38, "endPage": 40 },
+    "מקץ":           { "startPage": 41, "endPage": 43 },
+    "ויגש":          { "startPage": 44, "endPage": 46 },
+    "ויחי":          { "startPage": 47, "endPage": 49 },
+    "שמות":          { "startPage": 50, "endPage": 53 },
+    "וארא":          { "startPage": 54, "endPage": 56 },
+    "בא":            { "startPage": 57, "endPage": 59 },
+    "בשלח":          { "startPage": 60, "endPage": 63 },
+    "יתרו":          { "startPage": 64, "endPage": 66 },
+    "משפטים":        { "startPage": 67, "endPage": 69 },
+    "תרומה":         { "startPage": 70, "endPage": 72 },
+    "תצוה":          { "startPage": 73, "endPage": 75 },
+    "כי תשא":        { "startPage": 76, "endPage": 79 },
+    "ויקהל":         { "startPage": 80, "endPage": 83 },
+    "פקודי":         { "startPage": 84, "endPage": 87 },
+    "ויקהל-פקודי":   { "startPage": 80, "endPage": 87 },
+    "ויקרא":         { "startPage": 88, "endPage": 90 },
+    "צו":            { "startPage": 91, "endPage": 93 },
+    "שמיני":         { "startPage": 94, "endPage": 96 },
+    "תזריע":         { "startPage": 97, "endPage": 99 },
+    "מצורע":         { "startPage": 100, "endPage": 102 },
+    "תזריע-מצורע":   { "startPage": 97, "endPage": 102 },
+    "אחרי מות":      { "startPage": 103, "endPage": 105 },
+    "קדושים":        { "startPage": 106, "endPage": 108 },
+    "אחרי מות-קדושים": { "startPage": 103, "endPage": 108 },
+    "אמור":          { "startPage": 109, "endPage": 112 },
+    "בהר":           { "startPage": 113, "endPage": 115 },
+    "בחוקותי":       { "startPage": 116, "endPage": 118 },
+    "בהר-בחוקותי":   { "startPage": 113, "endPage": 118 },
+    "במדבר":         { "startPage": 119, "endPage": 122 },
+    "נשא":           { "startPage": 123, "endPage": 126 },
+    "בהעלותך":       { "startPage": 127, "endPage": 130 },
+    "שלח":           { "startPage": 131, "endPage": 133 },
+    "קרח":           { "startPage": 134, "endPage": 136 },
+    "חקת":           { "startPage": 137, "endPage": 139 },
+    "בלק":           { "startPage": 140, "endPage": 142 },
+    "חקת-בלק":       { "startPage": 137, "endPage": 142 },
+    "פינחס":         { "startPage": 143, "endPage": 146 },
+    "מטות":          { "startPage": 147, "endPage": 149 },
+    "מסעי":          { "startPage": 150, "endPage": 152 },
+    "מטות-מסעי":     { "startPage": 147, "endPage": 152 },
+    "דברים":         { "startPage": 153, "endPage": 156 },
+    "ואתחנן":        { "startPage": 157, "endPage": 160 },
+    "עקב":           { "startPage": 161, "endPage": 163 },
+    "ראה":           { "startPage": 164, "endPage": 167 },
+    "שופטים":        { "startPage": 168, "endPage": 170 },
+    "כי תצא":        { "startPage": 171, "endPage": 174 },
+    "כי תבוא":       { "startPage": 175, "endPage": 177 },
+    "נצבים":         { "startPage": 178, "endPage": 179 },
+    "וילך":          { "startPage": 180, "endPage": 181 },
+    "נצבים-וילך":    { "startPage": 178, "endPage": 181 },
+    "האזינו":        { "startPage": 182, "endPage": 183 },
+    "וזאת הברכה":    { "startPage": 184, "endPage": 186 }
+  }
+}
+```
+
+> **הערה:** מספרי העמודים הם placeholders. יש להזין את המספרים האמיתיים מהקובץ PDF לפני פרסום.
+
+### 6.2 — pdf-panel.js
+
+```javascript
+// pdf-panel.js
+
+let pdfDoc = null;
+let currentPage = 1;
+
+async function initPdfPanel() {
+  // קבלת מיקום קובץ ה-PDF מ-storage
+  const storedPath = await Otzaria.call('plugin.storage.read', { key: 'pdfPath' });
+
+  if (!storedPath?.value) {
+    showPdfUploadPrompt();
+    return;
+  }
+
+  await loadPdf(storedPath.value);
+  await navigateToCurrentParasha();
+}
+
+async function navigateToCurrentParasha() {
+  try {
+    // קריאה ל-API לוח השנה של אוצריא
+    const result = await Otzaria.call('calendar.getCurrentParasha', {});
+    const parashaName = result?.parasha ?? '';
+
+    const index = await fetchParashaIndex();
+    const mapping = index.mappings[parashaName];
+
+    if (mapping) {
+      goToPage(mapping.startPage);
+    } else {
+      // fallback: פרשות מחוברות — ניסיון עם חלק ראשון
+      const firstPart = parashaName.split('-')[0].trim();
+      const fallbackMapping = index.mappings[firstPart];
+      goToPage(fallbackMapping?.startPage ?? index.fallbackPage ?? 1);
+
+      if (!fallbackMapping) {
+        await Otzaria.call('notifications.send', {
+          message: `לא נמצא מיפוי לפרשה: "${parashaName}". הועבר לעמוד הראשון.`,
+          type: 'warning'
+        });
+      }
+    }
+  } catch (err) {
+    console.error('שגיאה בזיהוי פרשת השבוע:', err);
+  }
+}
+
+async function fetchParashaIndex() {
+  const response = await fetch('./data/parasha_index.json');
+  return response.json();
+}
+
+function goToPage(pageNum) {
+  if (!pdfDoc) return;
+  currentPage = Math.max(1, Math.min(pageNum, pdfDoc.numPages));
+  renderPage(currentPage);
+  updatePageDisplay();
+}
+```
+
+---
+
+## 7. פאנל ב': צורת הדף (מאגר ספרים)
+
+```javascript
+// library-panel.js
+
+async function initLibraryPanel() {
+  // חיפוש ספרי הבסיס הנדרשים
+  const books = await Otzaria.call('library.findBooks', {
+    query: 'שולחן ערוך אורח חיים',
+    limit: 1
+  });
+
+  if (!books?.results?.length) {
+    showBookNotFoundMessage('שולחן ערוך אורח חיים');
+    return;
+  }
+
+  const bookId = books.results[0].id;
+  renderBookView(bookId);
+}
+
+async function renderBookView(bookId) {
+  const content = await Otzaria.call('library.getBookContent', {
+    bookId,
+    linkedCommentaries: [
+      'משנה ברורה',
+      'ביאור הלכה',
+      'שער הציון'
+    ],
+    displayMode: 'page-layout'   // צורת הדף המובנית
+  });
+
+  const panel = document.getElementById('library-panel');
+  panel.innerHTML = content.html ?? '';
+}
+```
+
+---
+
+## 8. פאנל ג': עורך תשובות
+
+```javascript
+// editor-panel.js
+
+const AUTOSAVE_INTERVAL_MS = 30_000;
+let autosaveTimer = null;
+
+function initEditorPanel() {
+  setupEditor();
+  loadSavedDraft();
+  startAutosave();
+}
+
+async function loadSavedDraft() {
+  const result = await Otzaria.call('plugin.storage.read', { key: 'currentDraft' });
+  if (result?.value) {
+    document.getElementById('editor').innerHTML = result.value;
+  }
+}
+
+async function saveDraft() {
+  const content = document.getElementById('editor').innerHTML;
+  await Otzaria.call('plugin.storage.write', {
+    key: 'currentDraft',
+    value: content
+  });
+}
+
+function startAutosave() {
+  autosaveTimer = setInterval(saveDraft, AUTOSAVE_INTERVAL_MS);
+}
+
+// ייצוא ל-Word
+async function exportToDocx() {
+  const content = document.getElementById('editor').innerHTML;
+  const parasha = await getCurrentParashaName();
+  const filename = `${parasha}_תשובות.docx`;
+
+  // המרה ל-docx באמצעות docx.js או html-to-docx
+  const blob = await htmlToDocx(content, { filename, rtl: true });
+  downloadBlob(blob, filename);
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+```
+
+---
+
+## 9. CSS — משתני ערכת נושא
+
+```css
+/* style.css */
+
+:root {
+  /* ערכים ראשוניים — יוחלפו ב-JS עם app.getTheme() */
+  --color-primary:    #6750A4;
+  --color-secondary:  #625B71;
+  --color-surface:    #FFFBFE;
+  --color-background: #FFFBFE;
+  --color-on-surface: #1C1B1F;
+  --color-outline:    #79747E;
+  --color-error:      #B3261E;
+  --font-family:      'Frank Ruhl Libre', serif;
+  --font-size-base:   16px;
+  --radius-sm:        8px;
+  --radius-md:        12px;
+  --radius-lg:        16px;
+}
+
+html, body {
+  direction: rtl;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  background: var(--color-background);
+  color: var(--color-on-surface);
+  margin: 0;
+  height: 100%;
+}
+
+.panels-container {
+  display: flex;
+  flex-direction: row-reverse;  /* RTL: ימין→שמאל */
+  height: 100vh;
+  overflow: hidden;
+}
+
+.panel {
+  min-width: 200px;
+  overflow: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.splitter {
+  width: 6px;
+  cursor: col-resize;
+  background: var(--color-outline);
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.splitter:hover,
+.splitter.dragging {
+  opacity: 1;
+}
+```
+
+---
+
+## 10. תוכנית עבודה (Roadmap)
+
+### שלב א' — שלד ממשק (UI Skeleton)
+- [ ] `index.html`: 3 פאנלים + 2 splitters + `dir="rtl"`
+- [ ] `style.css`: CSS variables, פריסה flex, RTL
+- [ ] `app.js`: `plugin.boot`, `applyTheme()`, `theme.changed`
+- [ ] Splitters: גרירה חלקה, שמירת רוחבים ב-`plugin.storage`
+
+### שלב ב' — PDF + לוגיקת פרשה
+- [ ] `parasha_index.json`: מילוי כל 54 הפרשות + מחוברות
+- [ ] `pdf-panel.js`: טעינת PDF.js, ניווט לעמוד, כפתורי עמוד קודם/הבא
+- [ ] `calendar.getCurrentParasha`: חיבור API + fallback לפרשות מחוברות
+- [ ] כפתור "בחר קובץ PDF" + שמירת נתיב ב-`plugin.storage`
+
+### שלב ג' — מאגר ספרים
+- [ ] `library-panel.js`: חיפוש ש"ע א"ח + טעינה ב-`displayMode: 'page-layout'`
+- [ ] סנכרון קישורים בין השולחן ערוך למפרשיו
+- [ ] כפתור "שנה ספר" לניווט ידני
+
+### שלב ד' — עורך תשובות
+- [ ] `editor-panel.js`: contenteditable + סרגל כלים RTL
+- [ ] שמירה אוטומטית כל 30 שניות + שמירה ידנית
+- [ ] ייצוא Word (.docx) עם שם הפרשה
+- [ ] טעינת טיוטה שמורה עם פתיחת התוסף
+
+### שלב ה' — בדיקות ו-QA
+- [ ] בדיקת memory leaks עם PDF + מאגר בו-זמנית
+- [ ] בדיקת כל פרשות מחוברות (ויקהל-פקודי, מטות-מסעי, וכו')
+- [ ] בדיקת מעבר dark/light mode בזמן אמת
+- [ ] בדיקת RTL בכל הרכיבים
+- [ ] חבילה סופית: `dart tool/package_plugin.dart`
+
+---
+
+## 11. אבני דרך (Milestones)
+
+| גרסה | תוכן |
+|------|------|
+| 0.1.0 | שלד UI עם splitters |
+| 0.2.0 | PDF + ניווט אוטומטי לפרשה |
+| 0.3.0 | צורת הדף עם מפרשים |
+| 0.4.0 | עורך תשובות + שמירה + ייצוא |
+| 1.0.0 | בדיקות, אופטימיזציה, פרסום |
+
+---
+
+## 12. תלויות חיצוניות
+
+| ספרייה | מטרה | הערה |
+|--------|------|------|
+| `pdf.js` | הצגת קובץ PDF | CDN או local |
+| `docx.js` / `html-to-docx` | ייצוא Word | npm → bundle |
+
+> שתי הספריות ייכנסו ל-`index.html` כ-`<script>` מקומי. אין תלויות ב-npm runtime.
+
+---
+
+## 13. נקודות בירור נדרשות עם API אוצריא
+
+לפני תחילת פיתוח שלב ב', יש לאמת:
+
+1. **שם המתודה המדויק** של לוח השנה: `calendar.getCurrentParasha` — לבדוק ב-`API_REFERENCE.md` של הפרויקט.
+2. **מבנה הפלט** של המתודה: האם מחזירה `{ parasha: "לך לך" }` או פורמט אחר?
+3. **displayMode 'page-layout'** ב-`library.getBookContent`: לאמת שהפרמטר הזה קיים.
+4. **מדיניות קבצים מקומיים**: האם אפשר לטעון PDF מנתיב מקומי בתוך ה-sandbox של התוסף?
