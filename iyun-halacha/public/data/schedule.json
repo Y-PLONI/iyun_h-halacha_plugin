@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "dataVersion": "2026.06.01",
+  "updatedAt": "2026-06-01T00:00:00+03:00",
+  "defaultIssueId": "issue-0240",
+  "periods": [
+    {
+      "periodId": "sivan-5786",
+      "title": "סיון תשפ\"ו",
+      "hebrewMonthRange": "סיון תשפ\"ו",
+      "gregorianRange": { "start": "2026-05-18", "end": "2026-06-16" },
+      "issueIds": ["issue-0240"],
+      "weeks": [
+        {
+          "weekId": "issue-0240-w1",
+          "issueId": "issue-0240",
+          "weekNumber": 1,
+          "weeksInIssue": 4,
+          "parasha": "שלח לך",
+          "title": "חזרה כללית",
+          "topicTitle": "הכנה מחוה\"מ ליו\"ט שני, לקיחה, הלוואה, בנין",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקלט סעיף ב עד סימן תקמב סעיף א",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקלט", "endRef": "סימן תקמב" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקלט", "endRef": "סימן תקמב" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקלט", "endRef": "סימן תקמב" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקלט", "endRef": "סימן תקמב" }
+          },
+          "questionIds": ["q001", "q002", "q003", "q004", "q005"],
+          "requiredAnswersCount": 5,
+          "totalQuestionsCount": 5,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0240-w2",
+          "issueId": "issue-0240",
+          "weekNumber": 2,
+          "weeksInIssue": 4,
+          "parasha": "קרח",
+          "title": "חזרה כללית",
+          "topicTitle": "כתיבה ותיקון ס\"ת, כתיבה והגהה, כתיבה בשינוי, כתיבת דברי תורה",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקמב סעיף ב עד סוף סימן תקמה",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקמב", "endRef": "סימן תקמה" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקמב", "endRef": "סימן תקמה" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקמב", "endRef": "סימן תקמה" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקמב", "endRef": "סימן תקמה" }
+          },
+          "questionIds": ["q006", "q007", "q008", "q009", "q010"],
+          "requiredAnswersCount": 5,
+          "totalQuestionsCount": 5,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0240-w3",
+          "issueId": "issue-0240",
+          "weekNumber": 3,
+          "weeksInIssue": 4,
+          "parasha": "חקת",
+          "title": "דיני אירוסין ונשואין, ומת בחוה\"מ",
+          "topicTitle": "נישואין ואירוסין, הספד ותענית, אבילות בחול המועד",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקמו סעיף א עד סימן תקמח סעיף ג",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקמו", "endRef": "סימן תקמח" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקמו", "endRef": "סימן תקמח" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקמו", "endRef": "סימן תקמח" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקמו", "endRef": "סימן תקמח" }
+          },
+          "questionIds": ["q011", "q012", "q013", "q014", "q015"],
+          "requiredAnswersCount": 5,
+          "totalQuestionsCount": 5,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0240-w4",
+          "issueId": "issue-0240",
+          "weekNumber": 4,
+          "weeksInIssue": 4,
+          "parasha": "בלק",
+          "title": "דיני אבילות בחול המועד",
+          "topicTitle": "אבילות בפרהסיא ובצינעה, אנינות, גזרת שלשים",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקמח סעיף ד עד סוף סימן תקמח",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקמח" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקמח" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקמח" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקמח" }
+          },
+          "questionIds": ["q016", "q017", "q018", "q019", "q020"],
+          "requiredAnswersCount": 5,
+          "totalQuestionsCount": 5,
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

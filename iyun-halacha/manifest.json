@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "com.chadbedera.iyun-halacha",
+  "name": "עיון ההלכה",
+  "version": "0.1.0",
+  "description": "ניהול הספקי עיון ההלכה, צפייה בשאלות, כתיבת תשובות, עיון במקורות וייצוא ל-Word.",
+  "author": "חד בדרא",
+  "type": "webapp",
+  "category": "Utilities",
+  "entrypoint": "index.html",
+  "icon": "icon/icon.png",
+  "minAppVersion": "0.9.92",
+  "sdkVersion": "1.x",
+  "stability": "beta",
+  "permissions": [
+    "app.info.read",
+    "library.books.read",
+    "library.content.read",
+    "reader.open",
+    "plugin.storage.read",
+    "plugin.storage.write",
+    "ui.feedback",
+    "feedback.send_email",
+    "events.subscribe:theme.changed"
+  ],
+  "contributes": {
+    "toolTab": {
+      "title": "עיון ההלכה",
+      "order": 50,
+      "defaultPinned": true,
+      "iconName": "book_open_24_regular"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "iyun-halacha",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "תוסף אוצריא לניהול הספקי עיון ההלכה, כתיבת תשובות, עיון במקורות וייצוא ל-Word",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "release": "npm run validate-data && npm run build && tsx scripts/build-release.ts",
+    "preview": "vite preview",
+    "validate-data": "tsx scripts/validate-data.ts",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  },
+  "allowScripts": {
+    "esbuild@0.28.0": true,
+    "esbuild@0.21.5": true
+  }
+}

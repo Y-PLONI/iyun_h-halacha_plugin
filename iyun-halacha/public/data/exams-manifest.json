@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "dataVersion": "2026.06.01",
+  "updatedAt": "2026-06-01T00:00:00+03:00",
+  "exams": [
+    {
+      "issueId": "issue-0240",
+      "issueNumber": 240,
+      "title": "עיון ההלכה - גליון ר\"מ",
+      "hebrewMonth": "סיון תשפ\"ו",
+      "weeksInIssue": 4,
+      "parshiot": ["שלח לך", "קרח", "חקת", "בלק"],
+      "version": "1.0.0",
+      "updatedAt": "2026-06-01T00:00:00+03:00",
+      "files": {
+        "questionsJson": "data/questions/issue-0240.json",
+        "pdf": null,
+        "docx": null
+      },
+      "sha256": {
+        "questionsJson": "",
+        "pdf": ""
+      },
+      "licenseStatus": "private",
+      "notes": "נבנה מתוך גליון ר\"מ - סיון תשפ\"ו. סטטוס רישוי 'private' עד להכרעה על זכויות הפצה (סעיף 24 בתכנון)."
+    }
+  ]
+}

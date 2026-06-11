@@ -1,0 +1,25 @@
+/* ברירות מחדל מינימליות. הערכים האמיתיים מוזרקים מ-plugin.boot / theme.changed. */
+:root {
+  --color-primary: #6750a4;
+  --color-on-primary: #ffffff;
+  --color-secondary: #625b71;
+  --color-on-secondary: #ffffff;
+  --color-surface: #fffbfe;
+  --color-on-surface: #1c1b1f;
+  --color-surface-container-highest: #e6e0e9;
+  --color-error: #b3261e;
+  --color-on-error: #ffffff;
+  --color-outline: #79747e;
+
+  --color-primary-subtle: rgba(103, 80, 164, 0.12);
+  --color-primary-hover: rgba(103, 80, 164, 0.08);
+  --color-secondary-subtle: rgba(98, 91, 113, 0.12);
+
+  --font-main: 'Frank Ruhl Libre', 'David', serif;
+  --font-size-base: 18px;
+  --line-height: 1.5;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}

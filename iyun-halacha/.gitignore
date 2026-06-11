@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.otzplugin
+*.tsbuildinfo
+.DS_Store
