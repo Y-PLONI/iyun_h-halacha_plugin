@@ -11,11 +11,20 @@ if (import.meta.env.DEV && !hasOtzaria()) {
   installMockOtzaria();
 }
 
-const root = document.getElementById('root');
-if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
+// הבנייה מייצרת IIFE שרץ ב-<head> לפני שה-<body> נוצר, לכן מחכים ל-DOM.
+function mount(): void {
+  const root = document.getElementById('root');
+  if (root) {
+    createRoot(root).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mount);
+} else {
+  mount();
 }
