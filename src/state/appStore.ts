@@ -9,8 +9,6 @@ interface AppStoreState {
   screen: ScreenName;
   /** השבוע הפעיל בכל המסכים */
   activeWeekId: string | null;
-  /** השאלה הנבחרת בתוך סביבת הכתיבה */
-  activeQuestionId: string | null;
   settingsOpen: boolean;
   /** רוחב חלון נוכחי — לקביעת layout צר/רחב */
   isNarrow: boolean;
@@ -22,7 +20,6 @@ export const appStore = createStore<AppStoreState>({
   booted: false,
   screen: 'schedule',
   activeWeekId: initialWeek?.weekId ?? null,
-  activeQuestionId: null,
   settingsOpen: false,
   isNarrow: false,
 });
@@ -36,27 +33,19 @@ export function goToScreen(screen: ScreenName): void {
 }
 
 export function selectWeek(weekId: string): void {
-  appStore.set({ activeWeekId: weekId, activeQuestionId: null });
+  appStore.set({ activeWeekId: weekId });
   updateSettings({ lastOpenWeekId: weekId });
 }
 
-/** מעבר לסביבת כתיבה על שבוע (ואופציונלית שאלה). */
-export function openWorkspace(weekId: string, questionId?: string): void {
-  appStore.set({
-    screen: 'workspace',
-    activeWeekId: weekId,
-    activeQuestionId: questionId ?? null,
-  });
+/** מעבר לסביבת כתיבה על שבוע. */
+export function openWorkspace(weekId: string): void {
+  appStore.set({ screen: 'workspace', activeWeekId: weekId });
   updateSettings({ lastOpenWeekId: weekId });
 }
 
 export function openQuestionsScreen(weekId: string): void {
   appStore.set({ screen: 'questions', activeWeekId: weekId });
   updateSettings({ lastOpenWeekId: weekId });
-}
-
-export function selectQuestion(questionId: string): void {
-  appStore.set({ activeQuestionId: questionId });
 }
 
 export function setSettingsOpen(open: boolean): void {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Question, ScheduleWeek, SourceRef, SourceRole } from '../data/types';
+import type { ScheduleWeek, SourceRef, SourceRole } from '../data/types';
 import { SOURCE_ROLE_LABELS } from '../data/types';
 import { loadSourceRange, openInOtzaria, type LoadedSource } from '../otzaria/library';
 import { useSettings } from '../state/settingsStore';
@@ -11,7 +11,6 @@ const cache = new Map<string, LoadedSource>();
 
 interface SourcePaneProps {
   week: ScheduleWeek;
-  selectedQuestion?: Question | null;
 }
 
 // סדר התצוגה והגדלים היחסיים (מ"ב עיקרי)
@@ -22,12 +21,11 @@ const DISPLAY_ROLES: { role: SourceRole; basis: number }[] = [
   { role: 'shaarHatziyun', basis: 12 },
 ];
 
-export function SourcePane({ week, selectedQuestion }: SourcePaneProps) {
+export function SourcePane({ week }: SourcePaneProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {DISPLAY_ROLES.map(({ role, basis }) => {
-        // מעדיפים sourceRefs ספציפיים לשאלה, אחרת של השבוע
-        const ref = selectedQuestion?.sourceRefs?.[role] ?? week.sourceRefs[role];
+        const ref = week.sourceRefs[role];
         if (!ref) return null;
         return <SourceSubPane key={role} role={role} sourceRef={ref} basis={basis} />;
       })}
@@ -97,7 +95,7 @@ function SourceSubPane({ role, sourceRef, basis }: { role: SourceRole; sourceRef
           {SOURCE_ROLE_LABELS[role]} · {refLabel}
         </span>
         <button
-          className="icon-btn"
+          className="icon-btn mini"
           title="רענן"
           onClick={(e) => {
             e.stopPropagation();
@@ -107,7 +105,7 @@ function SourceSubPane({ role, sourceRef, basis }: { role: SourceRole; sourceRef
           ↻
         </button>
         <button
-          className="icon-btn"
+          className="icon-btn mini"
           title="פתח באוצריא"
           onClick={(e) => {
             e.stopPropagation();
@@ -119,7 +117,7 @@ function SourceSubPane({ role, sourceRef, basis }: { role: SourceRole; sourceRef
       </div>
       {!collapsed && (
         <div className={`source-sub-body${loading ? ' loading' : state && !state.ok ? ' error' : ''}`} style={{ flex: 1 }}>
-          {loading && <span className="spinner" style={{ display: 'inline-block', verticalAlign: 'middle' }} />}
+          {loading && <span className="spinner sm" style={{ display: 'inline-block', verticalAlign: 'middle' }} />}
           {loading && <span style={{ marginInlineStart: 8 }}>טוען מקור…</span>}
           {!loading && state?.ok && state.text}
           {!loading && state && !state.ok && (
@@ -127,7 +125,7 @@ function SourceSubPane({ role, sourceRef, basis }: { role: SourceRole; sourceRef
               {state.error}
               {!bookId && (
                 <div style={{ marginTop: 8 }}>
-                  <button className="icon-btn primary" onClick={() => setSettingsOpen(true)}>
+                  <button className="btn-secondary" onClick={() => setSettingsOpen(true)}>
                     הגדר ספר
                   </button>
                 </div>

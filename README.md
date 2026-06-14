@@ -44,16 +44,22 @@ cd dist && zip -r -X ../com.chadbedera.iyun-halacha-<version>.otzplugin . -x '.*
 
 ## הוספת גליון חדש
 
-1. צור `public/data/questions/issue-XXXX.json` (ראה את issue-0240 כתבנית).
-2. הוסף ייבוא ושורה במיפוי שב-[src/data/localData.ts](src/data/localData.ts):
+1. שמור את קובץ המבחן ב-`exams-src/issue-XXXX.docx` (Word, כפי שמתקבל מהמו"ל).
+2. הרץ `npm run convert-exams` — ממיר את ה-DOCX ל-`public/data/exams/issue-XXXX.json`
+   (HTML מנוקה, מפוצל לפי שבוע). הקבצים ב-`exams-src/` אינם נארזים בתוסף; רק ה-JSON.
+3. הוסף ייבוא ושורה במיפוי `examByIssue` שב-[src/data/localData.ts](src/data/localData.ts):
    ```ts
-   import issueXXXX from '../../public/data/questions/issue-XXXX.json';
-   const questionsByIssue = { ..., 'issue-XXXX': issueXXXX as unknown as QuestionsFile };
+   import examXXXX from '../../public/data/exams/issue-XXXX.json';
+   const examByIssue = { ..., 'issue-XXXX': examXXXX as unknown as ExamDoc };
    ```
-3. הוסף תקופה/שבועות ב-`public/data/schedule.json`.
-4. הוסף ערך ב-`public/data/exams-manifest.json`.
-5. הרץ `npm run validate-data`, ואז `npm run release`.
-6. עדכן `dataVersion` בקבצים.
+4. הוסף תקופה/שבועות ב-`public/data/schedule.json` (פרשה, טווח סימנים, `sourceRefs`).
+   חשוב: `weekNumber` בשבוע חייב להתאים למספר השבוע במסמך המבחן.
+5. הוסף ערך ב-`public/data/exams-manifest.json`.
+6. הרץ `npm run validate-data`, ואז `npm run release`.
+7. עדכן `dataVersion` בקבצים.
+
+> נוסח השאלות מוצג ישירות מתוך מסמך ה-Word (קריאה בלבד). קובץ
+> `public/data/questions/issue-XXXX.json` נשמר לתאימות/ולידציה אך אינו נדרש לתצוגה.
 
 ## מבנה נתונים
 

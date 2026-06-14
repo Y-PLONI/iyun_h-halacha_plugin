@@ -1,6 +1,6 @@
-import { getAllWeeks, getQuestionsForWeek, getWeek } from '../data/localData';
+import { getAllWeeks, getWeek } from '../data/localData';
 import { useApp, openWorkspace, selectWeek } from '../state/appStore';
-import { QuestionList } from '../components/QuestionList';
+import { ExamView } from '../components/ExamView';
 import { EmptyState } from '../components/EmptyState';
 import { openInOtzaria } from '../otzaria/library';
 import { useSettings } from '../state/settingsStore';
@@ -11,7 +11,6 @@ export function QuestionsScreen() {
   const settings = useSettings();
   const weeks = getAllWeeks();
   const week = app.activeWeekId ? getWeek(app.activeWeekId) : null;
-  const questions = week ? getQuestionsForWeek(week) : [];
 
   const openSourceInOtzaria = async () => {
     if (!week) return;
@@ -27,26 +26,22 @@ export function QuestionsScreen() {
 
   return (
     <div className="screen-pad">
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-        <label style={{ fontSize: '0.85rem' }}>שבוע:</label>
-        <select
-          className="issue-select"
-          value={week?.weekId ?? ''}
-          onChange={(e) => selectWeek(e.target.value)}
-        >
+      <div className="toolbar-row">
+        <label className="text-label">שבוע:</label>
+        <select className="input select-inline" value={week?.weekId ?? ''} onChange={(e) => selectWeek(e.target.value)}>
           {weeks.map((w) => (
             <option key={w.weekId} value={w.weekId}>
               שבוע {w.weekNumber} · פרשת {w.parasha}
             </option>
           ))}
         </select>
-        <span style={{ flex: 1 }} />
-        {week && questions.length > 0 && (
+        <span className="spacer" />
+        {week && (
           <>
-            <button className="icon-btn" onClick={() => void openSourceInOtzaria()}>
+            <button className="btn-secondary" onClick={() => void openSourceInOtzaria()}>
               ↗ פתח מקור באוצריא
             </button>
-            <button className="icon-btn primary" onClick={() => openWorkspace(week.weekId)}>
+            <button className="btn-primary" onClick={() => openWorkspace(week.weekId)}>
               עבור לכתיבה
             </button>
           </>
@@ -54,25 +49,11 @@ export function QuestionsScreen() {
       </div>
 
       {!week ? (
-        <EmptyState icon="📋" title="בחר שבוע להצגת השאלות" />
-      ) : questions.length === 0 ? (
-        <EmptyState icon="📭" title="קובץ שאלות מובנה לא זמין לגליון זה">
-          <p style={{ fontSize: '0.85rem' }}>ניתן לעדכן נתונים או לספק קובץ שאלות לגליון.</p>
-        </EmptyState>
+        <EmptyState icon="📋" title="בחר שבוע להצגת המבחן" />
       ) : (
-        <>
-          <div className="banner">
-            פרשת {week.parasha} · {week.title} · {week.sourceRangeTitle}
-          </div>
-          <QuestionList
-            week={week}
-            questions={questions}
-            selectedId={null}
-            onSelect={(qid) => openWorkspace(week.weekId, qid)}
-            showBody
-            search
-          />
-        </>
+        <div className="card exam-card">
+          <ExamView week={week} />
+        </div>
       )}
     </div>
   );

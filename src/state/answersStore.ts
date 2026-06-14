@@ -2,11 +2,9 @@ import { createStore } from './createStore';
 import { STORAGE_KEYS, storageGet, storageSet } from '../otzaria/storage';
 import { settingsStore } from './settingsStore';
 import {
-  answerKey,
   type AnswerRecord,
   type AnswersState,
   type AnswerStatus,
-  type Question,
   type ScheduleWeek,
 } from '../data/types';
 
@@ -19,9 +17,9 @@ interface AnswersStoreState {
 }
 
 const emptyAnswers: AnswersState = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   updatedAt: '',
-  answersByQuestion: {},
+  answersByWeek: {},
 };
 
 export const answersStore = createStore<AnswersStoreState>({
@@ -36,13 +34,13 @@ export async function loadAnswers(): Promise<void> {
   const saved = await storageGet<AnswersState>(STORAGE_KEYS.answers);
   answersStore.set({
     loaded: true,
-    answers: saved && saved.answersByQuestion ? saved : emptyAnswers,
+    answers: saved && saved.answersByWeek ? saved : emptyAnswers,
     saveStatus: 'saved',
   });
 }
 
-export function getAnswer(issueId: string, questionId: string): AnswerRecord | undefined {
-  return answersStore.get().answers.answersByQuestion[answerKey(issueId, questionId)];
+export function getAnswer(weekId: string): AnswerRecord | undefined {
+  return answersStore.get().answers.answersByWeek[weekId];
 }
 
 function countWords(text: string): number {
@@ -62,7 +60,7 @@ async function doSave(): Promise<void> {
   }
 }
 
-/** שמירה מיידית (מעבר שאלה/מסך, beforeunload). */
+/** שמירה מיידית (מעבר שבוע/מסך, beforeunload). */
 export async function saveAnswersNow(): Promise<void> {
   if (saveTimer) {
     clearTimeout(saveTimer);
@@ -82,47 +80,35 @@ function scheduleSave(): void {
   }, ms);
 }
 
-function upsert(
-  week: ScheduleWeek,
-  question: Question,
-  patch: Partial<AnswerRecord>,
-): void {
-  const key = answerKey(week.issueId, question.questionId);
+function upsert(week: ScheduleWeek, patch: Partial<AnswerRecord>): void {
   answersStore.set((prev) => {
-    const existing = prev.answers.answersByQuestion[key];
+    const existing = prev.answers.answersByWeek[week.weekId];
     const base: AnswerRecord = existing ?? {
       issueId: week.issueId,
       weekId: week.weekId,
-      questionId: question.questionId,
       answerHtml: '',
       answerText: '',
       status: 'empty',
       wordCount: 0,
       lastSavedAt: '',
-      sourceLinks: [],
     };
     const next: AnswerRecord = { ...base, ...patch, lastSavedAt: new Date().toISOString() };
     return {
       answers: {
         ...prev.answers,
-        answersByQuestion: { ...prev.answers.answersByQuestion, [key]: next },
+        answersByWeek: { ...prev.answers.answersByWeek, [week.weekId]: next },
       },
     };
   });
 }
 
-/** עדכון תוכן תשובה. הסטטוס עובר ל-draft אם היה empty ויש תוכן. */
-export function updateAnswerContent(
-  week: ScheduleWeek,
-  question: Question,
-  answerHtml: string,
-  answerText: string,
-): void {
-  const existing = getAnswer(week.issueId, question.questionId);
+/** עדכון תוכן תשובת השבוע. הסטטוס עובר ל-draft אם היה empty ויש תוכן. */
+export function updateAnswerContent(week: ScheduleWeek, answerHtml: string, answerText: string): void {
+  const existing = getAnswer(week.weekId);
   const hasContent = answerText.trim().length > 0;
   let status: AnswerStatus = existing?.status ?? 'empty';
   if (status !== 'completed') status = hasContent ? 'draft' : 'empty';
-  upsert(week, question, {
+  upsert(week, {
     answerHtml,
     answerText,
     wordCount: countWords(answerText),
@@ -131,37 +117,25 @@ export function updateAnswerContent(
   scheduleSave();
 }
 
-export function setAnswerStatus(week: ScheduleWeek, question: Question, status: AnswerStatus): void {
-  upsert(week, question, { status });
+export function setAnswerStatus(week: ScheduleWeek, status: AnswerStatus): void {
+  upsert(week, { status });
   scheduleSave();
 }
 
 // ── חישוב התקדמות שבוע ──
 
 export interface WeekProgress {
-  total: number;
-  completed: number;
-  draft: number;
   status: 'not-started' | 'draft' | 'completed' | 'missing-data';
+  wordCount: number;
 }
 
-export function computeWeekProgress(week: ScheduleWeek, questionCount: number): WeekProgress {
-  if (questionCount === 0) {
-    return { total: 0, completed: 0, draft: 0, status: 'missing-data' };
-  }
-  const map = answersStore.get().answers.answersByQuestion;
-  let completed = 0;
-  let draft = 0;
-  for (const qid of week.questionIds) {
-    const rec = map[answerKey(week.issueId, qid)];
-    if (!rec) continue;
-    if (rec.status === 'completed') completed++;
-    else if (rec.status === 'draft') draft++;
-  }
-  let status: WeekProgress['status'] = 'not-started';
-  if (completed >= week.requiredAnswersCount && completed > 0) status = 'completed';
-  else if (completed > 0 || draft > 0) status = 'draft';
-  return { total: questionCount, completed, draft, status };
+/** סטטוס השבוע לפי תשובת השבוע היחידה. hasExam=false → missing-data. */
+export function computeWeekProgress(week: ScheduleWeek, hasExam: boolean): WeekProgress {
+  if (!hasExam) return { status: 'missing-data', wordCount: 0 };
+  const rec = answersStore.get().answers.answersByWeek[week.weekId];
+  const status =
+    rec?.status === 'completed' ? 'completed' : rec?.status === 'draft' ? 'draft' : 'not-started';
+  return { status, wordCount: rec?.wordCount ?? 0 };
 }
 
 export function useAnswersState(): AnswersStoreState {

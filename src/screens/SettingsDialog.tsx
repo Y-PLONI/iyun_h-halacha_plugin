@@ -30,21 +30,22 @@ export function SettingsDialog() {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={close}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
+    <div className="overlay-scrim" onClick={close}>
+      <div className="overlay-panel" onClick={(e) => e.stopPropagation()}>
         <h2>הגדרות</h2>
 
         <div className="field">
           <label>שם</label>
-          <input value={settings.name} onChange={(e) => updateSettings({ name: e.target.value })} />
+          <input className="input" value={settings.name} onChange={(e) => updateSettings({ name: e.target.value })} />
         </div>
         <div className="field">
           <label>קוד אישי</label>
-          <input value={settings.personalCode} onChange={(e) => updateSettings({ personalCode: e.target.value })} />
+          <input className="input" value={settings.personalCode} onChange={(e) => updateSettings({ personalCode: e.target.value })} />
         </div>
         <div className="field">
           <label>המייל שלי (שולח)</label>
           <input
+            className="input"
             type="email"
             value={settings.senderEmail}
             onChange={(e) => updateSettings({ senderEmail: e.target.value })}
@@ -53,6 +54,7 @@ export function SettingsDialog() {
         <div className="field">
           <label>מייל יעד לשליחת תשובות</label>
           <input
+            className="input"
             type="email"
             value={settings.recipientEmail}
             onChange={(e) => updateSettings({ recipientEmail: e.target.value })}
@@ -60,16 +62,14 @@ export function SettingsDialog() {
         </div>
 
         <div className="section-title">שמות ספרים באוצריא</div>
-        <p style={{ fontSize: '0.78rem', color: 'var(--color-outline)', margin: '0 0 10px' }}>
-          אם טעינת מקורות נכשלת, התאם כאן את שם הספר כפי שמופיע בספרייה.
-        </p>
-        <button className="icon-btn" onClick={() => void detectBooks()} disabled={detecting}>
+        <p className="hint">אם טעינת מקורות נכשלת, התאם כאן את שם הספר כפי שמופיע בספרייה.</p>
+        <button className="btn-secondary" onClick={() => void detectBooks()} disabled={detecting}>
           {detecting ? 'מזהה…' : '🔍 זהה ספרים אוטומטית'}
         </button>
         {SOURCE_ROLES.map((role: SourceRole) => (
-          <div className="field" key={role} style={{ marginTop: 8 }}>
+          <div className="field" key={role} style={{ marginTop: 10 }}>
             <label>{SOURCE_ROLE_LABELS[role]}</label>
-            <input value={settings.bookIds[role]} onChange={(e) => setBookId(role, e.target.value)} />
+            <input className="input" value={settings.bookIds[role]} onChange={(e) => setBookId(role, e.target.value)} />
           </div>
         ))}
 
@@ -77,6 +77,7 @@ export function SettingsDialog() {
         <div className="field">
           <label>השהיית שמירה אוטומטית (מילישניות)</label>
           <input
+            className="input"
             type="number"
             min={300}
             max={10000}
@@ -86,7 +87,7 @@ export function SettingsDialog() {
         </div>
 
         <div className="row">
-          <button className="icon-btn primary" onClick={close}>
+          <button className="btn-primary" onClick={close}>
             סגור
           </button>
         </div>

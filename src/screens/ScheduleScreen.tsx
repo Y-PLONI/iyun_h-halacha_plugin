@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { schedule, getQuestionsForWeek } from '../data/localData';
+import { schedule, getExamWeek } from '../data/localData';
 import { computeWeekProgress, useAnswersState } from '../state/answersStore';
 import { WeekCard } from '../components/WeekCard';
 import { EmptyState } from '../components/EmptyState';
@@ -15,27 +15,21 @@ export function ScheduleScreen() {
   const period = schedule.periods[0];
   const weeks = period?.weeks ?? [];
 
-  // התקדמות כוללת — תלוי גם ב-answersState כדי להתעדכן בעת שמירה
+  // התקדמות כוללת לפי שבועות — תלוי גם ב-answersState כדי להתעדכן בעת שמירה
   const totals = useMemo(() => {
-    let total = 0;
     let completed = 0;
     for (const w of weeks) {
-      const qs = getQuestionsForWeek(w);
-      const p = computeWeekProgress(w, qs.length);
-      total += p.total;
-      completed += p.completed;
+      if (computeWeekProgress(w, !!getExamWeek(w)).status === 'completed') completed++;
     }
-    return { total, completed };
+    return { total: weeks.length, completed };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weeks, answersState]);
 
   const filtered = weeks.filter((w) => {
     if (parashaFilter !== 'all' && w.parasha !== parashaFilter) return false;
     if (statusFilter !== 'all') {
-      const p = computeWeekProgress(w, getQuestionsForWeek(w).length);
-      if (statusFilter === 'completed' && p.status !== 'completed') return false;
-      if (statusFilter === 'draft' && p.status !== 'draft') return false;
-      if (statusFilter === 'not-started' && p.status !== 'not-started') return false;
+      const p = computeWeekProgress(w, !!getExamWeek(w));
+      if (statusFilter !== p.status) return false;
     }
     return true;
   });
@@ -57,7 +51,7 @@ export function ScheduleScreen() {
         <div className="issue-meta">
           <span>{weeks.length} שבועות</span>
           <span>
-            הושלמו {totals.completed} מתוך {totals.total} שאלות
+            הושלמו {totals.completed} מתוך {totals.total} שבועות
           </span>
         </div>
         <div className="progress-bar" title={`${pct}%`}>

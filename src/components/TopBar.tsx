@@ -1,4 +1,4 @@
-import { schedule, getQuestionsForWeek, getWeek, examsManifest } from '../data/localData';
+import { schedule, getWeek, examsManifest } from '../data/localData';
 import { useApp, setSettingsOpen } from '../state/appStore';
 import { useSettings } from '../state/settingsStore';
 import { saveAnswersNow, getAnswer } from '../state/answersStore';
@@ -21,21 +21,14 @@ export function TopBar() {
       return;
     }
     await saveAnswersNow();
-    const questions = getQuestionsForWeek(activeWeek);
-    if (questions.length === 0) {
-      toast('אין שאלות לשבוע זה');
-      return;
-    }
     try {
       const filename = exportWeekDocx(
         {
           week: activeWeek,
-          questions,
           settings,
           issueTitle: exam?.title ?? 'עיון ההלכה',
           hebrewMonth: exam?.hebrewMonth ?? period?.title ?? '',
           dateLabel: todayLabel,
-          includeQuestionText: true,
         },
         exam?.issueNumber ?? 0,
       );
@@ -51,48 +44,35 @@ export function TopBar() {
       return;
     }
     await saveAnswersNow();
-    const questions = getQuestionsForWeek(activeWeek);
     const lines: string[] = [];
     if (settings.name) lines.push(`שם: ${settings.name}`);
     if (settings.personalCode) lines.push(`קוד אישי: ${settings.personalCode}`);
     lines.push(`גליון ${exam?.issueNumber ?? ''} · ${exam?.hebrewMonth ?? ''}`);
     lines.push(`שבוע ${activeWeek.weekNumber} - פרשת ${activeWeek.parasha}`);
+    lines.push(activeWeek.sourceRangeTitle);
     lines.push('');
-    let order = 0;
-    for (const q of questions) {
-      order++;
-      const rec = getAnswer(activeWeek.issueId, q.questionId);
-      lines.push(`שאלה ${q.letter}: ${q.title}`);
-      lines.push('תשובה:');
-      lines.push(rec?.answerText?.trim() || '—');
-      lines.push('');
-    }
+    const rec = getAnswer(activeWeek.weekId);
+    lines.push('תשובות:');
+    lines.push(rec?.answerText?.trim() || '—');
     const subject = `תשובות לעיון ההלכה - גליון ${exam?.issueNumber ?? ''} - שבוע ${activeWeek.weekNumber}`;
     await sendMail({ to: settings.recipientEmail, subject, body: lines.join('\n') });
     toast('נפתח חלון מייל. אם ייצאת קובץ DOCX, צרף אותו ידנית.');
   };
 
   return (
-    <div className="topbar">
+    <header className="topbar">
       <h1>עיון ההלכה</h1>
-      <select className="issue-select" value={exam?.issueId ?? ''} disabled>
-        <option value={exam?.issueId ?? ''}>
-          גליון {exam?.issueNumber ?? ''} · {exam?.hebrewMonth ?? ''}
-        </option>
-      </select>
+      <span className="issue-chip">גליון {exam?.issueNumber ?? ''} · {exam?.hebrewMonth ?? ''}</span>
       <span className="spacer" />
-      <button className="icon-btn" title="רענון נתונים" onClick={() => toast('הנתונים מעודכנים (גרסה מקומית)')}>
-        ↻ רענן
-      </button>
       <button className="icon-btn" title="ייצוא ל-Word" onClick={() => void handleExport()}>
-        ⬇ ייצוא
+        <span className="ico">⬇</span> ייצוא
       </button>
       <button className="icon-btn" title="שליחה במייל" onClick={() => void handleMail()}>
-        ✉ מייל
+        <span className="ico">✉</span> מייל
       </button>
-      <button className="icon-btn" title="הגדרות" onClick={() => setSettingsOpen(true)}>
+      <button className="icon-btn square" title="הגדרות" aria-label="הגדרות" onClick={() => setSettingsOpen(true)}>
         ⚙
       </button>
-    </div>
+    </header>
   );
 }

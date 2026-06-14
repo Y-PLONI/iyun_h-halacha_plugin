@@ -135,33 +135,47 @@ export interface QuestionsFile {
   weeks: QuestionsWeek[];
 }
 
-// ── תשובות המשתמש (storage: answers:v1) ──
+// ── מסמך מבחן מומר מ-Word (public/data/exams/issue-XXXX.json) ──
+// נבנה ב-scripts/convert-exams.ts. משמש לתצוגת המבחן (קריאה בלבד) בחלונית הימנית.
+
+export interface ExamWeekDoc {
+  weekNumber: number;
+  parasha: string;
+  title: string;
+  sourceRangeTitle: string;
+  /** HTML מנוקה: טווח סימנים + שאלות (exam-q / exam-sub) */
+  html: string;
+}
+
+export interface ExamDoc {
+  schemaVersion: 1;
+  issueId: string;
+  issueTitle: string;
+  hebrewMonth: string;
+  sourceFile: string;
+  weeks: ExamWeekDoc[];
+}
+
+// ── תשובות המשתמש (storage: answers:v2) ──
+// מודל תשובה חופשית אחת לכל שבוע (לא לכל שאלה). המבחן מוצג כקריאה בלבד.
 
 export type AnswerStatus = 'empty' | 'draft' | 'completed';
-
-export interface SourceLink {
-  bookId: string;
-  ref: string;
-  label: string;
-}
 
 export interface AnswerRecord {
   issueId: string;
   weekId: string;
-  questionId: string;
   answerHtml: string;
   answerText: string;
   status: AnswerStatus;
   wordCount: number;
   lastSavedAt: string;
-  sourceLinks: SourceLink[];
 }
 
 export interface AnswersState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   updatedAt: string;
-  /** מפתח: `${issueId}:${questionId}` */
-  answersByQuestion: Record<string, AnswerRecord>;
+  /** מפתח: weekId (ייחודי גלובלית, למשל issue-0240-w1) */
+  answersByWeek: Record<string, AnswerRecord>;
 }
 
 // ── הגדרות המשתמש (storage: settings:v1) ──
@@ -179,7 +193,3 @@ export interface SettingsState {
   lastOpenWeekId: string;
 }
 
-/** מפתח מורכב לתשובה בודדת */
-export function answerKey(issueId: string, questionId: string): string {
-  return `${issueId}:${questionId}`;
-}

@@ -43,7 +43,8 @@ export async function storageList(): Promise<string[]> {
 
 // מפתחות storage
 export const STORAGE_KEYS = {
-  answers: 'answers:v1',
+  // v2: מודל תשובה לכל שבוע (במקום לכל שאלה)
+  answers: 'answers:v2',
   settings: 'settings:v1',
-  splitSizes: 'split-sizes:v1',
+  splitSizes: 'split-sizes:v2',
 } as const;

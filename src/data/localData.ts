@@ -5,8 +5,11 @@
 import scheduleJson from '../../public/data/schedule.json';
 import examsManifestJson from '../../public/data/exams-manifest.json';
 import issue0240 from '../../public/data/questions/issue-0240.json';
+import exam0240 from '../../public/data/exams/issue-0240.json';
 
 import type {
+  ExamDoc,
+  ExamWeekDoc,
   ExamsManifest,
   Question,
   QuestionsFile,
@@ -22,8 +25,25 @@ const questionsByIssue: Record<string, QuestionsFile> = {
   'issue-0240': issue0240 as unknown as QuestionsFile,
 };
 
+// מיפוי issueId -> מסמך המבחן המומר מ-Word (נבנה ב-convert-exams).
+const examByIssue: Record<string, ExamDoc> = {
+  'issue-0240': exam0240 as unknown as ExamDoc,
+};
+
 export function getQuestionsFile(issueId: string): QuestionsFile | null {
   return questionsByIssue[issueId] ?? null;
+}
+
+/** מסמך המבחן (Word→HTML) של גליון. */
+export function getExamDoc(issueId: string): ExamDoc | null {
+  return examByIssue[issueId] ?? null;
+}
+
+/** מסמך המבחן של שבוע נתון (לפי weekNumber בתוך הגליון). */
+export function getExamWeek(week: ScheduleWeek): ExamWeekDoc | null {
+  const doc = getExamDoc(week.issueId);
+  if (!doc) return null;
+  return doc.weeks.find((w) => w.weekNumber === week.weekNumber) ?? null;
 }
 
 export function getAllWeeks(): ScheduleWeek[] {

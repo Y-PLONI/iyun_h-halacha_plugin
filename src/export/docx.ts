@@ -27,3 +27,5 @@ export function exportWeekDocx(input: ExportWeekInput, issueNumber: number): str
   downloadBlob(blob, filename);
   return filename;
 }
+
+export type { ExportWeekInput };

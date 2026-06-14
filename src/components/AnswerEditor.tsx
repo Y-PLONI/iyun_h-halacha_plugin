@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { Question, ScheduleWeek } from '../data/types';
+import type { ScheduleWeek } from '../data/types';
 import {
   getAnswer,
   setAnswerStatus,
@@ -16,28 +16,28 @@ const SAVE_LABELS: Record<string, string> = {
   error: '⚠ שגיאת שמירה',
 };
 
-export function AnswerEditor({ week, question }: { week: ScheduleWeek; question: Question }) {
+export function AnswerEditor({ week }: { week: ScheduleWeek }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const saveStatus = useSaveStatus();
   // נרשמים לשינויים כדי לעדכן ספירת מילים/סטטוס בכותרת
   const answersState = useAnswersState();
-  const record = answersState.answers.answersByQuestion[`${week.issueId}:${question.questionId}`];
+  const record = answersState.answers.answersByWeek[week.weekId];
 
-  // טעינת תוכן בעת החלפת שאלה (ללא איפוס סמן בהקלדה רגילה)
+  // טעינת תוכן בעת החלפת שבוע (ללא איפוס סמן בהקלדה רגילה)
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
-    const rec = getAnswer(week.issueId, question.questionId);
+    const rec = getAnswer(week.weekId);
     el.innerHTML = rec?.answerHtml ?? '';
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [week.issueId, question.questionId]);
+  }, [week.weekId]);
 
   const handleInput = () => {
     const el = editorRef.current;
     if (!el) return;
     const clean = sanitizeAnswerHtml(el.innerHTML);
     const text = htmlToPlainText(clean);
-    updateAnswerContent(week, question, clean, text);
+    updateAnswerContent(week, clean, text);
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -64,18 +64,11 @@ export function AnswerEditor({ week, question }: { week: ScheduleWeek; question:
   const isCompleted = status === 'completed';
 
   const toggleCompleted = () => {
-    setAnswerStatus(week, question, isCompleted ? 'draft' : 'completed');
+    setAnswerStatus(week, isCompleted ? 'draft' : 'completed');
   };
 
   return (
-    <div className="pane" style={{ height: '100%' }}>
-      <div className="question-prompt">
-        <div className="qp-title">
-          <span style={{ color: 'var(--color-primary)' }}>{question.letter}.</span> {question.title}
-        </div>
-        <div className="qp-body">{question.body}</div>
-      </div>
-
+    <div className="pane-stack">
       <div className="answer-toolbar">
         <button className="fmt-btn" title="מודגש" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('bold')}>
           <b>B</b>
@@ -120,7 +113,7 @@ export function AnswerEditor({ week, question }: { week: ScheduleWeek; question:
         className="answer-area"
         contentEditable
         dir="rtl"
-        data-placeholder="כתוב כאן את תשובתך…"
+        data-placeholder="כתוב כאן את תשובותיך לשבוע זה…"
         onInput={handleInput}
         onPaste={handlePaste}
         suppressContentEditableWarning
@@ -130,7 +123,7 @@ export function AnswerEditor({ week, question }: { week: ScheduleWeek; question:
         <span className={`save-status ${saveStatus}`}>{SAVE_LABELS[saveStatus]}</span>
         <span>{wordCount} מילים</span>
         <span className="spacer" />
-        <button className={`icon-btn${isCompleted ? ' primary' : ''}`} onClick={toggleCompleted}>
+        <button className={`btn-chip${isCompleted ? ' primary' : ''}`} onClick={toggleCompleted}>
           {isCompleted ? '✓ הושלם' : 'סמן כהושלם'}
         </button>
       </div>

@@ -23,17 +23,44 @@ export interface OtzariaResponse<T = unknown> {
   error: { code: string; message: string } | null;
 }
 
+/**
+ * Material 3 color roles. The host sends the full set documented in
+ * DESIGN_GUIDE.md; the extended roles are typed optional so the plugin can
+ * consume them when present and fall back gracefully on older hosts.
+ */
 export interface ColorScheme {
   primary: string;
   onPrimary: string;
+  primaryContainer?: string;
+  onPrimaryContainer?: string;
   secondary: string;
   onSecondary: string;
+  secondaryContainer?: string;
+  onSecondaryContainer?: string;
+  tertiary?: string;
+  onTertiary?: string;
+  tertiaryContainer?: string;
+  onTertiaryContainer?: string;
   surface: string;
   onSurface: string;
+  onSurfaceVariant?: string;
+  surfaceContainerLowest?: string;
+  surfaceContainerLow?: string;
+  surfaceContainer?: string;
+  surfaceContainerHigh?: string;
   surfaceContainerHighest: string;
   error: string;
   onError: string;
+  errorContainer?: string;
+  onErrorContainer?: string;
   outline: string;
+  outlineVariant?: string;
+  inverseSurface?: string;
+  onInverseSurface?: string;
+  inversePrimary?: string;
+  shadow?: string;
+  scrim?: string;
+  surfaceTint?: string;
 }
 
 export interface Typography {
