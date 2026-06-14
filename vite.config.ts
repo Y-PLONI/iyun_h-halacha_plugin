@@ -1,5 +1,7 @@
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, type Plugin, type ResolvedConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { cpSync, copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 // base: './'  → assets are referenced with relative paths, required because the
 // Otzaria host loads index.html from the plugin directory (not from a web root).
@@ -33,9 +35,39 @@ function webviewCompatScript(): Plugin {
   };
 }
 
+// copyPluginAssets → מעתיק manifest.json ו-icon/ אל תיקיית הבנייה בסיום כל build,
+// כך ש-dist/ היא תמיד תיקיית תוסף שלמה (manifest + entrypoint + icon + data) שאוצריא
+// יכול לטעון/לארוז. בלי זה, `vite build` לבדו (emptyOutDir מוחק ובונה מחדש) מייצר
+// dist/ ללא manifest, ואוצריא נכשל בטעינה: "manifest.json לא נמצא בתיקיית התוסף".
+// data/ מועתק ממילא דרך public/, ולכן כאן רק manifest+icon.
+function copyPluginAssets(): Plugin {
+  let root = '';
+  let outDir = 'dist';
+  return {
+    name: 'copy-plugin-assets',
+    apply: 'build',
+    configResolved(config: ResolvedConfig) {
+      root = config.root;
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      const dist = join(root, outDir);
+      const manifest = join(root, 'manifest.json');
+      if (existsSync(manifest)) {
+        copyFileSync(manifest, join(dist, 'manifest.json'));
+      }
+      const icon = join(root, 'icon');
+      if (existsSync(icon)) {
+        mkdirSync(join(dist, 'icon'), { recursive: true });
+        cpSync(icon, join(dist, 'icon'), { recursive: true });
+      }
+    },
+  };
+}
+
 export default defineConfig({
   base: './',
-  plugins: [react(), webviewCompatScript()],
+  plugins: [react(), webviewCompatScript(), copyPluginAssets()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
