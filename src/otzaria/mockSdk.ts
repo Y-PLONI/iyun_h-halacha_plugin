@@ -161,6 +161,10 @@ export function installMockOtzaria(): void {
         return ok(true) as OtzariaResponse<T>;
       case 'app.getGrantedPermissions':
         return ok(createMockBootPayload().permissions) as OtzariaResponse<T>;
+      case 'app.getTheme': {
+        const mode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+        return ok(createMockTheme(mode)) as OtzariaResponse<T>;
+      }
       default:
         return { success: false, data: null as T, error: { code: 'error.unknown_method', message: method } };
     }

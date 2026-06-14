@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { BootPayload, ThemePayload } from './otzaria/sdk';
-import { hasOtzaria, onOtzaria, offOtzaria } from './otzaria/sdk';
+import { hasOtzaria, onOtzaria, offOtzaria, callOtzariaSafe } from './otzaria/sdk';
 import { applyTheme, applyFontPrefs } from './otzaria/theme';
 import { loadSettings, settingsStore } from './state/settingsStore';
 import { loadAnswers, saveAnswersNow } from './state/answersStore';
@@ -20,7 +20,14 @@ export function App() {
     let alive = true;
 
     const init = async (boot?: BootPayload) => {
-      if (boot?.theme) applyTheme(boot.theme);
+      if (boot?.theme) {
+        applyTheme(boot.theme);
+      } else if (hasOtzaria()) {
+        // נפילה: אם פספסנו את אירוע ה-boot (bundle כבד נטען אחרי שה-host שידר) —
+        // מושכים את ה-theme ישירות כדי לא ליפול לצבעי ברירת המחדל.
+        const t = await callOtzariaSafe<ThemePayload | undefined>('app.getTheme', {}, undefined);
+        if (t) applyTheme(t);
+      }
       await Promise.all([loadSettings(), loadAnswers(), loadExams()]);
       // מיישמים נתונים מרוחקים שנשמרו מעדכון קודם (דורס bundled, מוסיף גליונות)
       await loadStoredRemote();
@@ -38,6 +45,10 @@ export function App() {
     if (hasOtzaria()) {
       onOtzaria('plugin.boot', onBoot);
       onOtzaria('theme.changed', onTheme);
+      // החלת theme מיידית, ללא תלות בתזמון אירוע ה-boot (מונע הבזק צבעי ברירת מחדל)
+      void callOtzariaSafe<ThemePayload | undefined>('app.getTheme', {}, undefined).then((t) => {
+        if (alive && t) applyTheme(t);
+      });
       // אם boot כבר נשלח לפני שנרשמנו — מאתחלים בכל זאת אחרי tick קצר
       const fallback = setTimeout(() => {
         if (alive && !ready) void init();

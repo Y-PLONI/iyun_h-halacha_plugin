@@ -499,13 +499,12 @@ select.input, .select-inline { cursor: pointer; width: auto; min-width: 220px; }
 .overlay-scrim {
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, 0.32);
-  display: flex; justify-content: flex-start;
   z-index: 1000;
   animation: fadeIn 0.18s ease-out;
 }
 .overlay-panel {
   position: fixed;
-  top: 10px; bottom: 12px; right: 10px;
+  top: 10px; bottom: 12px; left: 10px;
   width: min(420px, 92vw);
   background: var(--color-surface-container-high);
   border-radius: var(--radius-xl);
@@ -515,7 +514,8 @@ select.input, .select-inline { cursor: pointer; width: auto; min-width: 220px; }
   z-index: 1001;
   animation: slideIn 0.22s cubic-bezier(0.2, 0, 0, 1);
 }
-@keyframes slideIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+/* נכנס מצד שמאל (כמו כפתור ההגדרות בסרגל) */
+@keyframes slideIn { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: translateX(0); } }
 
 .overlay-panel h2 { margin: 0 0 16px; color: var(--color-on-surface); font-size: 1.15em; font-weight: 700; }
 .overlay-panel .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
