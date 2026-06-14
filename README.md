@@ -4,7 +4,7 @@
 עיון במקורות מתוך אוצריא (שו"ע, משנה ברורה, ביאור הלכה, שער הציון), ייצוא ל-Word
 ושליחה במייל.
 
-נבנה לפי [תכנון מפורט - תוסף עיון ההלכה.md](../תכנון%20מפורט%20-%20תוסף%20עיון%20ההלכה.md).
+נבנה לפי [תכנון מפורט - תוסף עיון ההלכה.md](./תכנון%20מפורט%20-%20תוסף%20עיון%20ההלכה.md).
 
 ## טכנולוגיה
 
@@ -37,7 +37,7 @@ npm run release         # validate-data + build + הרכבת dist/ מוכן לא
 
 ```bash
 # דרך כלי אוצריא:
-dart tool/package_plugin.dart /path/to/iyun-halacha/dist --force
+dart tool/package_plugin.dart /path/to/dist --force
 # או ידנית (זיפ של תוכן dist, הקבצים בשורש הזיפ):
 cd dist && zip -r -X ../com.chadbedera.iyun-halacha-<version>.otzplugin . -x '.*'
 ```
