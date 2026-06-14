@@ -5,6 +5,7 @@ import { loadSourceRange, openInOtzaria, type LoadedSource } from '../otzaria/li
 import { useSettings } from '../state/settingsStore';
 import { setSettingsOpen } from '../state/appStore';
 import { toast } from './Toast';
+import { Icon } from './Icon';
 
 // cache בזיכרון לפי bookId:startRef:endRef
 const cache = new Map<string, LoadedSource>();
@@ -90,7 +91,7 @@ function SourceSubPane({ role, sourceRef, basis }: { role: SourceRole; sourceRef
   return (
     <div className="source-sub" style={{ flex: collapsed ? '0 0 auto' : `1 1 ${basis}%`, minHeight: collapsed ? 'auto' : 60 }}>
       <div className="source-sub-head" onClick={() => setCollapsed((c) => !c)}>
-        <span>{collapsed ? '▸' : '▾'}</span>
+        <Icon name={collapsed ? 'chevron-down' : 'chevron-up'} size="1em" />
         <span style={{ flex: 1 }}>
           {SOURCE_ROLE_LABELS[role]} · {refLabel}
         </span>
@@ -102,7 +103,7 @@ function SourceSubPane({ role, sourceRef, basis }: { role: SourceRole; sourceRef
             handleRefresh();
           }}
         >
-          ↻
+          <Icon name="sync" size="1em" />
         </button>
         <button
           className="icon-btn mini"
@@ -112,7 +113,7 @@ function SourceSubPane({ role, sourceRef, basis }: { role: SourceRole; sourceRef
             void handleOpen();
           }}
         >
-          ↗
+          <Icon name="open" size="1em" />
         </button>
       </div>
       {!collapsed && (

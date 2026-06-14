@@ -10,6 +10,7 @@
     "release": "npm run convert-exams && npm run validate-data && npm run build && tsx scripts/build-release.ts",
     "preview": "vite preview",
     "convert-exams": "tsx scripts/convert-exams.ts",
+    "gen-icons": "python3 scripts/extract-icons.py",
     "validate-data": "tsx scripts/validate-data.ts",
     "typecheck": "tsc -b --noEmit"
   },

@@ -1,17 +1,21 @@
 import type { ReactNode } from 'react';
+import { Icon } from './Icon';
+import type { IconName } from '../icons/fluent';
 
 export function EmptyState({
-  icon = '📭',
+  icon = 'document',
   title,
   children,
 }: {
-  icon?: string;
+  icon?: IconName;
   title: string;
   children?: ReactNode;
 }) {
   return (
     <div className="empty-state">
-      <div className="big">{icon}</div>
+      <span className="big">
+        <Icon name={icon} />
+      </span>
       <p style={{ margin: 0, fontWeight: 700 }}>{title}</p>
       {children}
     </div>

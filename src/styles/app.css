@@ -80,6 +80,10 @@ button { font-family: inherit; color: inherit; }
 
 /* ── Buttons ─────────────────────────────────────────── */
 .btn-primary, .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border-radius: var(--radius-pill);
   padding: 9px 20px;
   font-family: inherit;
@@ -122,6 +126,9 @@ button { font-family: inherit; color: inherit; }
 .icon-btn.square { padding: 8px; min-width: 38px; justify-content: center; font-size: 1.05em; }
 .icon-btn.mini { padding: 3px 7px; font-size: 0.9em; }
 .icon-btn .ico { font-size: 1.1em; line-height: 1; }
+
+/* FluentUI inline icons — יורשים currentColor מהכפתור/הטקסט */
+.fi-svg { width: 1.2em; height: 1.2em; display: block; flex-shrink: 0; }
 
 /* small chip-style toggle (e.g. "סמן כהושלם") */
 .btn-chip {

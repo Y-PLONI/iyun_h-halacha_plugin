@@ -5,6 +5,7 @@ import { EmptyState } from '../components/EmptyState';
 import { openInOtzaria } from '../otzaria/library';
 import { useSettings } from '../state/settingsStore';
 import { toast } from '../components/Toast';
+import { Icon } from '../components/Icon';
 
 export function QuestionsScreen() {
   const app = useApp();
@@ -39,7 +40,7 @@ export function QuestionsScreen() {
         {week && (
           <>
             <button className="btn-secondary" onClick={() => void openSourceInOtzaria()}>
-              ↗ פתח מקור באוצריא
+              <Icon name="open" size="1em" /> פתח מקור באוצריא
             </button>
             <button className="btn-primary" onClick={() => openWorkspace(week.weekId)}>
               עבור לכתיבה
@@ -49,7 +50,7 @@ export function QuestionsScreen() {
       </div>
 
       {!week ? (
-        <EmptyState icon="📋" title="בחר שבוע להצגת המבחן" />
+        <EmptyState icon="document" title="בחר שבוע להצגת המבחן" />
       ) : (
         <div className="card exam-card">
           <ExamView week={week} />

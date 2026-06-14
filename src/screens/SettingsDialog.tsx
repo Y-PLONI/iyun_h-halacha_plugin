@@ -4,6 +4,7 @@ import { useSettings, updateSettings, setBookId, flushSettings, DEFAULT_SETTINGS
 import { autoDetectBookId } from '../otzaria/library';
 import { setSettingsOpen } from '../state/appStore';
 import { toast } from '../components/Toast';
+import { Icon } from '../components/Icon';
 
 export function SettingsDialog() {
   const settings = useSettings();
@@ -64,7 +65,7 @@ export function SettingsDialog() {
         <div className="section-title">שמות ספרים באוצריא</div>
         <p className="hint">אם טעינת מקורות נכשלת, התאם כאן את שם הספר כפי שמופיע בספרייה.</p>
         <button className="btn-secondary" onClick={() => void detectBooks()} disabled={detecting}>
-          {detecting ? 'מזהה…' : '🔍 זהה ספרים אוטומטית'}
+          <Icon name="search" size="1em" /> {detecting ? 'מזהה…' : 'זהה ספרים אוטומטית'}
         </button>
         {SOURCE_ROLES.map((role: SourceRole) => (
           <div className="field" key={role} style={{ marginTop: 10 }}>

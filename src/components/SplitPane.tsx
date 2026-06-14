@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { STORAGE_KEYS, storageGet, storageSet } from '../otzaria/storage';
+import { Icon } from './Icon';
 
 export interface PaneDef {
   id: string;
@@ -173,8 +174,8 @@ function FragmentPane({
           <span className="pane-title">{pane.title}</span>
           {!collapsed && pane.headerActions}
           {pane.collapsible && (
-            <button className="icon-btn" title={collapsed ? 'הרחב' : 'כווץ'} onClick={onCollapse}>
-              {collapsed ? '▸' : '▾'}
+            <button className="icon-btn mini" title={collapsed ? 'הרחב' : 'כווץ'} onClick={onCollapse}>
+              <Icon name={collapsed ? 'chevron-down' : 'chevron-up'} size="1em" />
             </button>
           )}
         </div>

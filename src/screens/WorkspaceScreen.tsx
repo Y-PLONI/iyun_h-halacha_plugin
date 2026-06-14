@@ -17,7 +17,7 @@ export function WorkspaceScreen() {
   if (!week) {
     return (
       <div className="screen-pad">
-        <EmptyState icon="✍️" title="בחר שבוע מהמסך 'הספקים' כדי להתחיל לכתוב" />
+        <EmptyState icon="edit" title="בחר שבוע מהמסך 'הספקים' כדי להתחיל לכתוב" />
       </div>
     );
   }

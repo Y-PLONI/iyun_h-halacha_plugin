@@ -6,7 +6,7 @@ import { EmptyState } from './EmptyState';
 export function ExamView({ week }: { week: ScheduleWeek }) {
   const exam = getExamWeek(week);
   if (!exam) {
-    return <EmptyState icon="📄" title="מסמך המבחן אינו זמין לשבוע זה" />;
+    return <EmptyState icon="document" title="מסמך המבחן אינו זמין לשבוע זה" />;
   }
   return (
     <div className="exam-doc">

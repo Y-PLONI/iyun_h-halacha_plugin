@@ -8,6 +8,7 @@ import {
   useSaveStatus,
 } from '../state/answersStore';
 import { sanitizeAnswerHtml, htmlToPlainText } from '../utils/html';
+import { Icon } from './Icon';
 
 const SAVE_LABELS: Record<string, string> = {
   saved: '✓ נשמר',
@@ -71,13 +72,13 @@ export function AnswerEditor({ week }: { week: ScheduleWeek }) {
     <div className="pane-stack">
       <div className="answer-toolbar">
         <button className="fmt-btn" title="מודגש" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('bold')}>
-          <b>B</b>
+          <Icon name="bold" />
         </button>
         <button className="fmt-btn" title="נטוי" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('italic')}>
-          <i>I</i>
+          <Icon name="italic" />
         </button>
         <button className="fmt-btn" title="קו תחתון" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('underline')}>
-          <u>U</u>
+          <Icon name="underline" />
         </button>
         <span className="fmt-sep" />
         <button
@@ -86,7 +87,7 @@ export function AnswerEditor({ week }: { week: ScheduleWeek }) {
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => cmd('insertOrderedList')}
         >
-          1.
+          <Icon name="list-ordered" />
         </button>
         <button
           className="fmt-btn"
@@ -94,17 +95,17 @@ export function AnswerEditor({ week }: { week: ScheduleWeek }) {
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => cmd('insertUnorderedList')}
         >
-          •
+          <Icon name="list-bullet" />
         </button>
         <span className="fmt-sep" />
         <button className="fmt-btn" title="בטל" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('undo')}>
-          ↺
+          <Icon name="undo" />
         </button>
         <button className="fmt-btn" title="חזור" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('redo')}>
-          ↻
+          <Icon name="redo" />
         </button>
         <button className="fmt-btn" title="ניקוי עיצוב" onMouseDown={(e) => e.preventDefault()} onClick={clearFormat}>
-          ✕
+          <Icon name="clear-format" />
         </button>
       </div>
 

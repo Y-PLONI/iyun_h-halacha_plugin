@@ -5,6 +5,7 @@ import { saveAnswersNow, getAnswer } from '../state/answersStore';
 import { exportWeekDocx } from '../export/docx';
 import { sendMail } from '../otzaria/mail';
 import { toast } from './Toast';
+import { Icon } from './Icon';
 
 export function TopBar() {
   const app = useApp();
@@ -65,13 +66,13 @@ export function TopBar() {
       <span className="issue-chip">גליון {exam?.issueNumber ?? ''} · {exam?.hebrewMonth ?? ''}</span>
       <span className="spacer" />
       <button className="icon-btn" title="ייצוא ל-Word" onClick={() => void handleExport()}>
-        <span className="ico">⬇</span> ייצוא
+        <Icon name="download" /> ייצוא
       </button>
       <button className="icon-btn" title="שליחה במייל" onClick={() => void handleMail()}>
-        <span className="ico">✉</span> מייל
+        <Icon name="mail" /> מייל
       </button>
       <button className="icon-btn square" title="הגדרות" aria-label="הגדרות" onClick={() => setSettingsOpen(true)}>
-        ⚙
+        <Icon name="settings" />
       </button>
     </header>
   );

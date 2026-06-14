@@ -37,7 +37,7 @@ export function ScheduleScreen() {
   if (!period) {
     return (
       <div className="screen-pad">
-        <EmptyState icon="📭" title="לא נמצאו נתוני הספק" />
+        <EmptyState icon="info" title="לא נמצאו נתוני הספק" />
       </div>
     );
   }
@@ -74,7 +74,7 @@ export function ScheduleScreen() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🔍" title="אין שבועות התואמים את הסינון" />
+        <EmptyState icon="filter" title="אין שבועות התואמים את הסינון" />
       ) : (
         <div className="weeks-grid">
           {filtered.map((w) => (
