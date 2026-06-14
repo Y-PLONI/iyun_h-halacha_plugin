@@ -53,14 +53,14 @@ export function WorkspaceScreen() {
   // ── מסך רחב: שלוש חלוניות ──
   // סדר RTL: מבחן (ימין) | תשובה (מרכז) | מקורות (שמאל)
   const panes: PaneDef[] = [
-    { id: 'exam', title: 'מבחן', minSize: 16, defaultSize: 30, collapsible: true, content: examContent },
-    { id: 'answer', title: 'תשובה', minSize: 26, defaultSize: 40, content: answerContent },
-    { id: 'sources', title: 'מקורות', minSize: 14, defaultSize: 30, collapsible: true, content: sourcesContent },
+    { id: 'exam', title: 'מבחן', minSize: 14, defaultSize: 22, collapsible: true, content: examContent },
+    { id: 'answer', title: 'תשובה', minSize: 22, defaultSize: 28, content: answerContent },
+    { id: 'sources', title: 'מקורות', minSize: 20, defaultSize: 50, collapsible: true, content: sourcesContent },
   ];
 
   return (
     <div className="workspace">
-      <SplitPane direction="horizontal" panes={panes} storageKey="workspace-3" />
+      <SplitPane direction="horizontal" panes={panes} storageKey="workspace-v4" />
     </div>
   );
 }

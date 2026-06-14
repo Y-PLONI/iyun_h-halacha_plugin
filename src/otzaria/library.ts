@@ -29,6 +29,28 @@ export async function getBookToc(bookId: string): Promise<TocEntry[]> {
   return await callOtzariaSafe<TocEntry[]>('library.getBookToc', { bookId }, []);
 }
 
+// cache לפתרון שם-ספר -> bookId אמיתי (findBooks). null = חיפשנו ולא נמצא.
+const bookIdCache = new Map<string, string | null>();
+
+/**
+ * מפענח שם ספר ל-bookId אמיתי דרך library.findBooks.
+ * שם התצוגה אינו בהכרח ה-bookId (למשל שו"ע/שעה"צ), לכן חובה לפענח.
+ * lenient: אם אין התאמה מדויקת, מחזיר את המועמד הראשון.
+ */
+export async function resolveBookId(nameOrId: string): Promise<string | null> {
+  if (!nameOrId) return null;
+  if (bookIdCache.has(nameOrId)) return bookIdCache.get(nameOrId)!;
+  const books = await findBooks(nameOrId, 10);
+  let resolved: string | null = null;
+  if (books.length) {
+    const exact = books.find((b) => b.title === nameOrId || b.bookId === nameOrId);
+    const starts = books.find((b) => b.title.startsWith(nameOrId));
+    resolved = (exact ?? starts ?? books[0]).bookId;
+  }
+  bookIdCache.set(nameOrId, resolved);
+  return resolved;
+}
+
 /** בוחר את ערך ה-TOC הקרוב ביותר ל-ref נתון (contains / נורמליזציה). */
 export function findBestTocEntry(toc: TocEntry[], ref: string): TocEntry | null {
   if (!toc.length || !ref) return null;
@@ -81,11 +103,16 @@ export interface LoadedSource {
  * ומעריך אורך קריאה. אם ה-TOC לא מכיל את ה-ref — fallback ל-section.
  */
 export async function loadSourceRange(
-  bookId: string,
+  bookName: string,
   startRef: string,
   endRef?: string,
 ): Promise<LoadedSource> {
   try {
+    // קודם מפענחים את שם הספר ל-bookId אמיתי (שם התצוגה ≠ bookId)
+    const bookId = await resolveBookId(bookName);
+    if (!bookId) {
+      return { ok: false, text: '', error: `הספר "${bookName}" לא נמצא בספרייה. עדכן את שם הספר בהגדרות.` };
+    }
     const toc = await getBookToc(bookId);
     const start = findBestTocEntry(toc, startRef);
     const end = endRef ? findBestTocEntry(toc, endRef) : null;
@@ -104,14 +131,18 @@ export async function loadSourceRange(
       '',
     );
     if (sectionText.trim()) return { ok: true, text: sectionText };
-    return { ok: false, text: '', error: 'לא נמצא תוכן עבור ההתייחסות המבוקשת' };
+    // fallback אחרון: תחילת הספר
+    const head = await loadContentChunks(bookId, 0, MAX_CHUNK);
+    if (head.trim()) return { ok: true, text: head };
+    return { ok: false, text: '', error: `לא נמצא תוכן עבור "${startRef}" בספר.` };
   } catch (e) {
     return { ok: false, text: '', error: e instanceof Error ? e.message : 'שגיאה בטעינת המקור' };
   }
 }
 
 /** פותח ספר בקורא אוצריא במיקום ה-ref, עם fallback ל-openBook+searchQuery. */
-export async function openInOtzaria(bookId: string, ref: string): Promise<boolean> {
+export async function openInOtzaria(bookName: string, ref: string): Promise<boolean> {
+  const bookId = (await resolveBookId(bookName)) ?? bookName;
   const ok = await callOtzariaSafe<boolean>('reader.openBookAtRef', { bookId, ref }, false);
   if (ok) return true;
   return await callOtzariaSafe<boolean>('reader.openBook', { bookId, searchQuery: ref }, false);

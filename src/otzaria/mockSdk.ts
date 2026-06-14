@@ -132,10 +132,12 @@ export function installMockOtzaria(): void {
           { text: 'סימן תקמב', index: 3600, level: 1 },
         ]) as OtzariaResponse<T>;
       case 'library.getBookContent':
+        // אוצריא מחזירה HTML — מדמים זאת כדי לבדוק את הרינדור (h3/b וכו').
         return ok(
-          `[תצוגת פיתוח] תוכן לדוגמה עבור ${String(payload?.bookId ?? '')} ` +
-            `מ-offset ${String(payload?.offset ?? 0)}. ` +
-            'בסביבת אוצריא יוחזר כאן הטקסט האמיתי מהספר. '.repeat(6),
+          `<h3>סעיף א</h3>` +
+            `<b>כיוצא להקנות וכו'</b> - תצוגת פיתוח עבור ${String(payload?.bookId ?? '')} ` +
+            `(offset ${String(payload?.offset ?? 0)}). בסביבת אוצריא יוחזר כאן הטקסט האמיתי מהספר. ` +
+            `<sup>1</sup> ועיין עוד בהמשך. `.repeat(4),
         ) as OtzariaResponse<T>;
       case 'reader.openBookAtRef':
       case 'reader.openBook':

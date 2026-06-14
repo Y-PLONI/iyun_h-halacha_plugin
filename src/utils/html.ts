@@ -45,6 +45,47 @@ function cleanNode(node: Node): void {
   }
 }
 
+// ── ניקוי HTML של מקורות מאוצריא (getBookContent מחזיר HTML) ──
+// משמרים מבנה (כותרות/הדגשות) ומסירים סקריפטים/אירועים/מאפיינים.
+const SOURCE_ALLOWED = new Set([
+  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'DIV', 'SPAN', 'B', 'STRONG', 'I', 'EM',
+  'U', 'BR', 'SUP', 'SUB', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'SMALL', 'BIG', 'SECTION', 'A',
+]);
+
+export function sanitizeSourceHtml(dirty: string): string {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = dirty;
+  cleanSourceNode(tmp);
+  return tmp.innerHTML;
+}
+
+function cleanSourceNode(node: Node): void {
+  for (const child of Array.from(node.childNodes)) {
+    if (child.nodeType === Node.TEXT_NODE) continue;
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      child.remove();
+      continue;
+    }
+    const el = child as HTMLElement;
+    const tag = el.tagName;
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'IFRAME' || tag === 'LINK' || tag === 'META') {
+      el.remove();
+      continue;
+    }
+    if (!SOURCE_ALLOWED.has(tag)) {
+      // תג לא מוכר — משמרים את התוכן, מסירים את העטיפה
+      const parent = el.parentNode;
+      if (parent) {
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
+      }
+      continue;
+    }
+    for (const attr of Array.from(el.attributes)) el.removeAttribute(attr.name);
+    cleanSourceNode(el);
+  }
+}
+
 export function htmlToPlainText(html: string): string {
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
