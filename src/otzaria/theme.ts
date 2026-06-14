@@ -1,4 +1,31 @@
 import type { ColorScheme, ThemePayload } from './otzaria_plugin';
+import { settingsStore } from '../state/settingsStore';
+import type { FontMode } from '../data/types';
+
+// ה-theme האחרון שהתקבל — דרוש כשמצב הגופן הוא 'otzaria' (שואב את גופן אוצריא).
+let lastTheme: ThemePayload | undefined;
+
+const SEGOE_STACK = "'Segoe UI','Segoe','David',sans-serif";
+
+/** מחיל את העדפות הגופן של המשתמש: מצב גופן (ברירת מחדל/אוצריא) וגודל. */
+export function applyFontPrefs(fontMode: FontMode, uiFontSize: number): void {
+  const root = document.documentElement;
+  const tp = lastTheme?.typography;
+  if (fontMode === 'otzaria' && tp?.fontFamily) {
+    root.style.setProperty('--font-main', `'${tp.fontFamily}','Segoe UI','David',sans-serif`);
+    const cf = tp.commentatorsFontFamily || tp.fontFamily;
+    root.style.setProperty('--font-commentators', `'${cf}','Segoe UI','David',serif`);
+  } else {
+    root.style.setProperty('--font-main', SEGOE_STACK);
+    root.style.setProperty('--font-commentators', SEGOE_STACK);
+  }
+  if (uiFontSize) root.style.setProperty('--font-size-base', `${uiFontSize}px`);
+}
+
+function applyFontPrefsFromSettings(): void {
+  const s = settingsStore.get().settings;
+  applyFontPrefs(s.fontMode, s.uiFontSize);
+}
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '');
@@ -48,6 +75,7 @@ const ROLE_TO_VAR: Record<keyof ColorScheme, string> = {
 /** מחיל theme שמגיע מ-plugin.boot / theme.changed על משתני ה-CSS (Material 3). */
 export function applyTheme(theme: ThemePayload | undefined): void {
   if (!theme) return;
+  lastTheme = theme;
   const root = document.documentElement;
   const c = theme.colorScheme;
   if (c) {
@@ -69,12 +97,10 @@ export function applyTheme(theme: ThemePayload | undefined): void {
       if (!c.secondaryContainer) root.style.setProperty('--color-secondary-container', hexToRgba(c.secondary, 0.16));
     }
   }
-  if (theme.typography) {
-    const t = theme.typography;
-    // גופן התוסף קבוע (Segoe UI מתוך fonts/) — לא נדרס מה-theme.
-    // מכבדים רק גודל גופן וריווח שורה מהגדרות אוצריא.
-    if (t.fontSize) root.style.setProperty('--font-size-base', `${t.fontSize}px`);
-    if (t.lineHeight) root.style.setProperty('--line-height', String(t.lineHeight));
+  if (theme.typography?.lineHeight) {
+    root.style.setProperty('--line-height', String(theme.typography.lineHeight));
   }
+  // הגופן והגודל נשלטים ע"י העדפות המשתמש (מצב גופן + גודל), לא ישירות מה-theme.
+  applyFontPrefsFromSettings();
   document.body.classList.toggle('dark-mode', theme.mode === 'dark');
 }

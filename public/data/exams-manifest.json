@@ -23,6 +23,27 @@
       },
       "licenseStatus": "private",
       "notes": "נבנה מתוך גליון ר\"מ - סיון תשפ\"ו. סטטוס רישוי 'private' עד להכרעה על זכויות הפצה (סעיף 24 בתכנון)."
+    },
+    {
+      "issueId": "issue-0239",
+      "issueNumber": 239,
+      "title": "עיון ההלכה - גליון רל\"ט",
+      "hebrewMonth": "אייר - סיון תשפ\"ו",
+      "weeksInIssue": 4,
+      "parshiot": ["בהר-בחוקתי", "במדבר", "נשא", "בהעלותך"],
+      "version": "1.0.0",
+      "updatedAt": "2026-06-01T00:00:00+03:00",
+      "files": {
+        "questionsJson": null,
+        "pdf": null,
+        "docx": null
+      },
+      "sha256": {
+        "questionsJson": "",
+        "pdf": ""
+      },
+      "licenseStatus": "private",
+      "notes": "נבנה מתוך גליון רל\"ט - אייר-סיון תשפ\"ו. שאלות מוצגות ישירות ממסמך ה-Word."
     }
   ]
 }

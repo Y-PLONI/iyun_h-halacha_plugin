@@ -1,4 +1,4 @@
-import { getAllWeeks, getWeek } from '../data/localData';
+import { getWeeksForIssue, getWeek } from '../data/localData';
 import { useApp, openWorkspace, selectWeek } from '../state/appStore';
 import { ExamView } from '../components/ExamView';
 import { EmptyState } from '../components/EmptyState';
@@ -10,7 +10,7 @@ import { Icon } from '../components/Icon';
 export function QuestionsScreen() {
   const app = useApp();
   const settings = useSettings();
-  const weeks = getAllWeeks();
+  const weeks = getWeeksForIssue(app.activeIssueId);
   const week = app.activeWeekId ? getWeek(app.activeWeekId) : null;
 
   const openSourceInOtzaria = async () => {

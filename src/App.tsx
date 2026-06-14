@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { BootPayload, ThemePayload } from './otzaria/sdk';
 import { hasOtzaria, onOtzaria, offOtzaria } from './otzaria/sdk';
-import { applyTheme } from './otzaria/theme';
-import { loadSettings } from './state/settingsStore';
+import { applyTheme, applyFontPrefs } from './otzaria/theme';
+import { loadSettings, settingsStore } from './state/settingsStore';
 import { loadAnswers, saveAnswersNow } from './state/answersStore';
 import { setBooted, setIsNarrow } from './state/appStore';
 import { AppShell } from './components/AppShell';
@@ -20,6 +20,9 @@ export function App() {
       if (boot?.theme) applyTheme(boot.theme);
       await Promise.all([loadSettings(), loadAnswers()]);
       if (!alive) return;
+      // לאחר טעינת ההגדרות — מחילים את העדפות הגופן השמורות (מצב + גודל)
+      const s = settingsStore.get().settings;
+      applyFontPrefs(s.fontMode, s.uiFontSize);
       setBooted();
       setReady(true);
     };
@@ -60,6 +63,14 @@ export function App() {
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // החלת העדפות גופן בכל שינוי הגדרות (מצב גופן / גודל)
+  useEffect(() => {
+    return settingsStore.subscribe(() => {
+      const s = settingsStore.get().settings;
+      applyFontPrefs(s.fontMode, s.uiFontSize);
+    });
   }, []);
 
   // שמירה לפני סגירה

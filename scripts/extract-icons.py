@@ -27,6 +27,8 @@ ICONS = {
     "edit": 62430,
     "filter": 62471,
     "info": 62628,
+    "dismiss": 62314,
+    "font": 63461,
 }
 
 font = TTFont(TTF)

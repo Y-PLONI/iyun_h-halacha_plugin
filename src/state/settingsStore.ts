@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS: SettingsState = {
     shaarHatziyun: 'שער הציון',
   },
   autosaveMs: 1500,
+  fontMode: 'default',
+  uiFontSize: 16,
   sourcePaneMode: 'three',
   lastOpenIssueId: 'issue-0240',
   lastOpenWeekId: 'issue-0240-w1',

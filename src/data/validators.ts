@@ -28,6 +28,9 @@ export function validateData(
         err(`week ${week.weekId}: issueId=${week.issueId} אינו ברשימת issueIds של התקופה ${period.periodId}`);
       }
 
+      // מודל תשובה-לשבוע: שבוע ללא questionIds שואב שאלות ממסמך המבחן (Word), ללא קובץ questions.
+      if (!week.questionIds.length) continue;
+
       const file = questionsFiles[week.issueId];
       if (!file) {
         warn(`week ${week.weekId}: אין קובץ שאלות לגליון ${week.issueId}`);

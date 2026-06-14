@@ -1,5 +1,6 @@
-import { schedule, getWeek, examsManifest } from '../data/localData';
-import { useApp, setSettingsOpen } from '../state/appStore';
+import { useEffect, useRef, useState } from 'react';
+import { getWeek, getExamMeta, getIssues } from '../data/localData';
+import { useApp, setSettingsOpen, setActiveIssue } from '../state/appStore';
 import { useSettings } from '../state/settingsStore';
 import { saveAnswersNow, getAnswer } from '../state/answersStore';
 import { exportWeekDocx } from '../export/docx';
@@ -10,8 +11,8 @@ import { Icon } from './Icon';
 export function TopBar() {
   const app = useApp();
   const settings = useSettings();
-  const period = schedule.periods[0];
-  const exam = examsManifest.exams[0];
+  const exam = getExamMeta(app.activeIssueId);
+  const issues = getIssues();
   const activeWeek = app.activeWeekId ? getWeek(app.activeWeekId) : null;
 
   const todayLabel = new Date().toLocaleDateString('he-IL');
@@ -28,7 +29,7 @@ export function TopBar() {
           week: activeWeek,
           settings,
           issueTitle: exam?.title ?? 'עיון ההלכה',
-          hebrewMonth: exam?.hebrewMonth ?? period?.title ?? '',
+          hebrewMonth: exam?.hebrewMonth ?? '',
           dateLabel: todayLabel,
         },
         exam?.issueNumber ?? 0,
@@ -63,7 +64,11 @@ export function TopBar() {
   return (
     <header className="topbar">
       <h1>עיון ההלכה</h1>
-      <span className="issue-chip">גליון {exam?.issueNumber ?? ''} · {exam?.hebrewMonth ?? ''}</span>
+      <IssuePicker
+        current={exam ? `גליון ${exam.issueNumber} · ${exam.hebrewMonth}` : 'בחר גליון'}
+        issues={issues.map((e) => ({ id: e.issueId, label: `גליון ${e.issueNumber} · ${e.hebrewMonth}`, active: e.issueId === app.activeIssueId }))}
+        onSelect={setActiveIssue}
+      />
       <span className="spacer" />
       <button className="icon-btn" title="ייצוא ל-Word" onClick={() => void handleExport()}>
         <Icon name="download" /> ייצוא
@@ -75,5 +80,60 @@ export function TopBar() {
         <Icon name="settings" />
       </button>
     </header>
+  );
+}
+
+interface IssueOption {
+  id: string;
+  label: string;
+  active: boolean;
+}
+
+function IssuePicker({
+  current,
+  issues,
+  onSelect,
+}: {
+  current: string;
+  issues: IssueOption[];
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  return (
+    <div className="popover-anchor" ref={ref}>
+      <button className="issue-picker" onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open}>
+        <span>{current}</span>
+        <Icon name="chevron-down" size="0.9em" />
+      </button>
+      {open && (
+        <div className="popover" role="listbox">
+          {issues.map((iss) => (
+            <button
+              key={iss.id}
+              className={`popover-item${iss.active ? ' active' : ''}`}
+              role="option"
+              aria-selected={iss.active}
+              onClick={() => {
+                onSelect(iss.id);
+                setOpen(false);
+              }}
+            >
+              {iss.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

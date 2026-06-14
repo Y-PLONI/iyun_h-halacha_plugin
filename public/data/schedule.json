@@ -5,6 +5,103 @@
   "defaultIssueId": "issue-0240",
   "periods": [
     {
+      "periodId": "iyar-sivan-5786",
+      "title": "אייר - סיון תשפ\"ו",
+      "hebrewMonthRange": "אייר - סיון תשפ\"ו",
+      "gregorianRange": { "start": "2026-04-20", "end": "2026-05-17" },
+      "issueIds": ["issue-0239"],
+      "weeks": [
+        {
+          "weekId": "issue-0239-w1",
+          "issueId": "issue-0239",
+          "weekNumber": 1,
+          "weeksInIssue": 4,
+          "parasha": "בהר-בחוקתי",
+          "title": "מלאכה לאחרים, צרכי רבים, וכתיבה בחוה\"מ",
+          "topicTitle": "מלאכה ע\"י פועל, אמירה לנכרי, צרכי רבים, דיני כתיבה",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקמב סעיף ב עד סימן תקמה סעיף ב",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקמב", "endRef": "סימן תקמה" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקמב", "endRef": "סימן תקמה" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקמב", "endRef": "סימן תקמה" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקמב", "endRef": "סימן תקמה" }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "past"
+        },
+        {
+          "weekId": "issue-0239-w2",
+          "issueId": "issue-0239",
+          "weekNumber": 2,
+          "weeksInIssue": 4,
+          "parasha": "במדבר",
+          "title": "דיני כתיבה בחול המועד",
+          "topicTitle": "תפילין ומזוזות, הגהה, כתיבה לצורך המועד",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקמה סעיף ג עד סוף סימן תקמה",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקמה" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקמה" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקמה" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקמה" }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "past"
+        },
+        {
+          "weekId": "issue-0239-w3",
+          "issueId": "issue-0239",
+          "weekNumber": 3,
+          "weeksInIssue": 4,
+          "parasha": "נשא",
+          "title": "חזרה כללית",
+          "topicTitle": "המגלחים במועד, גילוח ותספורת, צרכי המועד",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקל סעיף א עד סוף סימן תקלד",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקל", "endRef": "סימן תקלד" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקל", "endRef": "סימן תקלד" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקל", "endRef": "סימן תקלד" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקל", "endRef": "סימן תקלד" }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "past"
+        },
+        {
+          "weekId": "issue-0239-w4",
+          "issueId": "issue-0239",
+          "weekNumber": 4,
+          "weeksInIssue": 4,
+          "parasha": "בהעלותך",
+          "title": "חזרה כללית",
+          "topicTitle": "השקיה, מלאכות מותרות ואסורות בחול המועד",
+          "hebrewDateRange": "",
+          "gregorianDateRange": { "start": "", "end": "" },
+          "sourceRangeTitle": "מסימן תקלה סעיף א עד סימן תקלט סעיף א",
+          "sourceRefs": {
+            "shulchanAruch": { "bookId": "שולחן ערוך אורח חיים", "startRef": "סימן תקלה", "endRef": "סימן תקלט" },
+            "mishnaBerurah": { "bookId": "משנה ברורה", "startRef": "סימן תקלה", "endRef": "סימן תקלט" },
+            "biurHalacha": { "bookId": "ביאור הלכה", "startRef": "סימן תקלה", "endRef": "סימן תקלט" },
+            "shaarHatziyun": { "bookId": "שער הציון", "startRef": "סימן תקלה", "endRef": "סימן תקלט" }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "past"
+        }
+      ]
+    },
+    {
       "periodId": "sivan-5786",
       "title": "סיון תשפ\"ו",
       "hebrewMonthRange": "סיון תשפ\"ו",

@@ -1,5 +1,5 @@
 import { createStore } from './createStore';
-import { getDefaultWeek } from '../data/localData';
+import { getDefaultIssueId, getDefaultWeekForIssue } from '../data/localData';
 import { updateSettings } from './settingsStore';
 
 export type ScreenName = 'schedule' | 'questions' | 'workspace';
@@ -7,6 +7,8 @@ export type ScreenName = 'schedule' | 'questions' | 'workspace';
 interface AppStoreState {
   booted: boolean;
   screen: ScreenName;
+  /** הגליון הפעיל */
+  activeIssueId: string;
   /** השבוע הפעיל בכל המסכים */
   activeWeekId: string | null;
   settingsOpen: boolean;
@@ -14,11 +16,13 @@ interface AppStoreState {
   isNarrow: boolean;
 }
 
-const initialWeek = getDefaultWeek();
+const initialIssueId = getDefaultIssueId();
+const initialWeek = getDefaultWeekForIssue(initialIssueId);
 
 export const appStore = createStore<AppStoreState>({
   booted: false,
   screen: 'schedule',
+  activeIssueId: initialIssueId,
   activeWeekId: initialWeek?.weekId ?? null,
   settingsOpen: false,
   isNarrow: false,
@@ -30,6 +34,13 @@ export function setBooted(): void {
 
 export function goToScreen(screen: ScreenName): void {
   appStore.set({ screen });
+}
+
+/** מעבר לגליון אחר: מאפס לשבוע הראשון של הגליון ומציג את מסך ההספקים. */
+export function setActiveIssue(issueId: string): void {
+  const week = getDefaultWeekForIssue(issueId);
+  appStore.set({ activeIssueId: issueId, activeWeekId: week?.weekId ?? null, screen: 'schedule' });
+  updateSettings({ lastOpenIssueId: issueId, lastOpenWeekId: week?.weekId ?? '' });
 }
 
 export function selectWeek(weekId: string): void {

@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react';
-import { schedule, getExamWeek } from '../data/localData';
+import { getExamWeek, getExamMeta, getWeeksForIssue } from '../data/localData';
 import { computeWeekProgress, useAnswersState } from '../state/answersStore';
+import { useApp } from '../state/appStore';
 import { WeekCard } from '../components/WeekCard';
 import { EmptyState } from '../components/EmptyState';
 
 type StatusFilter = 'all' | 'not-started' | 'draft' | 'completed';
 
 export function ScheduleScreen() {
+  const app = useApp();
   // נרשמים לשינויי תשובות כדי שחישוב ההתקדמות יתעדכן בכל שמירה
   const answersState = useAnswersState();
   const [parashaFilter, setParashaFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
-  const period = schedule.periods[0];
-  const weeks = period?.weeks ?? [];
+  const exam = getExamMeta(app.activeIssueId);
+  const weeks = getWeeksForIssue(app.activeIssueId);
 
   // התקדמות כוללת לפי שבועות — תלוי גם ב-answersState כדי להתעדכן בעת שמירה
   const totals = useMemo(() => {
@@ -34,10 +36,10 @@ export function ScheduleScreen() {
     return true;
   });
 
-  if (!period) {
+  if (!weeks.length) {
     return (
       <div className="screen-pad">
-        <EmptyState icon="info" title="לא נמצאו נתוני הספק" />
+        <EmptyState icon="info" title="לא נמצאו נתוני הספק לגליון זה" />
       </div>
     );
   }
@@ -47,7 +49,7 @@ export function ScheduleScreen() {
   return (
     <div className="screen-pad">
       <div className="issue-card">
-        <h2>גליון ר"מ · {period.title}</h2>
+        <h2>{exam ? `גליון ${exam.issueNumber} · ${exam.hebrewMonth}` : 'הספק'}</h2>
         <div className="issue-meta">
           <span>{weeks.length} שבועות</span>
           <span>

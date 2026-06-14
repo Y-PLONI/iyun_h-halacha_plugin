@@ -140,10 +140,10 @@ export interface QuestionsFile {
 
 export interface ExamWeekDoc {
   weekNumber: number;
-  parasha: string;
-  title: string;
+  /** כותרת/נושא השבוע מתוך המסמך (פרשה + נושא), מנוקה. */
+  headerText: string;
   sourceRangeTitle: string;
-  /** HTML מנוקה: טווח סימנים + שאלות (exam-q / exam-sub) */
+  /** HTML מנוקה: שאלות בלבד (exam-q / exam-sub) */
   html: string;
 }
 
@@ -180,6 +180,9 @@ export interface AnswersState {
 
 // ── הגדרות המשתמש (storage: settings:v1) ──
 
+/** מצב הגופן: 'default' = Segoe UI המצורף; 'otzaria' = הגופן מהגדרות אוצריא. */
+export type FontMode = 'default' | 'otzaria';
+
 export interface SettingsState {
   schemaVersion: 1;
   name: string;
@@ -188,6 +191,9 @@ export interface SettingsState {
   recipientEmail: string;
   bookIds: Record<SourceRole, string>;
   autosaveMs: number;
+  /** מראה התוסף */
+  fontMode: FontMode;
+  uiFontSize: number;
   sourcePaneMode: 'one' | 'three';
   lastOpenIssueId: string;
   lastOpenWeekId: string;

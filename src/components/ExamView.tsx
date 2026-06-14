@@ -12,8 +12,9 @@ export function ExamView({ week }: { week: ScheduleWeek }) {
     <div className="exam-doc">
       <div className="exam-doc-head">
         <span className="exam-week-pill">שבוע {week.weekNumber}/{week.weeksInIssue}</span>
-        <h3>פרשת {exam.parasha}{exam.title ? ` · ${exam.title}` : ''}</h3>
+        <h3>{exam.headerText || `פרשת ${week.parasha}`}</h3>
       </div>
+      {exam.sourceRangeTitle && <p className="exam-range">{exam.sourceRangeTitle}</p>}
       <div className="exam-doc-body" dangerouslySetInnerHTML={{ __html: exam.html }} />
     </div>
   );

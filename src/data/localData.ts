@@ -6,9 +6,11 @@ import scheduleJson from '../../public/data/schedule.json';
 import examsManifestJson from '../../public/data/exams-manifest.json';
 import issue0240 from '../../public/data/questions/issue-0240.json';
 import exam0240 from '../../public/data/exams/issue-0240.json';
+import exam0239 from '../../public/data/exams/issue-0239.json';
 
 import type {
   ExamDoc,
+  ExamEntry,
   ExamWeekDoc,
   ExamsManifest,
   Question,
@@ -28,6 +30,7 @@ const questionsByIssue: Record<string, QuestionsFile> = {
 // מיפוי issueId -> מסמך המבחן המומר מ-Word (נבנה ב-convert-exams).
 const examByIssue: Record<string, ExamDoc> = {
   'issue-0240': exam0240 as unknown as ExamDoc,
+  'issue-0239': exam0239 as unknown as ExamDoc,
 };
 
 export function getQuestionsFile(issueId: string): QuestionsFile | null {
@@ -54,9 +57,37 @@ export function getWeek(weekId: string): ScheduleWeek | null {
   return getAllWeeks().find((w) => w.weekId === weekId) ?? null;
 }
 
-export function getDefaultWeek(): ScheduleWeek | null {
-  const weeks = getAllWeeks();
+/** רשימת הגליונות לבחירה (מה-manifest), ממוין לפי מספר גליון יורד. */
+export function getIssues(): ExamEntry[] {
+  return [...examsManifest.exams].sort((a, b) => b.issueNumber - a.issueNumber);
+}
+
+export function getExamMeta(issueId: string): ExamEntry | null {
+  return examsManifest.exams.find((e) => e.issueId === issueId) ?? null;
+}
+
+/** כל השבועות של גליון נתון, לפי הסדר. */
+export function getWeeksForIssue(issueId: string): ScheduleWeek[] {
+  return getAllWeeks()
+    .filter((w) => w.issueId === issueId)
+    .sort((a, b) => a.weekNumber - b.weekNumber);
+}
+
+/** הגליון ההתחלתי: defaultIssueId אם קיים, אחרת הגבוה ביותר. */
+export function getDefaultIssueId(): string {
+  const ids = new Set(examsManifest.exams.map((e) => e.issueId));
+  if (schedule.defaultIssueId && ids.has(schedule.defaultIssueId)) return schedule.defaultIssueId;
+  return getIssues()[0]?.issueId ?? schedule.defaultIssueId;
+}
+
+/** השבוע ההתחלתי בגליון: ה-'active' הראשון, אחרת הראשון. */
+export function getDefaultWeekForIssue(issueId: string): ScheduleWeek | null {
+  const weeks = getWeeksForIssue(issueId);
   return weeks.find((w) => w.status === 'active') ?? weeks[0] ?? null;
+}
+
+export function getDefaultWeek(): ScheduleWeek | null {
+  return getDefaultWeekForIssue(getDefaultIssueId());
 }
 
 /** כל השאלות של שבוע נתון, בסדר. מחזיר [] אם אין קובץ שאלות. */

@@ -10,8 +10,8 @@ const OUT_DIR = 'public/data/exams';
 
 interface ExamWeekDoc {
   weekNumber: number;
-  parasha: string;
-  title: string;
+  /** כותרת/נושא השבוע כפי שמופיע במסמך (פרשה + נושא), מנוקה. */
+  headerText: string;
   sourceRangeTitle: string;
   html: string;
 }
@@ -39,44 +39,50 @@ const isMarker = (t: string) => /\(\s*שבוע\s+(\d+)\s+מתוך\s+\d+\s*\)/.ex
 const isSeparator = (t: string) => /^-{5,}$/.test(t.replace(/\s/g, ''));
 const isFormField = (t: string) => /^שם\s*:?$/.test(t) || /^קוד\s*אישי/.test(t) || /^בס["׳']?ד/.test(t);
 const isWeekTitle = (t: string) => /^שבוע\s+פרשת/.test(t);
-const isQuestion = (t: string) => new RegExp(`^[${HEB}]\\]`).test(t);
+// שאלה: "א]" (גליון ר"מ) או "[א]" (גליון רל"ט) — אות עברית באות סוגרת ]
+const Q_RE = new RegExp(`^\\s*\\[?([${HEB}])\\]\\s*`);
+const isQuestion = (t: string) => Q_RE.test(t);
+// טווח סימנים: "מסימן ... עד ..." (ללא \b — לא עובד עם עברית ב-regex לא-unicode)
+const isRange = (t: string) => /^מסימן\s/.test(t) || /^מסי['׳]/.test(t);
 
-function buildWeek(weekNumber: number, paras: string[]): ExamWeekDoc {
-  let parasha = '';
-  let title = '';
-  let sourceRangeTitle = '';
+function buildWeek(weekNumber: number, rawParas: string[]): ExamWeekDoc {
+  // ניקוי: מסירים מרקר/מפריד/שדות-טופס/ריקים
+  const paras = rawParas
+    .map((t) => t.trim())
+    .filter((t) => t && !isMarker(t) && !isSeparator(t) && !isFormField(t));
+
+  const titleStart = Math.max(0, paras.findIndex(isWeekTitle));
+  const rangeIdx = paras.findIndex((t, i) => i > titleStart && isRange(t));
+  const firstQIdx = paras.findIndex((t, i) => i > titleStart && isQuestion(t));
+  const titleEndCands = [rangeIdx, firstQIdx].filter((x) => x >= 0);
+  const titleEnd = titleEndCands.length ? Math.min(...titleEndCands) : titleStart + 1;
+
+  // כותרת/נושא — יכול להשתרע על כמה פסקאות (גליון רל"ט). מסירים "שבוע פרשת", מאחדים מפרידים.
+  const headerText = paras
+    .slice(titleStart, titleEnd)
+    .join(' ')
+    .replace(/^שבוע\s+פרשת\s+/, '')
+    .replace(/\s*-\s*/g, ' · ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*·\s*$/, '')
+    .trim();
+
+  const sourceRangeTitle = rangeIdx >= 0 ? paras[rangeIdx] : '';
+  const bodyStart = rangeIdx >= 0 ? rangeIdx + 1 : titleEnd;
+
   const bodyParts: string[] = [];
-  let seenTitle = false;
-
-  for (const raw of paras) {
-    const t = raw.trim();
-    if (!t || isMarker(t) || isSeparator(t) || isFormField(t)) continue;
-    if (isWeekTitle(t)) {
-      const rest = t.replace(/^שבוע\s+פרשת\s+/, '');
-      const segs = rest.split(/\s+-\s+/);
-      parasha = (segs.shift() ?? '').trim();
-      title = segs.join(' - ').trim();
-      seenTitle = true;
-      continue;
-    }
-    // הפסקה שמיד אחרי כותרת השבוע = טווח הסימנים
-    if (seenTitle && !sourceRangeTitle && !isQuestion(t)) {
-      sourceRangeTitle = t;
-      continue;
-    }
-    if (isQuestion(t)) {
-      const letter = t.slice(0, t.indexOf(']') + 1);
-      const restText = t.slice(t.indexOf(']') + 1).trim();
-      bodyParts.push(`<p class="exam-q"><span class="exam-q-letter">${esc(letter)}</span> ${esc(restText)}</p>`);
+  for (const t of paras.slice(bodyStart)) {
+    const m = Q_RE.exec(t);
+    if (m) {
+      const rest = t.slice(m[0].length).trim();
+      bodyParts.push(`<p class="exam-q"><span class="exam-q-letter">${esc(m[1])}]</span> ${esc(rest)}</p>`);
     } else {
       bodyParts.push(`<p class="exam-sub">${esc(t)}</p>`);
     }
   }
 
-  const html =
-    (sourceRangeTitle ? `<p class="exam-range">${esc(sourceRangeTitle)}</p>` : '') +
-    bodyParts.join('\n');
-  return { weekNumber, parasha, title, sourceRangeTitle, html };
+  const html = bodyParts.join('\n');
+  return { weekNumber, headerText, sourceRangeTitle, html };
 }
 
 async function convertFile(file: string): Promise<ExamDoc> {
@@ -126,7 +132,7 @@ async function main(): Promise<void> {
     const doc = await convertFile(file);
     const out = join(OUT_DIR, `${doc.issueId}.json`);
     writeFileSync(out, JSON.stringify(doc, null, 2) + '\n', 'utf8');
-    console.log(`✓ ${file} → ${out} (${doc.weeks.length} שבועות: ${doc.weeks.map((w) => w.parasha).join(', ')})`);
+    console.log(`✓ ${file} → ${out} (${doc.weeks.length} שבועות: ${doc.weeks.map((w) => w.headerText.split(' · ')[0]).join(', ')})`);
   }
 }
 
