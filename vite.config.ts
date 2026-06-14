@@ -1,7 +1,24 @@
 import { defineConfig, type Plugin, type ResolvedConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { cpSync, copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { cpSync, copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+// docxBase64 → מייבא קבצי .docx כמחרוזת base64 מוטמעת ב-bundle.
+// כך מסמכי ה-Word הם מקור האמת, נטענים בזמן ריצה דרך mammoth — בלי קבצי JSON ביניים
+// ובלי fetch (fetch של קובץ מקומי נכשל ב-WebView מסוג file://). enforce:'pre' רץ לפני
+// מטפל ה-assets המובנה של Vite, כך ש-.docx לא הופך ל-URL אלא למודול מחרוזת.
+function docxBase64(): Plugin {
+  return {
+    name: 'docx-base64',
+    enforce: 'pre',
+    load(id) {
+      const clean = id.split('?')[0];
+      if (!clean.endsWith('.docx')) return null;
+      const b64 = readFileSync(clean).toString('base64');
+      return `export default ${JSON.stringify(b64)};`;
+    },
+  };
+}
 
 // base: './'  → assets are referenced with relative paths, required because the
 // Otzaria host loads index.html from the plugin directory (not from a web root).
@@ -67,10 +84,14 @@ function copyPluginAssets(): Plugin {
 
 export default defineConfig({
   base: './',
-  plugins: [react(), webviewCompatScript(), copyPluginAssets()],
+  // mammoth (browserify) מזהה את ה-global דרך `typeof global` — ממפים ל-globalThis
+  // כדי שירוץ ב-WebView ללא Node globals.
+  define: { global: 'globalThis' },
+  plugins: [docxBase64(), react(), webviewCompatScript(), copyPluginAssets()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     target: 'es2020',
+    chunkSizeWarningLimit: 1500,
   },
 });

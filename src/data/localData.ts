@@ -5,13 +5,9 @@
 import scheduleJson from '../../public/data/schedule.json';
 import examsManifestJson from '../../public/data/exams-manifest.json';
 import issue0240 from '../../public/data/questions/issue-0240.json';
-import exam0240 from '../../public/data/exams/issue-0240.json';
-import exam0239 from '../../public/data/exams/issue-0239.json';
 
 import type {
-  ExamDoc,
   ExamEntry,
-  ExamWeekDoc,
   ExamsManifest,
   Question,
   QuestionsFile,
@@ -19,34 +15,26 @@ import type {
   ScheduleWeek,
 } from './types';
 
-export const schedule = scheduleJson as Schedule;
-export const examsManifest = examsManifestJson as ExamsManifest;
+// מסמכי המבחן נטענים בזמן ריצה ישירות מ-exams-src/*.docx (ראה examLoader).
+export { getExamDoc, getExamWeek, loadExams } from './examLoader';
 
-// מיפוי issueId -> קובץ שאלות. הוספת גליון חדש: ייבוא וקו נוסף כאן.
+// ניתנים לדריסה ע"י נתונים מרוחקים (עדכון מ-GitHub). live-binding: צרכנים קוראים ערך עדכני.
+export let schedule = scheduleJson as Schedule;
+export let examsManifest = examsManifestJson as ExamsManifest;
+
+/** דורס את schedule/examsManifest בנתונים מרוחקים (אחרי עדכון מ-GitHub). */
+export function applyRemoteData(next: { schedule?: Schedule; examsManifest?: ExamsManifest }): void {
+  if (next.schedule) schedule = next.schedule;
+  if (next.examsManifest) examsManifest = next.examsManifest;
+}
+
+// מיפוי issueId -> קובץ שאלות (legacy/ולידציה). תצוגת השאלות מגיעה ממסמך ה-Word.
 const questionsByIssue: Record<string, QuestionsFile> = {
   'issue-0240': issue0240 as unknown as QuestionsFile,
 };
 
-// מיפוי issueId -> מסמך המבחן המומר מ-Word (נבנה ב-convert-exams).
-const examByIssue: Record<string, ExamDoc> = {
-  'issue-0240': exam0240 as unknown as ExamDoc,
-  'issue-0239': exam0239 as unknown as ExamDoc,
-};
-
 export function getQuestionsFile(issueId: string): QuestionsFile | null {
   return questionsByIssue[issueId] ?? null;
-}
-
-/** מסמך המבחן (Word→HTML) של גליון. */
-export function getExamDoc(issueId: string): ExamDoc | null {
-  return examByIssue[issueId] ?? null;
-}
-
-/** מסמך המבחן של שבוע נתון (לפי weekNumber בתוך הגליון). */
-export function getExamWeek(week: ScheduleWeek): ExamWeekDoc | null {
-  const doc = getExamDoc(week.issueId);
-  if (!doc) return null;
-  return doc.weeks.find((w) => w.weekNumber === week.weekNumber) ?? null;
 }
 
 export function getAllWeeks(): ScheduleWeek[] {

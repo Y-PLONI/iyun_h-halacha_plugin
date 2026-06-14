@@ -8,10 +8,10 @@
 
 ## טכנולוגיה
 
-- React + TypeScript + Vite (build סטטי).
-- ללא תלות ברשת ב-MVP — כל הנתונים מקומיים.
-- API אוצריא: `storage.*`, `library.*`, `reader.*`, `feedback.sendEmail`, `ui.*`
-  (דרך עטיפה אחת ב-[src/otzaria/](src/otzaria/)).
+- React + TypeScript + Vite (build סטטי, chunk יחיד — נדרש ל-WebView מסוג file://).
+- הנתונים מוטמעים מקומית; עדכון אופציונלי מ-GitHub (ראה למטה).
+- API אוצריא: `storage.*`, `library.*`, `reader.*`, `network.fetch`, `feedback.sendEmail`,
+  `ui.*` (דרך עטיפה אחת ב-[src/otzaria/](src/otzaria/)).
 
 ## פיתוח
 
@@ -44,29 +44,40 @@ cd dist && zip -r -X ../com.chadbedera.iyun-halacha-<version>.otzplugin . -x '.*
 
 ## הוספת גליון חדש
 
-1. שמור את קובץ המבחן ב-`exams-src/issue-XXXX.docx` (Word, כפי שמתקבל מהמו"ל).
-2. הרץ `npm run convert-exams` — ממיר את ה-DOCX ל-`public/data/exams/issue-XXXX.json`
-   (HTML מנוקה, מפוצל לפי שבוע). הקבצים ב-`exams-src/` אינם נארזים בתוסף; רק ה-JSON.
-3. הוסף ייבוא ושורה במיפוי `examByIssue` שב-[src/data/localData.ts](src/data/localData.ts):
-   ```ts
-   import examXXXX from '../../public/data/exams/issue-XXXX.json';
-   const examByIssue = { ..., 'issue-XXXX': examXXXX as unknown as ExamDoc };
-   ```
-4. הוסף תקופה/שבועות ב-`public/data/schedule.json` (פרשה, טווח סימנים, `sourceRefs`).
-   חשוב: `weekNumber` בשבוע חייב להתאים למספר השבוע במסמך המבחן.
-5. הוסף ערך ב-`public/data/exams-manifest.json`.
-6. הרץ `npm run validate-data`, ואז `npm run release`.
-7. עדכן `dataVersion` בקבצים.
+מסמכי ה-Word הם **מקור האמת**. אין שלב המרה ידני ואין קבצי JSON ביניים — הקבצים
+מ-`exams-src/*.docx` מוטמעים ב-build ומומרים בזמן ריצה (mammoth) ומפוצלים לפי שבוע.
 
-> נוסח השאלות מוצג ישירות מתוך מסמך ה-Word (קריאה בלבד). קובץ
-> `public/data/questions/issue-XXXX.json` נשמר לתאימות/ולידציה אך אינו נדרש לתצוגה.
-> שבוע ללא `questionIds` (המודל החדש) שואב שאלות מהמבחן בלבד — אין צורך בקובץ questions.
+1. שמור את קובץ המבחן ב-`exams-src/issue-XXXX.docx` (Word, כפי שמתקבל מהמו"ל).
+   שם הקובץ קובע את ה-issueId (למשל `issue-0241.docx` → `issue-0241`).
+2. הוסף תקופה/שבועות ב-`public/data/schedule.json` (פרשה, טווח סימנים, `sourceRefs`).
+   חשוב: `weekNumber` בשבוע חייב להתאים למספר השבוע במסמך (מרקר "(שבוע N מתוך M)").
+3. הוסף ערך ב-`public/data/exams-manifest.json` (issueNumber, hebrewMonth, parshiot).
+4. הרץ `npm run build` (או `npm run release`). זהו — אין צורך לערוך קוד:
+   `import.meta.glob` מגלה את כל קבצי ה-docx אוטומטית.
+
+> פורמט המבחן הנתמך: מרקר "(שבוע N מתוך M)" לכל שבוע, כותרת "שבוע פרשת ...",
+> שורת טווח "מסימן ... עד ...", ושאלות באות פותחת — `א]` או `[א]`. הפענוח
+> ב-[src/data/examParse.ts](src/data/examParse.ts).
+>
+> נוסח השאלות מוצג ישירות מתוך מסמך ה-Word (קריאה בלבד). מודל התשובות הוא לכל שבוע
+> (לא לכל שאלה); אין צורך בקובץ `questions/issue-XXXX.json`.
 
 ## מעבר בין גליונות
 
 כל גליון שמופיע ב-`exams-manifest.json` ושיש לו תקופה/שבועות ב-`schedule.json` מופיע
 אוטומטית **בבורר הגליונות בסרגל העליון**. מעבר גליון מציג את ההספק והשבועות שלו.
 כרגע מחווטים שני גליונות: ר"מ (סיון) ו-רל"ט (אייר-סיון).
+
+## עדכון מ-GitHub
+
+התוסף יכול למשוך גליונות ונתונים חדשים בלי התקנה מחדש: **הגדרות → עדכונים → בדוק עדכונים**.
+- מקור: `Y-PLONI/iyun_h-halacha_plugin` (branch `main`). דורש הרשאת `network.access` ו-`network`
+  ב-manifest; ה-repo כבר נמצא ב-`pluginNetworkAllowlist` הרשמי של אוצריא.
+- `schedule.json` ו-`exams-manifest.json` נמשכים כ-raw (טקסט); קבצי `.docx` נמשכים דרך
+  GitHub **Contents API** כ-base64 (כי `network.fetch` מחזיר טקסט בלבד).
+- ההשוואה היא לפי `dataVersion` ב-`exams-manifest.json`. הנתונים נשמרים ב-`storage`
+  (`remote:data:v1`) ומיושמים בכל טעינה. ראה [src/data/remoteUpdate.ts](src/data/remoteUpdate.ts).
+- כדי לפרסם עדכון: דחוף את הקבצים ל-repo והעלה את `dataVersion`. ראה [exams-src/README.md](exams-src/README.md).
 
 ## הגדרות
 

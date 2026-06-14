@@ -7,14 +7,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "release": "npm run convert-exams && npm run validate-data && npm run build && tsx scripts/build-release.ts",
+    "release": "npm run validate-data && npm run build && tsx scripts/build-release.ts",
     "preview": "vite preview",
-    "convert-exams": "tsx scripts/convert-exams.ts",
     "gen-icons": "python3 scripts/extract-icons.py",
     "validate-data": "tsx scripts/validate-data.ts",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "mammoth": "^1.12.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -23,7 +23,6 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "mammoth": "^1.12.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"

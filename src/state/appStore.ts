@@ -1,5 +1,5 @@
 import { createStore } from './createStore';
-import { getDefaultIssueId, getDefaultWeekForIssue } from '../data/localData';
+import { getDefaultIssueId, getDefaultWeekForIssue, getIssues } from '../data/localData';
 import { updateSettings } from './settingsStore';
 
 export type ScreenName = 'schedule' | 'questions' | 'workspace';
@@ -14,6 +14,8 @@ interface AppStoreState {
   settingsOpen: boolean;
   /** רוחב חלון נוכחי — לקביעת layout צר/רחב */
   isNarrow: boolean;
+  /** עולה בכל עדכון נתונים (מ-GitHub) כדי לאלץ רינדור מחדש */
+  dataVersion: number;
 }
 
 const initialIssueId = getDefaultIssueId();
@@ -26,7 +28,26 @@ export const appStore = createStore<AppStoreState>({
   activeWeekId: initialWeek?.weekId ?? null,
   settingsOpen: false,
   isNarrow: false,
+  dataVersion: 0,
 });
+
+/** מאלץ רינדור מחדש של האפליקציה אחרי עדכון נתונים מרוחק. */
+export function bumpDataVersion(): void {
+  const state = appStore.get();
+  const patch: Partial<AppStoreState> = { dataVersion: state.dataVersion + 1 };
+  // אחרי עדכון, אם הגליון הפעיל כבר אינו קיים — מיישרים לברירת המחדל
+  const exists = getIssues().some((e) => e.issueId === state.activeIssueId);
+  if (!exists) {
+    const issueId = getDefaultIssueId();
+    patch.activeIssueId = issueId;
+    patch.activeWeekId = getDefaultWeekForIssue(issueId)?.weekId ?? null;
+  }
+  appStore.set(patch);
+}
+
+export function useDataVersion(): number {
+  return appStore.use((s) => s.dataVersion);
+}
 
 export function setBooted(): void {
   appStore.set({ booted: true });
