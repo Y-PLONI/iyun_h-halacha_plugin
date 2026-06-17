@@ -197,5 +197,16 @@ export interface SettingsState {
   sourcePaneMode: 'one' | 'three';
   lastOpenIssueId: string;
   lastOpenWeekId: string;
+  /** ── התראות ותזכורות ── */
+  /** מתג ראשי: האם לשלוח תזכורות כלל (שולחן עבודה + לוח שנה) */
+  remindersEnabled: boolean;
+  /** יום בשבוע לתזכורת השבועית. 0=ראשון … 6=שבת */
+  reminderWeekday: number;
+  /** שעת התזכורת בפורמט "HH:MM" (24 שעות) */
+  reminderTime: string;
+  /** התראת מערכת (שולחן עבודה) */
+  desktopNotifications: boolean;
+  /** פרסום אירוע ללוח השנה של אוצריא */
+  calendarReminders: boolean;
 }
 

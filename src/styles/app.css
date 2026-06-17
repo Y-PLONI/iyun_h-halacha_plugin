@@ -526,6 +526,18 @@ select.input, .select-inline { cursor: pointer; width: auto; min-width: 220px; }
 .overlay-panel .hint { font-size: 0.7em; color: var(--color-on-surface-variant); margin: 6px 0 10px; }
 .overlay-panel .row { display: flex; gap: 8px; justify-content: flex-start; margin-top: 14px; }
 
+/* checkbox toggle row (התראות) */
+.overlay-panel .check-row {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  font-size: 0.86em; font-weight: 600; color: var(--color-on-surface);
+  margin: 8px 0;
+}
+.overlay-panel .check-row input[type='checkbox'] {
+  width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer; margin: 0;
+}
+.overlay-panel .check-row input:disabled { cursor: default; }
+.overlay-panel .check-row:has(input:disabled) { cursor: default; color: var(--color-on-surface-variant); }
+
 .settings-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .settings-head h2 { margin: 0; flex: 1; }
 
@@ -540,16 +552,18 @@ select.input, .select-inline { cursor: pointer; width: auto; min-width: 220px; }
 }
 .settings-tab {
   flex: 1;
+  min-width: 0;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 3px;
   border: none;
   background: transparent;
   color: var(--color-on-surface-variant);
-  border-radius: var(--radius-pill);
-  padding: 7px 8px;
-  font-size: 0.68em;
+  border-radius: var(--radius-lg, 14px);
+  padding: 7px 4px;
+  font-size: 0.66em;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;

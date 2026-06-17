@@ -7,6 +7,7 @@ import { loadAnswers, saveAnswersNow } from './state/answersStore';
 import { loadExams } from './data/localData';
 import { setBooted, setIsNarrow, useDataVersion } from './state/appStore';
 import { loadStoredRemote } from './data/remoteUpdate';
+import { initReminders } from './state/reminders';
 import { AppShell } from './components/AppShell';
 import { ToastHost } from './components/Toast';
 
@@ -37,6 +38,8 @@ export function App() {
       applyFontPrefs(s.fontMode, s.uiFontSize);
       setBooted();
       setReady(true);
+      // תיאום תזכורות (שולחן עבודה + לוח שנה) לפי המצב הנוכחי
+      initReminders();
     };
 
     const onBoot = (detail: unknown) => void init(detail as BootPayload);

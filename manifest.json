@@ -22,6 +22,9 @@
     "ui.feedback",
     "feedback.send_email",
     "network.access",
+    "notifications.send",
+    "notifications.system",
+    "published_data.write",
     "events.subscribe:theme.changed"
   ],
   "network": {

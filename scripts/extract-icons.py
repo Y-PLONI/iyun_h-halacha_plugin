@@ -29,6 +29,9 @@ ICONS = {
     "info": 62628,
     "dismiss": 62314,
     "font": 63461,
+    "alert": 61717,
+    "calendar": 57935,
+    "clock": 62174,
 }
 
 font = TTFont(TTF)

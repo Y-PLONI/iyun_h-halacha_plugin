@@ -9,17 +9,54 @@ export async function findBooks(query: string, limit = 10): Promise<BookMeta[]> 
   return await callOtzariaSafe<BookMeta[]>('library.findBooks', { query, limit }, []);
 }
 
+/** נרמול שם ספר להשוואה: הסרת פיסוק (פסיק/גרשיים/נקודה) וצמצום רווחים. */
+function normName(s: string): string {
+  return s
+    .replace(/[",'״׳.]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** האם הכותרת היא של מפרש על ספר אחר (למשל "מטה יהונתן על שולחן ערוך"). */
+function isCommentaryTitle(title: string): boolean {
+  return / על /.test(title);
+}
+
+/**
+ * בוחר את הספר המתאים ביותר לשם מבוקש מתוך תוצאות findBooks.
+ * סדר עדיפויות: התאמה מדויקת (אחרי נרמול פיסוק) → מתחיל בשם → ספר בסיס (לא מפרש) → הראשון.
+ * מחזיר null אם אין תוצאות.
+ */
+function pickBestBook(books: BookMeta[], wantedName: string): BookMeta | null {
+  if (!books.length) return null;
+  const target = normName(wantedName);
+  const wantedIsCommentary = isCommentaryTitle(wantedName);
+  const exact = books.find((b) => normName(b.title) === target || b.bookId === wantedName);
+  if (exact) return exact;
+  const starts = books.find((b) => normName(b.title).startsWith(target));
+  if (starts) return starts;
+  // הימנעות ממפרשים ("X על Y") כשהשם המבוקש אינו של מפרש — מונע זיהוי שו"ע כפירוש
+  if (!wantedIsCommentary) {
+    const base = books.find((b) => !isCommentaryTitle(b.title));
+    if (base) return base;
+  }
+  return books[0];
+}
+
 /**
  * מנסה לזהות אוטומטית bookId לפי שם מבוקש.
- * מחזיר את ה-bookId אם יש התאמה מדויקת או התאמה יחידה, אחרת null.
+ * מחזיר את ה-bookId אם יש התאמה מדויקת או התאמה יחידה (ללא מפרשים), אחרת null.
  */
 export async function autoDetectBookId(wantedName: string): Promise<string | null> {
   const books = await findBooks(wantedName, 10);
   if (books.length === 0) return null;
-  const exact = books.find((b) => b.title === wantedName || b.bookId === wantedName);
+  const target = normName(wantedName);
+  const exact = books.find((b) => normName(b.title) === target || b.bookId === wantedName);
   if (exact) return exact.bookId;
-  // התאמה שמתחילה בשם המבוקש (למשל "שולחן ערוך אורח חיים")
-  const starts = books.filter((b) => b.title.startsWith(wantedName));
+  // התאמה יחידה שמתחילה בשם המבוקש (אחרי נרמול), בלי לכלול מפרשים
+  const starts = books.filter(
+    (b) => normName(b.title).startsWith(target) && !isCommentaryTitle(b.title),
+  );
   if (starts.length === 1) return starts[0].bookId;
   if (books.length === 1) return books[0].bookId;
   return null;
@@ -41,12 +78,7 @@ export async function resolveBookId(nameOrId: string): Promise<string | null> {
   if (!nameOrId) return null;
   if (bookIdCache.has(nameOrId)) return bookIdCache.get(nameOrId)!;
   const books = await findBooks(nameOrId, 10);
-  let resolved: string | null = null;
-  if (books.length) {
-    const exact = books.find((b) => b.title === nameOrId || b.bookId === nameOrId);
-    const starts = books.find((b) => b.title.startsWith(nameOrId));
-    resolved = (exact ?? starts ?? books[0]).bookId;
-  }
+  const resolved = pickBestBook(books, nameOrId)?.bookId ?? null;
   bookIdCache.set(nameOrId, resolved);
   return resolved;
 }

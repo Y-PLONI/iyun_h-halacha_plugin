@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SOURCE_ROLES, SOURCE_ROLE_LABELS, type SourceRole } from '../data/types';
 import { useSettings, updateSettings, setBookId, flushSettings, DEFAULT_SETTINGS } from '../state/settingsStore';
 import { autoDetectBookId } from '../otzaria/library';
@@ -7,17 +7,25 @@ import { toast } from '../components/Toast';
 import { Icon } from '../components/Icon';
 import { examsManifest } from '../data/localData';
 import { checkForUpdates, applyUpdate, hasNetwork, type UpdateCheck } from '../data/remoteUpdate';
+import {
+  checkNotificationPermissions,
+  notificationsAvailable,
+  requestNotificationPermissions,
+} from '../otzaria/notifications';
 import manifest from '../../manifest.json';
 
-type Tab = 'appearance' | 'submit' | 'sources' | 'updates' | 'about';
+type Tab = 'appearance' | 'submit' | 'sources' | 'reminders' | 'updates' | 'about';
 
 const TABS: { id: Tab; label: string; icon: Parameters<typeof Icon>[0]['name'] }[] = [
   { id: 'appearance', label: 'מראה', icon: 'font' },
   { id: 'submit', label: 'שליחה', icon: 'mail' },
   { id: 'sources', label: 'מקורות', icon: 'book-open' },
+  { id: 'reminders', label: 'התראות', icon: 'alert' },
   { id: 'updates', label: 'עדכונים', icon: 'sync' },
   { id: 'about', label: 'אודות', icon: 'info' },
 ];
+
+const WEEKDAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 export function SettingsDialog() {
   const [tab, setTab] = useState<Tab>('appearance');
@@ -55,7 +63,8 @@ export function SettingsDialog() {
         <div className="settings-tabs">
           {TABS.map((t) => (
             <button key={t.id} className={`settings-tab${tab === t.id ? ' active' : ''}`} onClick={() => setTab(t.id)}>
-              <Icon name={t.icon} size="1em" /> {t.label}
+              <Icon name={t.icon} size="1.4em" />
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
@@ -64,6 +73,7 @@ export function SettingsDialog() {
           {tab === 'appearance' && <AppearanceTab />}
           {tab === 'submit' && <SubmitTab />}
           {tab === 'sources' && <SourcesTab detecting={detecting} detectBooks={detectBooks} />}
+          {tab === 'reminders' && <RemindersTab />}
           {tab === 'updates' && <UpdatesTab />}
           {tab === 'about' && <AboutTab />}
         </div>
@@ -167,6 +177,108 @@ function SourcesTab({ detecting, detectBooks }: { detecting: boolean; detectBook
           onChange={(e) => updateSettings({ autosaveMs: Number(e.target.value) || 1500 })}
         />
       </div>
+    </>
+  );
+}
+
+function RemindersTab() {
+  const settings = useSettings();
+  const inOtzaria = notificationsAvailable();
+  const [perm, setPerm] = useState<boolean | null>(null);
+  const [requesting, setRequesting] = useState(false);
+
+  useEffect(() => {
+    if (!inOtzaria) return;
+    void checkNotificationPermissions().then((p) => setPerm(p.granted));
+  }, [inOtzaria]);
+
+  const requestPerm = async () => {
+    setRequesting(true);
+    const granted = await requestNotificationPermissions();
+    setPerm(granted);
+    setRequesting(false);
+    toast(granted ? 'הרשאת התראות אושרה' : 'הרשאת התראות נדחתה — ניתן לאשר בהגדרות המערכת');
+  };
+
+  return (
+    <>
+      {!inOtzaria && (
+        <p className="hint">התראות ולוח שנה זמינים רק כשהתוסף רץ בתוך אוצריא.</p>
+      )}
+      <p className="hint">
+        תזכורת שבועית קבועה על שבועות שטרם הושלמו (אי לימוד/כתיבת תשובות). התזכורת נשלחת רק כל
+        עוד יש שבוע פעיל שתשובתו לא סומנה כ"הושלם".
+      </p>
+
+      <label className="check-row">
+        <input
+          type="checkbox"
+          checked={settings.remindersEnabled}
+          onChange={(e) => updateSettings({ remindersEnabled: e.target.checked })}
+        />
+        <span>הפעל תזכורות</span>
+      </label>
+
+      <div className="field" style={{ marginTop: 12, opacity: settings.remindersEnabled ? 1 : 0.5 }}>
+        <label>יום בשבוע</label>
+        <select
+          className="input"
+          value={settings.reminderWeekday}
+          disabled={!settings.remindersEnabled}
+          onChange={(e) => updateSettings({ reminderWeekday: Number(e.target.value) })}
+        >
+          {WEEKDAYS.map((d, i) => (
+            <option key={i} value={i}>
+              יום {d}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="field" style={{ opacity: settings.remindersEnabled ? 1 : 0.5 }}>
+        <label>שעה</label>
+        <input
+          className="input"
+          type="time"
+          style={{ width: 'auto', minWidth: 140 }}
+          value={settings.reminderTime}
+          disabled={!settings.remindersEnabled}
+          onChange={(e) => updateSettings({ reminderTime: e.target.value || '20:00' })}
+        />
+      </div>
+
+      <div className="section-title">ערוצים</div>
+      <label className="check-row">
+        <input
+          type="checkbox"
+          checked={settings.desktopNotifications}
+          disabled={!settings.remindersEnabled}
+          onChange={(e) => updateSettings({ desktopNotifications: e.target.checked })}
+        />
+        <Icon name="alert" size="1em" />
+        <span>התראת שולחן עבודה</span>
+      </label>
+      <label className="check-row">
+        <input
+          type="checkbox"
+          checked={settings.calendarReminders}
+          disabled={!settings.remindersEnabled}
+          onChange={(e) => updateSettings({ calendarReminders: e.target.checked })}
+        />
+        <Icon name="calendar" size="1em" />
+        <span>אירוע בלוח השנה של אוצריא</span>
+      </label>
+
+      {inOtzaria && settings.remindersEnabled && settings.desktopNotifications && perm === false && (
+        <div className="row">
+          <button className="btn-secondary" onClick={() => void requestPerm()} disabled={requesting}>
+            <Icon name="alert" size="1em" /> {requesting ? 'מבקש…' : 'אפשר התראות מערכת'}
+          </button>
+        </div>
+      )}
+      {inOtzaria && perm === true && (
+        <p className="hint" style={{ marginTop: 10 }}>הרשאת התראות מערכת פעילה ✓</p>
+      )}
     </>
   );
 }

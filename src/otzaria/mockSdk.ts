@@ -111,7 +111,7 @@ type Listener = (detail: unknown) => void;
 export function installMockOtzaria(): void {
   const listeners: Record<string, Listener[]> = {};
   const mockBooks = [
-    { bookId: 'שולחן ערוך אורח חיים', title: 'שולחן ערוך אורח חיים', topics: ['הלכה'] },
+    { bookId: 'שולחן ערוך, אורח חיים', title: 'שולחן ערוך, אורח חיים', topics: ['הלכה'] },
     { bookId: 'משנה ברורה', title: 'משנה ברורה', topics: ['הלכה'] },
     { bookId: 'ביאור הלכה', title: 'ביאור הלכה', topics: ['הלכה'] },
     { bookId: 'שער הציון', title: 'שער הציון', topics: ['הלכה'] },
@@ -159,6 +159,25 @@ export function installMockOtzaria(): void {
       case 'ui.showError':
         console.info('[mock]', method, payload);
         return ok(true) as OtzariaResponse<T>;
+      case 'notifications.checkPermissions':
+        return ok({ granted: true, initialized: true }) as OtzariaResponse<T>;
+      case 'notifications.requestPermissions':
+        return ok({ granted: true }) as OtzariaResponse<T>;
+      case 'notifications.sendSystem':
+      case 'notifications.scheduleSystem':
+        console.info('[mock]', method, payload);
+        return ok({ id: Number(payload?.id ?? 1) }) as OtzariaResponse<T>;
+      case 'notifications.cancel':
+      case 'notifications.cancelAll':
+      case 'notifications.showInApp':
+        console.info('[mock]', method, payload);
+        return ok(true) as OtzariaResponse<T>;
+      case 'publishedData.upsert':
+      case 'publishedData.remove':
+        console.info('[mock]', method, payload);
+        return ok(true) as OtzariaResponse<T>;
+      case 'publishedData.listOwn':
+        return ok([]) as OtzariaResponse<T>;
       case 'app.getGrantedPermissions':
         return ok(createMockBootPayload().permissions) as OtzariaResponse<T>;
       case 'app.getTheme': {

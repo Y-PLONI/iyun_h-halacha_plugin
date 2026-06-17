@@ -9,7 +9,8 @@ export const DEFAULT_SETTINGS: SettingsState = {
   senderEmail: '',
   recipientEmail: 'iyun1@iyun.co.il',
   bookIds: {
-    shulchanAruch: 'שולחן ערוך אורח חיים',
+    // שם הספר כפי שהוא מופיע בספריית אוצריא (עם פסיק) — חובה לדיוק בזיהוי.
+    shulchanAruch: 'שולחן ערוך, אורח חיים',
     mishnaBerurah: 'משנה ברורה',
     biurHalacha: 'ביאור הלכה',
     shaarHatziyun: 'שער הציון',
@@ -20,6 +21,19 @@ export const DEFAULT_SETTINGS: SettingsState = {
   sourcePaneMode: 'three',
   lastOpenIssueId: 'issue-0240',
   lastOpenWeekId: 'issue-0240-w1',
+  remindersEnabled: false,
+  reminderWeekday: 4, // יום חמישי
+  reminderTime: '20:00',
+  desktopNotifications: true,
+  calendarReminders: true,
+};
+
+/**
+ * שמות ספרים מברירת מחדל ישנה שזוהו שגוי (החזירו פירוש במקום הספר עצמו) —
+ * ממירים אותם לערך התקין בעת טעינת הגדרות שמורות.
+ */
+const LEGACY_BOOK_ID_FIXES: Record<string, string> = {
+  'שולחן ערוך אורח חיים': 'שולחן ערוך, אורח חיים',
 };
 
 interface SettingsStoreState {
@@ -42,6 +56,11 @@ export async function loadSettings(): Promise<void> {
     // מיזוג עמוק ל-bookIds כדי לא לאבד ברירות מחדל בשדות חסרים
     bookIds: { ...DEFAULT_SETTINGS.bookIds, ...(saved?.bookIds ?? {}) },
   };
+  // תיקון שמות ספרים שמורים מברירת מחדל ישנה ושגויה
+  for (const role of Object.keys(merged.bookIds) as SourceRole[]) {
+    const fixed = LEGACY_BOOK_ID_FIXES[merged.bookIds[role]];
+    if (fixed) merged.bookIds[role] = fixed;
+  }
   settingsStore.set({ loaded: true, settings: merged });
 }
 
