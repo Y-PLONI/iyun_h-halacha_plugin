@@ -4,7 +4,7 @@
   "name": "עיון ההלכה",
   "version": "1.2.5",
   "description": "ניהול הספקי עיון ההלכה, צפייה בשאלות, כתיבת תשובות, עיון במקורות וייצוא ל-Word.",
-  "author": "חד בדרא",
+  "author": "y.pl. (בהתבסס על העבודה של 'חד בדרא', 'יאיר דניאל')",
   "type": "webapp",
   "category": "Utilities",
   "entrypoint": "index.html",
