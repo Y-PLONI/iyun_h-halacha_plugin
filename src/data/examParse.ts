@@ -59,7 +59,12 @@ function buildWeek(weekNumber: number, rawParas: string[]): ExamWeekDoc {
     const m = Q_RE.exec(t);
     if (m) {
       const rest = t.slice(m[0].length).trim();
-      bodyParts.push(`<p class="exam-q"><span class="exam-q-letter">${esc(m[1])}]</span> ${esc(rest)}</p>`);
+      // הכותרת המודגשת היא רק הנושא; תת-השאלה הראשונה ("א, ...") יורדת לשורה משלה
+      // ואינה מודגשת — בדיוק כשאר תת-השאלות (ב, ג ...) שמגיעות כפסקאות נפרדות.
+      const split = new RegExp(`^(.+?)\\s+-\\s+([${HEB}]\\s*,[\\s\\S]*)$`).exec(rest);
+      const title = split ? split[1].trim() : rest;
+      bodyParts.push(`<p class="exam-q"><span class="exam-q-letter">${esc(m[1])}]</span> ${esc(title)}</p>`);
+      if (split) bodyParts.push(`<p class="exam-sub">${esc(split[2].trim())}</p>`);
     } else {
       bodyParts.push(`<p class="exam-sub">${esc(t)}</p>`);
     }
