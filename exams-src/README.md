@@ -35,7 +35,7 @@
 
 המשתמשים מקבלים גליונות חדשים בלי להתקין גרסה חדשה של התוסף:
 
-1. דחוף את הקבצים ל-repo: `Y-PLONI/iyun_h-halacha_plugin` (branch `main`) —
+1. דחוף את הקבצים ל-repo: `Y-PLONI/iyun_h-halacha_plugin` (branch `master`) —
    `exams-src/issue-XXXX.docx`, וכן `public/data/schedule.json` ו-`public/data/exams-manifest.json`.
 2. **העלה את `dataVersion`** ב-`exams-manifest.json` (למשל `2026.07.01`). זהו הסימן
    לתוסף שיש עדכון.

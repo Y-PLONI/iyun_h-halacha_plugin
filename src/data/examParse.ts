@@ -24,17 +24,20 @@ function extractParas(html: string): string[] {
 const isMarker = (t: string) => /\(\s*שבוע\s+(\d+)\s+מתוך\s+\d+\s*\)/.exec(t);
 const isSeparator = (t: string) => /^-{5,}$/.test(t.replace(/\s/g, ''));
 const isFormField = (t: string) => /^שם\s*:?$/.test(t) || /^קוד\s*אישי/.test(t) || /^בס["׳']?ד/.test(t);
-const isWeekTitle = (t: string) => /^שבוע\s+פרשת/.test(t);
+// כותרת שבוע: "שבוע פרשת <פרשה> ..." או "שבוע <פרשה> ..." (כמו "שבוע מטות - מסעי")
+const isWeekTitle = (t: string) => /^שבוע\s+/.test(t);
 // שאלה: "א]" (גליון ר"מ) או "[א]" (גליון רל"ט)
 const Q_RE = new RegExp(`^\\s*\\[?([${HEB}])\\]\\s*`);
 const isQuestion = (t: string) => Q_RE.test(t);
 // טווח סימנים: "מסימן ... עד ..." (ללא \\b — לא עובד עם עברית ב-regex לא-unicode)
 const isRange = (t: string) => /^מסימן\s/.test(t) || /^מסי['׳]/.test(t);
 
-function buildWeek(weekNumber: number, rawParas: string[]): ExamWeekDoc {
+function buildWeek(weekNumber: number, rawParas: string[], junk: Set<string>): ExamWeekDoc {
   const paras = rawParas
     .map((t) => t.trim())
-    .filter((t) => t && !isMarker(t) && !isSeparator(t) && !isFormField(t));
+    // מסננים גם את שורות כותרת-העמוד החוזרות (שם הגליון + החודש) שדולפות לסוף השבוע
+    // הקודם, כי הן מופיעות לפני המרקר של השבוע הבא.
+    .filter((t) => t && !isMarker(t) && !isSeparator(t) && !isFormField(t) && !junk.has(t));
 
   const titleStart = Math.max(0, paras.findIndex(isWeekTitle));
   const rangeIdx = paras.findIndex((t, i) => i > titleStart && isRange(t));
@@ -45,8 +48,9 @@ function buildWeek(weekNumber: number, rawParas: string[]): ExamWeekDoc {
   const headerText = paras
     .slice(titleStart, titleEnd)
     .join(' ')
-    .replace(/^שבוע\s+פרשת\s+/, '')
+    .replace(/^שבוע\s+(?:פרשת\s+)?/, '')
     .replace(/\s*-\s*/g, ' · ')
+    .replace(/·(?:\s*·)+/g, '·')
     .replace(/\s+/g, ' ')
     .replace(/\s*·\s*$/, '')
     .trim();
@@ -90,9 +94,10 @@ export function parseExamHtml(issueId: string, html: string): ExamDoc {
     if (m) markers.push({ idx, weekNumber: Number(m[1]) });
   });
 
+  const junk = new Set([titleLine, hebrewMonth].filter(Boolean));
   const weeks: ExamWeekDoc[] = markers.map((mk, i) => {
     const end = i + 1 < markers.length ? markers[i + 1].idx : paras.length;
-    return buildWeek(mk.weekNumber, paras.slice(mk.idx, end));
+    return buildWeek(mk.weekNumber, paras.slice(mk.idx, end), junk);
   });
 
   return { schemaVersion: 1, issueId, issueTitle: titleLine || issueId, hebrewMonth, sourceFile: `${issueId}.docx`, weeks };

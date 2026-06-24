@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "com.chadbedera.iyun-halacha",
   "name": "עיון ההלכה",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "ניהול הספקי עיון ההלכה, צפייה בשאלות, כתיבת תשובות, עיון במקורות וייצוא ל-Word.",
   "author": "חד בדרא",
   "type": "webapp",

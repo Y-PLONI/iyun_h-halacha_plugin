@@ -1,8 +1,29 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.06.01",
-  "updatedAt": "2026-06-01T00:00:00+03:00",
+  "dataVersion": "2026.06.24",
+  "updatedAt": "2026-06-24T00:00:00+03:00",
   "exams": [
+    {
+      "issueId": "issue-0241",
+      "issueNumber": 241,
+      "title": "עיון ההלכה - גליון רמ\"א",
+      "hebrewMonth": "תמוז - אב תשפ\"ו",
+      "weeksInIssue": 4,
+      "parshiot": ["פינחס", "מטות-מסעי", "דברים", "ואתחנן"],
+      "version": "1.0.0",
+      "updatedAt": "2026-06-24T00:00:00+03:00",
+      "files": {
+        "questionsJson": null,
+        "pdf": null,
+        "docx": null
+      },
+      "sha256": {
+        "questionsJson": "",
+        "pdf": ""
+      },
+      "licenseStatus": "private",
+      "notes": "נבנה מתוך גליון רמ\"א - תמוז-אב תשפ\"ו. שאלות מוצגות ישירות ממסמך ה-Word."
+    },
     {
       "issueId": "issue-0240",
       "issueNumber": 240,

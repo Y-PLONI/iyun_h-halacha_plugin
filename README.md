@@ -71,7 +71,7 @@ cd dist && zip -r -X ../com.chadbedera.iyun-halacha-<version>.otzplugin . -x '.*
 ## עדכון מ-GitHub
 
 התוסף יכול למשוך גליונות ונתונים חדשים בלי התקנה מחדש: **הגדרות → עדכונים → בדוק עדכונים**.
-- מקור: `Y-PLONI/iyun_h-halacha_plugin` (branch `main`). דורש הרשאת `network.access` ו-`network`
+- מקור: `Y-PLONI/iyun_h-halacha_plugin` (branch `master`). דורש הרשאת `network.access` ו-`network`
   ב-manifest; ה-repo כבר נמצא ב-`pluginNetworkAllowlist` הרשמי של אוצריא.
 - `schedule.json` ו-`exams-manifest.json` נמשכים כ-raw (טקסט); קבצי `.docx` נמשכים דרך
   GitHub **Contents API** כ-base64 (כי `network.fetch` מחזיר טקסט בלבד).

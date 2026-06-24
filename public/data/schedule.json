@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.06.01",
-  "updatedAt": "2026-06-01T00:00:00+03:00",
-  "defaultIssueId": "issue-0240",
+  "dataVersion": "2026.06.24",
+  "updatedAt": "2026-06-24T00:00:00+03:00",
+  "defaultIssueId": "issue-0241",
   "periods": [
     {
       "periodId": "iyar-sivan-5786",
@@ -372,6 +372,184 @@
           ],
           "requiredAnswersCount": 5,
           "totalQuestionsCount": 5,
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "periodId": "tammuz-av-5786",
+      "title": "תמוז - אב תשפ\"ו",
+      "hebrewMonthRange": "תמוז - אב תשפ\"ו",
+      "gregorianRange": {
+        "start": "2026-06-17",
+        "end": "2026-08-13"
+      },
+      "issueIds": [
+        "issue-0241"
+      ],
+      "weeks": [
+        {
+          "weekId": "issue-0241-w1",
+          "issueId": "issue-0241",
+          "weekNumber": 1,
+          "weeksInIssue": 4,
+          "parasha": "פינחס",
+          "title": "חזרה כללית",
+          "topicTitle": "קריעה על המת, צרכי המת, קבורה, הקובר מתו ברגל, ערב הרגל",
+          "hebrewDateRange": "",
+          "gregorianDateRange": {
+            "start": "",
+            "end": ""
+          },
+          "sourceRangeTitle": "מסימן תקמו סעיף א עד סוף סימן תקמח",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקמו",
+              "endRef": "סימן תקמח"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקמו",
+              "endRef": "סימן תקמח"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקמו",
+              "endRef": "סימן תקמח"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקמו",
+              "endRef": "סימן תקמח"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0241-w2",
+          "issueId": "issue-0241",
+          "weekNumber": 2,
+          "weeksInIssue": 4,
+          "parasha": "מטות-מסעי",
+          "title": "ימי תחנונים, ערב ר\"ה, וסדר תפילת עשי\"ת ור\"ה",
+          "topicTitle": "מנהגי אלול, סליחות, אבל בסליחות, שליח ציבור, תענית ער\"ה",
+          "hebrewDateRange": "",
+          "gregorianDateRange": {
+            "start": "",
+            "end": ""
+          },
+          "sourceRangeTitle": "מסימן תקפא סעיף א עד סימן תקפב סעיף א",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפב"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפב"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפב"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפב"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0241-w3",
+          "issueId": "issue-0241",
+          "weekNumber": 3,
+          "weeksInIssue": 4,
+          "parasha": "דברים",
+          "title": "סדר תפילת עשי\"ת ור\"ה, קריאת התורה, וברכת השופר",
+          "topicTitle": "אכילת סימנים, הלל ואבינו מלכנו, קריאת התורה, מילה בר\"ה, תקיעת שופר",
+          "hebrewDateRange": "",
+          "gregorianDateRange": {
+            "start": "",
+            "end": ""
+          },
+          "sourceRangeTitle": "מסימן תקפב סעיף ב עד סימן תקפה סעיף א",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפב",
+              "endRef": "סימן תקפה"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפב",
+              "endRef": "סימן תקפה"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפב",
+              "endRef": "סימן תקפה"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפב",
+              "endRef": "סימן תקפה"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0241-w4",
+          "issueId": "issue-0241",
+          "weekNumber": 4,
+          "weeksInIssue": 4,
+          "parasha": "ואתחנן",
+          "title": "דין ברכת השופר ודיני שופר של ראש השנה",
+          "topicTitle": "ברכת השופר, התוקע והמקריא, שופר שאינו שלו, שופר של ע\"ז",
+          "hebrewDateRange": "",
+          "gregorianDateRange": {
+            "start": "",
+            "end": ""
+          },
+          "sourceRangeTitle": "מסימן תקפה סעיף ב עד סימן תקפו סעיף ו",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
           "status": "active"
         }
       ]

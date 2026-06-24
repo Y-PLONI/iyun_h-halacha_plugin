@@ -9,7 +9,7 @@ import { applyRemoteExams } from './examLoader';
 import type { ExamsManifest, Schedule } from './types';
 
 const REPO = 'Y-PLONI/iyun_h-halacha_plugin';
-const BRANCH = 'main';
+const BRANCH = 'master';
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`;
 const API_CONTENTS = `https://api.github.com/repos/${REPO}/contents`;
 const GH_HEADERS = { 'User-Agent': 'iyun-halacha-plugin', Accept: 'application/vnd.github+json' };
