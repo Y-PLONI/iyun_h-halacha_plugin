@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   name: '',
   personalCode: '',
   senderEmail: '',
-  recipientEmail: 'iyun1@iyun.co.il',
+  recipientEmail: '8178002@gmail.com',
   bookIds: {
     // שם הספר כפי שהוא מופיע בספריית אוצריא (עם פסיק) — חובה לדיוק בזיהוי.
     shulchanAruch: 'שולחן ערוך, אורח חיים',
@@ -36,6 +36,14 @@ const LEGACY_BOOK_ID_FIXES: Record<string, string> = {
   'שולחן ערוך אורח חיים': 'שולחן ערוך, אורח חיים',
 };
 
+/**
+ * כתובות יעד מברירת מחדל ישנה — ממירים לכתובת השליחה הנוכחית, כדי שמשתמשים
+ * עם הגדרות שמורות לא ישלחו ליעד הישן שלא בשימוש.
+ */
+const LEGACY_RECIPIENT_FIXES: Record<string, string> = {
+  'iyun1@iyun.co.il': '8178002@gmail.com',
+};
+
 interface SettingsStoreState {
   loaded: boolean;
   settings: SettingsState;
@@ -61,6 +69,9 @@ export async function loadSettings(): Promise<void> {
     const fixed = LEGACY_BOOK_ID_FIXES[merged.bookIds[role]];
     if (fixed) merged.bookIds[role] = fixed;
   }
+  // תיקון כתובת יעד מברירת מחדל ישנה
+  const fixedRecipient = LEGACY_RECIPIENT_FIXES[merged.recipientEmail];
+  if (fixedRecipient) merged.recipientEmail = fixedRecipient;
   settingsStore.set({ loaded: true, settings: merged });
 }
 

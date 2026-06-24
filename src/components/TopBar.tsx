@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getWeek, getExamMeta, getIssues } from '../data/localData';
 import { useApp, setSettingsOpen, setActiveIssue, goToScreen, type ScreenName } from '../state/appStore';
 import { useSettings } from '../state/settingsStore';
-import { saveAnswersNow, getAnswer } from '../state/answersStore';
+import { saveAnswersNow } from '../state/answersStore';
 import { exportWeekDocx } from '../export/docx';
 import { sendMail } from '../otzaria/mail';
 import { toast } from './Toast';
@@ -46,19 +46,52 @@ export function TopBar() {
       return;
     }
     await saveAnswersNow();
-    const lines: string[] = [];
-    if (settings.name) lines.push(`שם: ${settings.name}`);
-    if (settings.personalCode) lines.push(`קוד אישי: ${settings.personalCode}`);
-    lines.push(`גליון ${exam?.issueNumber ?? ''} · ${exam?.hebrewMonth ?? ''}`);
-    lines.push(`שבוע ${activeWeek.weekNumber} - פרשת ${activeWeek.parasha}`);
-    lines.push(activeWeek.sourceRangeTitle);
-    lines.push('');
-    const rec = getAnswer(activeWeek.weekId);
-    lines.push('תשובות:');
-    lines.push(rec?.answerText?.trim() || '—');
-    const subject = `תשובות לעיון ההלכה - גליון ${exam?.issueNumber ?? ''} - שבוע ${activeWeek.weekNumber}`;
-    await sendMail({ to: settings.recipientEmail, subject, body: lines.join('\n') });
-    toast('נפתח חלון מייל. אם ייצאת קובץ DOCX, צרף אותו ידנית.');
+
+    // ייצוא אוטומטי של קובץ ה-Word לתיקיית ההורדות לפני פתיחת המייל,
+    // כדי שהמשתמש יוכל לצרף אותו ידנית (mailto אינו מאפשר צירוף אוטומטי).
+    let exportedFile = '';
+    try {
+      exportedFile = exportWeekDocx(
+        {
+          week: activeWeek,
+          settings,
+          issueTitle: exam?.title ?? 'עיון ההלכה',
+          hebrewMonth: exam?.hebrewMonth ?? '',
+          dateLabel: todayLabel,
+        },
+        exam?.issueNumber ?? 0,
+      );
+    } catch (e) {
+      toast('שגיאה בייצוא הקובץ: ' + (e instanceof Error ? e.message : ''));
+    }
+
+    // שורת נושא: שם | קוד: XXX | פרשת XXX | גליון XXX
+    const subject = [
+      settings.name || 'ללא שם',
+      `קוד: ${settings.personalCode || '—'}`,
+      `פרשת ${activeWeek.parasha}`,
+      `גליון ${exam?.issueNumber ?? ''}`,
+    ].join(' | ');
+
+    // גוף המייל: הנחיות צירוף במקום התשובות עצמן (אלו נמצאות בקובץ ה-Word).
+    const body = [
+      'שלום רב,',
+      '',
+      'מצורפות תשובותיי לעיון ההלכה.',
+      '',
+      'לצירוף:',
+      `• צרף את קובץ ה-Word שירד לתיקיית ההורדות${exportedFile ? ` (${exportedFile})` : ''}.`,
+      '• צרף את טופס סימון התשובות (לבקשת טופס: iyun1@iyun.co.il).',
+      '',
+      settings.name ? `בברכה,\n${settings.name}` : 'בברכה,',
+    ].join('\n');
+
+    await sendMail({ to: settings.recipientEmail, subject, body });
+    toast(
+      exportedFile
+        ? `הקובץ "${exportedFile}" ירד לתיקיית ההורדות — צרף אותו למייל שנפתח.`
+        : 'נפתח חלון מייל. צרף את קובץ ה-Word של התשובות.',
+    );
   };
 
   return (
