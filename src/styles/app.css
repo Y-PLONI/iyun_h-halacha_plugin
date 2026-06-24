@@ -36,6 +36,10 @@ button { font-family: inherit; color: inherit; }
   white-space: nowrap;
 }
 .topbar .spacer { flex: 1; }
+/* שלוש קבוצות בשורה אחת: גיליון (ימין) · טאבים (מרכז) · פעולות (שמאל) */
+.topbar-side { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.topbar-right { justify-content: flex-start; }
+.topbar-left { justify-content: flex-end; }
 
 /* ── Issue picker (anchored popover) ─────────────────── */
 .popover-anchor { position: relative; display: inline-block; }
@@ -92,12 +96,11 @@ button { font-family: inherit; color: inherit; }
   font-weight: 700;
 }
 
-/* ── Internal nav (pill segments) ────────────────────── */
+/* ── Internal nav (pill segments) — ממורכז בתוך ה-topbar ── */
 .nav {
   display: flex;
   gap: 4px;
-  padding: 8px 16px;
-  background: var(--color-surface-container-high);
+  justify-content: center;
   flex-shrink: 0;
 }
 .nav-btn {

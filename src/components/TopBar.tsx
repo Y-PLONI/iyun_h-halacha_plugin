@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getWeek, getExamMeta, getIssues } from '../data/localData';
-import { useApp, setSettingsOpen, setActiveIssue } from '../state/appStore';
+import { useApp, setSettingsOpen, setActiveIssue, goToScreen, type ScreenName } from '../state/appStore';
 import { useSettings } from '../state/settingsStore';
 import { saveAnswersNow, getAnswer } from '../state/answersStore';
 import { exportWeekDocx } from '../export/docx';
@@ -63,25 +63,45 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      <h1>עיון ההלכה</h1>
-      <IssuePicker
-        current={exam ? `גליון ${exam.issueNumber} · ${exam.hebrewMonth}` : 'בחר גליון'}
-        issues={issues.map((e) => ({ id: e.issueId, label: `גליון ${e.issueNumber} · ${e.hebrewMonth}`, active: e.issueId === app.activeIssueId }))}
-        onSelect={setActiveIssue}
-      />
-      <span className="spacer" />
-      <button className="icon-btn" title="ייצוא ל-Word" onClick={() => void handleExport()}>
-        <Icon name="download" /> ייצוא
-      </button>
-      <button className="icon-btn" title="שליחה במייל" onClick={() => void handleMail()}>
-        <Icon name="mail" /> מייל
-      </button>
-      <button className="icon-btn square" title="הגדרות" aria-label="הגדרות" onClick={() => setSettingsOpen(true)}>
-        <Icon name="settings" />
-      </button>
+      <div className="topbar-side topbar-right">
+        <h1>עיון ההלכה</h1>
+        <IssuePicker
+          current={exam ? `גליון ${exam.issueNumber} · ${exam.hebrewMonth}` : 'בחר גליון'}
+          issues={issues.map((e) => ({ id: e.issueId, label: `גליון ${e.issueNumber} · ${e.hebrewMonth}`, active: e.issueId === app.activeIssueId }))}
+          onSelect={setActiveIssue}
+        />
+      </div>
+      <nav className="nav">
+        {NAV.map((n) => (
+          <button
+            key={n.id}
+            className={`nav-btn${app.screen === n.id ? ' active' : ''}`}
+            onClick={() => goToScreen(n.id)}
+          >
+            {n.label}
+          </button>
+        ))}
+      </nav>
+      <div className="topbar-side topbar-left">
+        <button className="icon-btn" title="ייצוא ל-Word" onClick={() => void handleExport()}>
+          <Icon name="download" /> ייצוא
+        </button>
+        <button className="icon-btn" title="שליחה במייל" onClick={() => void handleMail()}>
+          <Icon name="mail" /> מייל
+        </button>
+        <button className="icon-btn square" title="הגדרות" aria-label="הגדרות" onClick={() => setSettingsOpen(true)}>
+          <Icon name="settings" />
+        </button>
+      </div>
     </header>
   );
 }
+
+const NAV: { id: ScreenName; label: string }[] = [
+  { id: 'schedule', label: 'הספקים' },
+  { id: 'questions', label: 'שאלות' },
+  { id: 'workspace', label: 'כתיבת תשובות' },
+];
 
 interface IssueOption {
   id: string;
