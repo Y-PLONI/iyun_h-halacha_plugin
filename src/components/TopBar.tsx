@@ -4,9 +4,9 @@ import { useApp, setSettingsOpen, setActiveIssue, goToScreen, type ScreenName } 
 import { useSettings } from '../state/settingsStore';
 import { saveAnswersNow } from '../state/answersStore';
 import { exportWeekDocx } from '../export/docx';
-import { sendMail } from '../otzaria/mail';
 import { toast } from './Toast';
 import { Icon } from './Icon';
+import { SendDialog } from './SendDialog';
 
 export function TopBar() {
   const app = useApp();
@@ -14,6 +14,7 @@ export function TopBar() {
   const exam = getExamMeta(app.activeIssueId);
   const issues = getIssues();
   const activeWeek = app.activeWeekId ? getWeek(app.activeWeekId) : null;
+  const [sendOpen, setSendOpen] = useState(false);
 
   const todayLabel = new Date().toLocaleDateString('he-IL');
 
@@ -40,58 +41,12 @@ export function TopBar() {
     }
   };
 
-  const handleMail = async () => {
+  const handleMail = () => {
     if (!activeWeek) {
       toast('בחר שבוע לפני שליחה');
       return;
     }
-    await saveAnswersNow();
-
-    // ייצוא אוטומטי של קובץ ה-Word לתיקיית ההורדות לפני פתיחת המייל,
-    // כדי שהמשתמש יוכל לצרף אותו ידנית (mailto אינו מאפשר צירוף אוטומטי).
-    let exportedFile = '';
-    try {
-      exportedFile = exportWeekDocx(
-        {
-          week: activeWeek,
-          settings,
-          issueTitle: exam?.title ?? 'עיון ההלכה',
-          hebrewMonth: exam?.hebrewMonth ?? '',
-          dateLabel: todayLabel,
-        },
-        exam?.issueNumber ?? 0,
-      );
-    } catch (e) {
-      toast('שגיאה בייצוא הקובץ: ' + (e instanceof Error ? e.message : ''));
-    }
-
-    // שורת נושא: שם | קוד: XXX | פרשת XXX | גליון XXX
-    const subject = [
-      settings.name || 'ללא שם',
-      `קוד: ${settings.personalCode || '—'}`,
-      `פרשת ${activeWeek.parasha}`,
-      `גליון ${exam?.issueNumber ?? ''}`,
-    ].join(' | ');
-
-    // גוף המייל: הנחיות צירוף במקום התשובות עצמן (אלו נמצאות בקובץ ה-Word).
-    const body = [
-      'שלום רב,',
-      '',
-      'מצורפות תשובותיי לעיון ההלכה.',
-      '',
-      'לצירוף:',
-      `• צרף את קובץ ה-Word שירד לתיקיית ההורדות${exportedFile ? ` (${exportedFile})` : ''}.`,
-      '• צרף את טופס סימון התשובות (לבקשת טופס: iyun1@iyun.co.il).',
-      '',
-      settings.name ? `בברכה,\n${settings.name}` : 'בברכה,',
-    ].join('\n');
-
-    await sendMail({ to: settings.recipientEmail, subject, body });
-    toast(
-      exportedFile
-        ? `הקובץ "${exportedFile}" ירד לתיקיית ההורדות — צרף אותו למייל שנפתח.`
-        : 'נפתח חלון מייל. צרף את קובץ ה-Word של התשובות.',
-    );
+    setSendOpen(true);
   };
 
   return (
@@ -119,13 +74,16 @@ export function TopBar() {
         <button className="icon-btn" title="ייצוא ל-Word" onClick={() => void handleExport()}>
           <Icon name="download" /> ייצוא
         </button>
-        <button className="icon-btn" title="שליחה במייל" onClick={() => void handleMail()}>
+        <button className="icon-btn" title="שליחה במייל" onClick={handleMail}>
           <Icon name="mail" /> מייל
         </button>
         <button className="icon-btn square" title="הגדרות" aria-label="הגדרות" onClick={() => setSettingsOpen(true)}>
           <Icon name="settings" />
         </button>
       </div>
+      {sendOpen && activeWeek && (
+        <SendDialog week={activeWeek} exam={exam} onClose={() => setSendOpen(false)} />
+      )}
     </header>
   );
 }

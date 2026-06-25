@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   schemaVersion: 1,
   name: '',
   personalCode: '',
+  kollel: '',
   senderEmail: '',
   recipientEmail: '8178002@gmail.com',
   bookIds: {

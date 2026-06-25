@@ -139,6 +139,10 @@ function SubmitTab() {
         <input className="input" value={settings.personalCode} onChange={(e) => updateSettings({ personalCode: e.target.value })} />
       </div>
       <div className="field">
+        <label>כולל</label>
+        <input className="input" value={settings.kollel} onChange={(e) => updateSettings({ kollel: e.target.value })} />
+      </div>
+      <div className="field">
         <label>המייל שלי (שולח)</label>
         <input className="input" type="email" value={settings.senderEmail} onChange={(e) => updateSettings({ senderEmail: e.target.value })} />
       </div>

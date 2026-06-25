@@ -187,6 +187,8 @@ export interface SettingsState {
   schemaVersion: 1;
   name: string;
   personalCode: string;
+  /** שם הכולל (לטופס סימון התשובות) */
+  kollel: string;
   senderEmail: string;
   recipientEmail: string;
   bookIds: Record<SourceRole, string>;
