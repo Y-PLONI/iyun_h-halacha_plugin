@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.06.24",
-  "updatedAt": "2026-06-24T00:00:00+03:00",
-  "defaultIssueId": "issue-0241",
+  "dataVersion": "2026.07.24",
+  "updatedAt": "2026-07-24T00:00:00+03:00",
+  "defaultIssueId": "issue-0242",
   "periods": [
     {
       "periodId": "iyar-sivan-5786",
@@ -545,6 +545,221 @@
               "bookId": "שער הציון",
               "startRef": "סימן תקפה",
               "endRef": "סימן תקפו"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "periodId": "av-elul-5786",
+      "title": "אב - אלול תשפ\"ו",
+      "hebrewMonthRange": "אב - אלול תשפ\"ו",
+      "gregorianRange": {
+        "start": "2026-07-26",
+        "end": "2026-08-29"
+      },
+      "issueIds": [
+        "issue-0242"
+      ],
+      "weeks": [
+        {
+          "weekId": "issue-0242-w1",
+          "issueId": "issue-0242",
+          "weekNumber": 1,
+          "weeksInIssue": 5,
+          "parasha": "עקב",
+          "title": "דיני שופר של ראש השנה",
+          "topicTitle": "ניקב ולא סתמו, ניקב וסתמו, נסדק לאורכו, נסדק לרוחבו",
+          "hebrewDateRange": "יב-יח אב",
+          "gregorianDateRange": {
+            "start": "2026-07-26",
+            "end": "2026-08-01"
+          },
+          "sourceRangeTitle": "מסימן תקפו סעיף ז עד סימן תקפו סעיף כ",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפו"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפו"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפו"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפו"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0242-w2",
+          "issueId": "issue-0242",
+          "weekNumber": 2,
+          "weeksInIssue": 5,
+          "parasha": "ראה",
+          "title": "דין התוקע לתוך הבור, זמן תקיעת שופר",
+          "topicTitle": "התוקע בבור ומערה, קול הברה, חסר תחילת או סוף התקיעה",
+          "hebrewDateRange": "יט-כה אב",
+          "gregorianDateRange": {
+            "start": "2026-08-02",
+            "end": "2026-08-08"
+          },
+          "sourceRangeTitle": "מסימן תקפו סעיף כא עד סימן תקפח סעיף ג",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקפח"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקפח"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקפח"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקפח"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0242-w3",
+          "issueId": "issue-0242",
+          "weekNumber": 3,
+          "weeksInIssue": 5,
+          "parasha": "שופטים",
+          "title": "מי הם הראוים לתקיעת שופר, סדר הראוי לתקיעת שופר",
+          "topicTitle": "תקיעה לנשים, כוונה להוציא ולצאת, חיוב ושיעור התקיעות, תשר\"ת",
+          "hebrewDateRange": "כו אב - ב אלול",
+          "gregorianDateRange": {
+            "start": "2026-08-09",
+            "end": "2026-08-15"
+          },
+          "sourceRangeTitle": "מסימן תקפח סעיף ד עד סימן תקצ סעיף ד",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפח",
+              "endRef": "סימן תקצ"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפח",
+              "endRef": "סימן תקצ"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפח",
+              "endRef": "סימן תקצ"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפח",
+              "endRef": "סימן תקצ"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0242-w4",
+          "issueId": "issue-0242",
+          "weekNumber": 4,
+          "weeksInIssue": 5,
+          "parasha": "כי תצא",
+          "title": "סדר תפלת מוסף ביחיד, תפלת מוסף בקול רם וסדר התקיעות",
+          "topicTitle": "האם עלתה לו, הפסיק באמצע, חזרה בתקיעות, סדר התקיעות",
+          "hebrewDateRange": "ג-ט אלול",
+          "gregorianDateRange": {
+            "start": "2026-08-16",
+            "end": "2026-08-22"
+          },
+          "sourceRangeTitle": "מסימן תקצ סעיף ה עד סוף סימן תקצב",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תקצב"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תקצב"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תקצב"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תקצב"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0242-w5",
+          "issueId": "issue-0242",
+          "weekNumber": 5,
+          "weeksInIssue": 5,
+          "parasha": "כי תבוא",
+          "title": "אם הברכות והתקיעות מעכבות, סדרי ימי תשובה",
+          "topicTitle": "מעכבות זו את זו, יחיד שלא התפלל, תקיעות לאחר התפילה, תענית בר\"ה, ר\"ה שחל בשבת",
+          "hebrewDateRange": "י-טז אלול",
+          "gregorianDateRange": {
+            "start": "2026-08-23",
+            "end": "2026-08-29"
+          },
+          "sourceRangeTitle": "מסימן תקצג סעיף א עד סוף סימן תרג",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקצג",
+              "endRef": "סימן תרג"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקצג",
+              "endRef": "סימן תרג"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקצג",
+              "endRef": "סימן תרג"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקצג",
+              "endRef": "סימן תרג"
             }
           },
           "questionIds": [],

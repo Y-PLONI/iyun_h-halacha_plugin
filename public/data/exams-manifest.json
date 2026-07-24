@@ -1,8 +1,29 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.06.24",
-  "updatedAt": "2026-06-24T00:00:00+03:00",
+  "dataVersion": "2026.07.24",
+  "updatedAt": "2026-07-24T00:00:00+03:00",
   "exams": [
+    {
+      "issueId": "issue-0242",
+      "issueNumber": 242,
+      "title": "עיון ההלכה - גליון רמ\"ב",
+      "hebrewMonth": "אב - אלול תשפ\"ו",
+      "weeksInIssue": 5,
+      "parshiot": ["עקב", "ראה", "שופטים", "כי תצא", "כי תבוא"],
+      "version": "1.0.0",
+      "updatedAt": "2026-07-24T00:00:00+03:00",
+      "files": {
+        "questionsJson": null,
+        "pdf": null,
+        "docx": null
+      },
+      "sha256": {
+        "questionsJson": "",
+        "pdf": ""
+      },
+      "licenseStatus": "private",
+      "notes": "נבנה מתוך גליון רמ\"ב - אב-אלול תשפ\"ו. שאלות מוצגות ישירות ממסמך ה-Word."
+    },
     {
       "issueId": "issue-0241",
       "issueNumber": 241,
