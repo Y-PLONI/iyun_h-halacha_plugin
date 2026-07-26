@@ -21,19 +21,11 @@
     "plugin.storage.write",
     "ui.feedback",
     "feedback.send_email",
-    "network.access",
     "notifications.send",
     "notifications.system",
     "published_data.write",
     "events.subscribe:theme.changed"
   ],
-  "network": {
-    "enabled": true,
-    "allowlist": [
-      "https://raw.githubusercontent.com/Y-PLONI/iyun_h-halacha_plugin",
-      "https://api.github.com/repos/Y-PLONI/iyun_h-halacha_plugin"
-    ]
-  },
   "contributes": {
     "toolTab": {
       "title": "עיון ההלכה",

@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react';
 import { SOURCE_ROLES, SOURCE_ROLE_LABELS, type SourceRole } from '../data/types';
 import { useSettings, updateSettings, setBookId, flushSettings, DEFAULT_SETTINGS } from '../state/settingsStore';
 import { autoDetectBookId } from '../otzaria/library';
-import { setSettingsOpen, bumpDataVersion } from '../state/appStore';
+import { setSettingsOpen } from '../state/appStore';
 import { toast } from '../components/Toast';
 import { Icon } from '../components/Icon';
-import { examsManifest } from '../data/localData';
-import { checkForUpdates, applyUpdate, hasNetwork, type UpdateCheck } from '../data/remoteUpdate';
 import {
   checkNotificationPermissions,
   notificationsAvailable,
@@ -14,14 +12,13 @@ import {
 } from '../otzaria/notifications';
 import manifest from '../../manifest.json';
 
-type Tab = 'appearance' | 'submit' | 'sources' | 'reminders' | 'updates' | 'about';
+type Tab = 'appearance' | 'submit' | 'sources' | 'reminders' | 'about';
 
 const TABS: { id: Tab; label: string; icon: Parameters<typeof Icon>[0]['name'] }[] = [
   { id: 'appearance', label: 'מראה', icon: 'font' },
   { id: 'submit', label: 'שליחה', icon: 'mail' },
   { id: 'sources', label: 'מקורות', icon: 'book-open' },
   { id: 'reminders', label: 'התראות', icon: 'alert' },
-  { id: 'updates', label: 'עדכונים', icon: 'sync' },
   { id: 'about', label: 'אודות', icon: 'info' },
 ];
 
@@ -74,7 +71,6 @@ export function SettingsDialog() {
           {tab === 'submit' && <SubmitTab />}
           {tab === 'sources' && <SourcesTab detecting={detecting} detectBooks={detectBooks} />}
           {tab === 'reminders' && <RemindersTab />}
-          {tab === 'updates' && <UpdatesTab />}
           {tab === 'about' && <AboutTab />}
         </div>
       </div>
@@ -284,73 +280,6 @@ function RemindersTab() {
         <p className="hint" style={{ marginTop: 10 }}>הרשאת התראות מערכת פעילה ✓</p>
       )}
     </>
-  );
-}
-
-function UpdatesTab() {
-  const [status, setStatus] = useState<'idle' | 'checking' | 'updating'>('idle');
-  const [check, setCheck] = useState<UpdateCheck | null>(null);
-  const [msg, setMsg] = useState('');
-
-  if (!hasNetwork()) {
-    return (
-      <div className="about">
-        <p className="hint">עדכון נתונים מ-GitHub זמין רק כשהתוסף רץ בתוך אוצריא.</p>
-        <div className="about-meta">
-          <div><span>גרסת נתונים נוכחית</span><b dir="ltr">{examsManifest.dataVersion}</b></div>
-        </div>
-      </div>
-    );
-  }
-
-  const runCheck = async () => {
-    setStatus('checking');
-    setMsg('');
-    try {
-      const res = await checkForUpdates();
-      setCheck(res);
-      setMsg(res.available ? `יש עדכון: ${res.remoteVersion}` : 'הנתונים מעודכנים.');
-    } catch (e) {
-      setMsg('בדיקת עדכון נכשלה: ' + (e instanceof Error ? e.message : ''));
-    } finally {
-      setStatus('idle');
-    }
-  };
-
-  const runUpdate = async () => {
-    setStatus('updating');
-    setMsg('');
-    try {
-      const res = await applyUpdate();
-      toast(`עודכן לגרסה ${res.version} (${res.totalIssues} גליונות)`);
-      setSettingsOpen(false);
-      bumpDataVersion();
-    } catch (e) {
-      setMsg('העדכון נכשל: ' + (e instanceof Error ? e.message : ''));
-      setStatus('idle');
-    }
-  };
-
-  return (
-    <div className="about">
-      <p className="hint">בדיקה ומשיכה של גליונות ונתונים חדשים ממאגר ה-GitHub של התוסף.</p>
-      <div className="about-meta">
-        <div><span>גרסת נתונים נוכחית</span><b dir="ltr">{examsManifest.dataVersion}</b></div>
-        {check && <div><span>גרסה במאגר</span><b dir="ltr">{check.remoteVersion || '—'}</b></div>}
-      </div>
-
-      <div className="row" style={{ gap: 8 }}>
-        <button className="btn-secondary" onClick={() => void runCheck()} disabled={status !== 'idle'}>
-          <Icon name="sync" size="1em" /> {status === 'checking' ? 'בודק…' : 'בדוק עדכונים'}
-        </button>
-        {check?.available && (
-          <button className="btn-primary" onClick={() => void runUpdate()} disabled={status !== 'idle'}>
-            <Icon name="download" size="1em" /> {status === 'updating' ? 'מעדכן…' : 'עדכן עכשיו'}
-          </button>
-        )}
-      </div>
-      {msg && <p className="hint" style={{ marginTop: 12 }}>{msg}</p>}
-    </div>
   );
 }
 

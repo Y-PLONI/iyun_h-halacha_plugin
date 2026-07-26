@@ -5,8 +5,7 @@ import { applyTheme, applyFontPrefs } from './otzaria/theme';
 import { loadSettings, settingsStore } from './state/settingsStore';
 import { loadAnswers, saveAnswersNow } from './state/answersStore';
 import { loadExams } from './data/localData';
-import { setBooted, setIsNarrow, useDataVersion } from './state/appStore';
-import { loadStoredRemote } from './data/remoteUpdate';
+import { setBooted, setIsNarrow } from './state/appStore';
 import { initReminders } from './state/reminders';
 import { AppShell } from './components/AppShell';
 import { ToastHost } from './components/Toast';
@@ -15,7 +14,6 @@ const NARROW_BREAKPOINT = 760;
 
 export function App() {
   const [ready, setReady] = useState(false);
-  const dataVersion = useDataVersion();
 
   useEffect(() => {
     let alive = true;
@@ -30,8 +28,6 @@ export function App() {
         if (t) applyTheme(t);
       }
       await Promise.all([loadSettings(), loadAnswers(), loadExams()]);
-      // מיישמים נתונים מרוחקים שנשמרו מעדכון קודם (דורס bundled, מוסיף גליונות)
-      await loadStoredRemote();
       if (!alive) return;
       // לאחר טעינת ההגדרות — מחילים את העדפות הגופן השמורות (מצב + גודל)
       const s = settingsStore.get().settings;
@@ -112,7 +108,7 @@ export function App() {
 
   return (
     <>
-      <AppShell key={dataVersion} />
+      <AppShell />
       <ToastHost />
     </>
   );

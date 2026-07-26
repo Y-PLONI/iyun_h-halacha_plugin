@@ -146,14 +146,6 @@ export function installMockOtzaria(): void {
       case 'feedback.sendEmail':
         console.info('[mock] sendEmail', payload);
         return ok(true) as OtzariaResponse<T>;
-      case 'network.fetch': {
-        // dev: מדמים "מעודכן" — מחזירים manifest עם אותה גרסה מקומית
-        const url = String(payload?.url ?? '');
-        const body = url.includes('exams-manifest.json')
-          ? JSON.stringify({ dataVersion: '2026.06.01', exams: [] })
-          : '{}';
-        return ok({ status: 200, ok: true, body }) as OtzariaResponse<T>;
-      }
       case 'ui.showMessage':
       case 'ui.showSuccess':
       case 'ui.showError':

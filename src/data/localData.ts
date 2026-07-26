@@ -1,6 +1,6 @@
 // טעינת הנתונים המקומיים. הקבצים מיובאים ישירות (bundled) כדי להבטיח טעינה
 // גם ללא רשת וללא fetch. הקבצים נשארים גם כקבצים עצמאיים תחת dist/data/* (publicDir)
-// לצורך תחזוקה ועדכוני remote עתידיים.
+// לצורך תחזוקה.
 
 import scheduleJson from '../../public/data/schedule.json';
 import examsManifestJson from '../../public/data/exams-manifest.json';
@@ -18,15 +18,8 @@ import type {
 // מסמכי המבחן נטענים בזמן ריצה ישירות מ-exams-src/*.docx (ראה examLoader).
 export { getExamDoc, getExamWeek, loadExams } from './examLoader';
 
-// ניתנים לדריסה ע"י נתונים מרוחקים (עדכון מ-GitHub). live-binding: צרכנים קוראים ערך עדכני.
-export let schedule = scheduleJson as Schedule;
-export let examsManifest = examsManifestJson as ExamsManifest;
-
-/** דורס את schedule/examsManifest בנתונים מרוחקים (אחרי עדכון מ-GitHub). */
-export function applyRemoteData(next: { schedule?: Schedule; examsManifest?: ExamsManifest }): void {
-  if (next.schedule) schedule = next.schedule;
-  if (next.examsManifest) examsManifest = next.examsManifest;
-}
+export const schedule = scheduleJson as Schedule;
+export const examsManifest = examsManifestJson as ExamsManifest;
 
 // מיפוי issueId -> קובץ שאלות (legacy/ולידציה). תצוגת השאלות מגיעה ממסמך ה-Word.
 const questionsByIssue: Record<string, QuestionsFile> = {

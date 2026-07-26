@@ -9,8 +9,8 @@
 ## טכנולוגיה
 
 - React + TypeScript + Vite (build סטטי, chunk יחיד — נדרש ל-WebView מסוג file://).
-- הנתונים מוטמעים מקומית; עדכון אופציונלי מ-GitHub (ראה למטה).
-- API אוצריא: `storage.*`, `library.*`, `reader.*`, `network.fetch`, `feedback.sendEmail`,
+- כל הנתונים מוטמעים מקומית ב-bundle; אין גישת רשת ואין עדכון נתונים מרוחק.
+- API אוצריא: `storage.*`, `library.*`, `reader.*`, `feedback.sendEmail`,
   `ui.*` (דרך עטיפה אחת ב-[src/otzaria/](src/otzaria/)).
 
 ## פיתוח
@@ -68,22 +68,11 @@ cd dist && zip -r -X ../com.chadbedera.iyun-halacha-<version>.otzplugin . -x '.*
 אוטומטית **בבורר הגליונות בסרגל העליון**. מעבר גליון מציג את ההספק והשבועות שלו.
 כרגע מחווטים שני גליונות: ר"מ (סיון) ו-רל"ט (אייר-סיון).
 
-## עדכון מ-GitHub
-
-התוסף יכול למשוך גליונות ונתונים חדשים בלי התקנה מחדש: **הגדרות → עדכונים → בדוק עדכונים**.
-- מקור: `Y-PLONI/iyun_h-halacha_plugin` (branch `master`). דורש הרשאת `network.access` ו-`network`
-  ב-manifest; ה-repo כבר נמצא ב-`pluginNetworkAllowlist` הרשמי של אוצריא.
-- `schedule.json` ו-`exams-manifest.json` נמשכים כ-raw (טקסט); קבצי `.docx` נמשכים דרך
-  GitHub **Contents API** כ-base64 (כי `network.fetch` מחזיר טקסט בלבד).
-- ההשוואה היא לפי `dataVersion` ב-`exams-manifest.json`. הנתונים נשמרים ב-`storage`
-  (`remote:data:v1`) ומיושמים בכל טעינה. ראה [src/data/remoteUpdate.ts](src/data/remoteUpdate.ts).
-- כדי לפרסם עדכון: דחוף את הקבצים ל-repo והעלה את `dataVersion`. ראה [exams-src/README.md](exams-src/README.md).
-
 ## הגדרות
 
 חלון ההגדרות מחולק לכרטיסיות: **מראה** (גופן — ברירת מחדל/כמו אוצריא, וגודל גופן),
 **שליחת תשובות** (שם, קוד אישי, מיילים), **מקורות** (שמות ספרים + זיהוי אוטומטי + השהיית
-שמירה), **התראות** (תזכורות), **עדכונים**, ו**אודות**. גודל הגופן ומצב הגופן נשמרים
+שמירה), **התראות** (תזכורות), ו**אודות**. גודל הגופן ומצב הגופן נשמרים
 ב-`settings:v1` ומיושמים על משתני ה-CSS.
 
 ### התראות ותזכורות
@@ -112,7 +101,7 @@ cd dist && zip -r -X ../com.chadbedera.iyun-halacha-<version>.otzplugin . -x '.*
 
 - **רישוי הפצה**: `licenseStatus` בגליון מסומן `private`. אין לפרסם לציבור עד
   הכרעה על זכויות הפצת נוסח השאלות.
-- **עדכוני GitHub**: לא ב-MVP. דורש הרשאת `network.access` ו-PR ל-allowlist של אוצריא.
+- **עדכוני נתונים**: הגליונות מוטמעים ב-build. עדכון גליון = גרסת תוסף חדשה והתקנה מחדש.
 - **שמות ספרים**: ניתנים ל-override בהגדרות + זיהוי אוטומטי (`library.findBooks`).
 
 ## הגבלות ידועות

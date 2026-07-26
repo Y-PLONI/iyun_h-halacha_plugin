@@ -49,20 +49,6 @@ export async function loadExams(): Promise<void> {
   loaded = true;
 }
 
-/** ממיר מסמכי docx מרוחקים (base64, מ-GitHub) וממזג/דורס לפי issueId. */
-export async function applyRemoteExams(examsBase64: Record<string, string>): Promise<void> {
-  await Promise.all(
-    Object.entries(examsBase64).map(async ([issueId, b64]) => {
-      try {
-        const { value } = await mammoth.convertToHtml({ arrayBuffer: base64ToBytes(b64).buffer as ArrayBuffer });
-        examByIssue[issueId] = parseExamHtml(issueId, value);
-      } catch (e) {
-        console.error(`[exams] המרת גליון מרוחק ${issueId} נכשלה`, e);
-      }
-    }),
-  );
-}
-
 /** מסמך המבחן (Word→HTML) של גליון. */
 export function getExamDoc(issueId: string): ExamDoc | null {
   return examByIssue[issueId] ?? null;
