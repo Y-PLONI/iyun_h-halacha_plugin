@@ -26,6 +26,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
       # The validator zips the plugin folder as-is; it does not run the build.
       # `npm run release` runs validate-data + Vite build and assembles the final
       # plugin folder (manifest.json + icon/ + index.html + assets/ + data/) in dist/.

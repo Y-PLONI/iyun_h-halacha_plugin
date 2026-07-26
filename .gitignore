@@ -1,5 +1,6 @@
 node_modules/
 dist/
+coverage/
 *.otzplugin
 *.tsbuildinfo
 .DS_Store

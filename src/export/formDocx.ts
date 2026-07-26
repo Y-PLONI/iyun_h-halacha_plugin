@@ -202,8 +202,8 @@ export function toGematria(n: number): string {
   const t = Math.floor(rest / 10);
   const u = rest % 10;
   if (t === 1 && (u === 5 || u === 6)) {
-    // 15→טו, 16→טז (כדי לא לכתוב שם ה'/ו')
-    parts.push('ט', units[u]);
+    // 15→טו, 16→טז (כדי לא לכתוב שם ה'/ו'). ט=9, ולכן היחידה המשלימה היא u+1.
+    parts.push('ט', units[u + 1]);
   } else {
     if (t) parts.push(tens[t]);
     if (u) parts.push(units[u]);

@@ -11,23 +11,34 @@ export function sanitizeAnswerHtml(dirty: string): string {
   return tmp.innerHTML;
 }
 
+// המעבר נעשה עם סמן על הצאצאים החיים (ולא על snapshot), כדי שצאצאים שהועלו למעלה
+// בעקבות פירוק עטיפה לא-מותרת ייבדקו אף הם. אחרת עטיפה כמו <span><img onerror=…>
+// הייתה מבריחה את הצאצא מהניקוי.
 function cleanNode(node: Node): void {
-  const children = Array.from(node.childNodes);
-  for (const child of children) {
-    if (child.nodeType === Node.TEXT_NODE) continue;
+  let child: ChildNode | null = node.firstChild;
+  while (child) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      child = child.nextSibling;
+      continue;
+    }
     if (child.nodeType !== Node.ELEMENT_NODE) {
+      const next = child.nextSibling;
       child.remove();
+      child = next;
       continue;
     }
     const el = child as HTMLElement;
     const tag = el.tagName;
     if (!ALLOWED_TAGS.has(tag)) {
       // שומרים את הטקסט הפנימי, מסירים את העטיפה
+      const nextAfter = el.nextSibling;
+      const firstHoisted = el.firstChild;
       const parent = el.parentNode;
       if (parent) {
         while (el.firstChild) parent.insertBefore(el.firstChild, el);
         parent.removeChild(el);
       }
+      child = firstHoisted ?? nextAfter;
       continue;
     }
     // הסרת כל המאפיינים (כולל on*, style, class)
@@ -39,9 +50,11 @@ function cleanNode(node: Node): void {
       while (el.firstChild) replacement.appendChild(el.firstChild);
       el.replaceWith(replacement);
       cleanNode(replacement);
+      child = replacement.nextSibling;
       continue;
     }
     cleanNode(el);
+    child = el.nextSibling;
   }
 }
 
@@ -59,30 +72,44 @@ export function sanitizeSourceHtml(dirty: string): string {
   return tmp.innerHTML;
 }
 
+// כמו cleanNode — סמן על הצאצאים החיים, כדי שצאצא שהועלה בעקבות פירוק עטיפה
+// לא-מוכרת (למשל <font><script>) ייבדק וינוקה גם הוא.
 function cleanSourceNode(node: Node): void {
-  for (const child of Array.from(node.childNodes)) {
-    if (child.nodeType === Node.TEXT_NODE) continue;
+  let child: ChildNode | null = node.firstChild;
+  while (child) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      child = child.nextSibling;
+      continue;
+    }
     if (child.nodeType !== Node.ELEMENT_NODE) {
+      const next = child.nextSibling;
       child.remove();
+      child = next;
       continue;
     }
     const el = child as HTMLElement;
     const tag = el.tagName;
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'IFRAME' || tag === 'LINK' || tag === 'META') {
+      const next = el.nextSibling;
       el.remove();
+      child = next;
       continue;
     }
     if (!SOURCE_ALLOWED.has(tag)) {
       // תג לא מוכר — משמרים את התוכן, מסירים את העטיפה
+      const nextAfter = el.nextSibling;
+      const firstHoisted = el.firstChild;
       const parent = el.parentNode;
       if (parent) {
         while (el.firstChild) parent.insertBefore(el.firstChild, el);
         parent.removeChild(el);
       }
+      child = firstHoisted ?? nextAfter;
       continue;
     }
     for (const attr of Array.from(el.attributes)) el.removeAttribute(attr.name);
     cleanSourceNode(el);
+    child = el.nextSibling;
   }
 }
 

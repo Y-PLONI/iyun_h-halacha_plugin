@@ -22,12 +22,33 @@ npm run dev          # דפדפן רגיל, עם mock SDK (localStorage במקו
 
 ב-console של הדפדפן ניתן להחליף theme: `__toggleTheme()`.
 
+## טסטים
+
+```bash
+npm test                # כל הטסטים (Vitest + jsdom)
+npm run test:watch      # מצב watch לפיתוח
+npm run test:coverage   # דוח כיסוי
+```
+
+הטסטים ב-[tests/](tests/), מקבילים למבנה `src/`, ומכסים כל שכבה: פענוח מסמכי ה-Word
+(`examParse`/`examLoader` — על קבצי ה-docx האמיתיים), ולידציית הנתונים, ניקוי HTML,
+ייצוא ל-DOCX ומילוי טופס הסימון, ה-stores (שמירה אוטומטית, הגדרות, תזכורות), עטיפות
+ה-API של אוצריא, כל הקומפוננטות והמסכים, זרימת ה-boot, ועקביות ה-manifest מול
+ההרשאות והנתונים.
+
+- ה-host של אוצריא מדומה ב-[tests/helpers/host.ts](tests/helpers/host.ts) (`installFakeHost`) —
+  מתעד קריאות ומאפשר להגדיר תשובה/כשל לכל מתודה.
+- מודולים עם מצב פנימי (cache של ספרים, `lastSignature` בתזכורות) נטענים מחדש
+  ב-`vi.resetModules()` בכל טסט.
+- המרת ה-docx (mammoth) דורשת טיימרים אמיתיים — לכן היא מתבצעת לפני
+  `vi.useFakeTimers()` (ראה `prepareExams` ב-[tests/helpers/app.ts](tests/helpers/app.ts)).
+
 ## בנייה ואריזה
 
 ```bash
 npm run validate-data   # בדיקת עקביות schedule/questions/exams
-npm run typecheck
-npm run release         # validate-data + build + הרכבת dist/ מוכן לאריזה
+npm run typecheck       # קוד האפליקציה + הטסטים
+npm run release         # validate-data + טסטים + build + הרכבת dist/ מוכן לאריזה
 ```
 
 `npm run release` יוצר את התיקייה `dist/` הכוללת: `manifest.json`, `index.html`,

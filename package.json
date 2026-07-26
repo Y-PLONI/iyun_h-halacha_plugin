@@ -7,11 +7,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "release": "npm run validate-data && npm run build && tsx scripts/build-release.ts",
+    "release": "npm run validate-data && npm test && npm run build && tsx scripts/build-release.ts",
     "preview": "vite preview",
     "gen-icons": "python3 scripts/extract-icons.py",
     "validate-data": "tsx scripts/validate-data.ts",
-    "typecheck": "tsc -b --noEmit"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -b --noEmit && tsc -p tsconfig.test.json --noEmit"
   },
   "dependencies": {
     "mammoth": "^1.12.0",
@@ -19,13 +22,20 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^25.9.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.9",
+    "jsdom": "^25.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^2.1.9"
   },
   "allowScripts": {
     "esbuild@0.28.0": true,
