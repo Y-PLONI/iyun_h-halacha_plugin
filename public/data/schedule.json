@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.07.24",
-  "updatedAt": "2026-07-24T00:00:00+03:00",
-  "defaultIssueId": "issue-0242",
+  "dataVersion": "2026.09.02",
+  "updatedAt": "2026-09-02T00:00:00+03:00",
+  "defaultIssueId": "issue-0243",
   "periods": [
     {
       "periodId": "iyar-sivan-5786",
@@ -760,6 +760,389 @@
               "bookId": "שער הציון",
               "startRef": "סימן תקצג",
               "endRef": "סימן תרג"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "periodId": "elul-5786-cheshvan-5787",
+      "title": "אלול תשפ\"ו - חשון תשפ\"ז",
+      "hebrewMonthRange": "אלול תשפ\"ו - חשון תשפ\"ז",
+      "gregorianRange": {
+        "start": "2026-08-30",
+        "end": "2026-10-31"
+      },
+      "issueIds": [
+        "issue-0243"
+      ],
+      "weeks": [
+        {
+          "weekId": "issue-0243-w1",
+          "issueId": "issue-0243",
+          "weekNumber": 1,
+          "weeksInIssue": 9,
+          "parasha": "נצבים-וילך",
+          "title": "חזרה כללית",
+          "topicTitle": "ערב ר\"ה, לא אמר המלך הקדוש והמלך המשפט, חזרה תוך כדי דיבור, סדר התפילה, לדקדק בתפילתו",
+          "hebrewDateRange": "יז-כג אלול",
+          "gregorianDateRange": {
+            "start": "2026-08-30",
+            "end": "2026-09-05"
+          },
+          "sourceRangeTitle": "מסימן תקפא סעיף א עד סימן תקפה סעיף א",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפה"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפה"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפה"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפא",
+              "endRef": "סימן תקפה"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w2",
+          "issueId": "issue-0243",
+          "weekNumber": 2,
+          "weeksInIssue": 9,
+          "parasha": "שבת ראש השנה",
+          "title": "חזרה כללית",
+          "topicTitle": "קונם ושבועה בשופר, מדיני השופר, ציפהו זהב, שינה בו, נתן שופר בתוך שופר",
+          "hebrewDateRange": "כד אלול - א תשרי",
+          "gregorianDateRange": {
+            "start": "2026-09-06",
+            "end": "2026-09-12"
+          },
+          "sourceRangeTitle": "מסימן תקפה סעיף ב עד סימן תקפו סעיף כ",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפה",
+              "endRef": "סימן תקפו"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w3",
+          "issueId": "issue-0243",
+          "weekNumber": 3,
+          "weeksInIssue": 9,
+          "parasha": "האזינו",
+          "title": "חזרה כללית",
+          "topicTitle": "זמן תקיעת שופר, שמיעת ג' סדרים בהפסק, שמע בבת אחת, שופר בר\"ה שחל בשבת, האם מוציא אחרים",
+          "hebrewDateRange": "ב-ח תשרי",
+          "gregorianDateRange": {
+            "start": "2026-09-13",
+            "end": "2026-09-19"
+          },
+          "sourceRangeTitle": "מסימן תקפו סעיף כא עד סימן תקצ סעיף ד",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקצ"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקצ"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקצ"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקפו",
+              "endRef": "סימן תקצ"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w4",
+          "issueId": "issue-0243",
+          "weekNumber": 4,
+          "weeksInIssue": 9,
+          "parasha": "שבת יו\"ט סוכות",
+          "title": "חזרה כללית",
+          "topicTitle": "שיחה בין התקיעות, שהחיינו ביום השני, ספק יום, ימים שבין ר\"ה ליוה\"כ, זהירות ותשובה",
+          "hebrewDateRange": "ט-טו תשרי",
+          "gregorianDateRange": {
+            "start": "2026-09-20",
+            "end": "2026-09-26"
+          },
+          "sourceRangeTitle": "מסימן תקצ סעיף ה עד סוף סימן תרג",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תרג"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תרג"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תרג"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תקצ",
+              "endRef": "סימן תרג"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w5",
+          "issueId": "issue-0243",
+          "weekNumber": 5,
+          "weeksInIssue": 9,
+          "parasha": "שמ\"ע ושמח\"ת",
+          "title": "סדר ערב יום כפור, מנהג כפרות בערב יום כפור, שיפייס אדם חבירו בערב יום כפור, סדר הוידוי",
+          "topicTitle": "עבירות שבין אדם לחבירו, המוחל, במת אשר חטא לו, וידוי, פירוט החטא בקול",
+          "hebrewDateRange": "טז-כב תשרי",
+          "gregorianDateRange": {
+            "start": "2026-09-27",
+            "end": "2026-10-03"
+          },
+          "sourceRangeTitle": "מסימן תרד סעיף א עד סימן תרז סעיף ב",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרז"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרז"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרז"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרז"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w6",
+          "issueId": "issue-0243",
+          "weekNumber": 6,
+          "weeksInIssue": 9,
+          "parasha": "בראשית",
+          "title": "סדר הוידוי במנחה בערב, סדר סעודה המפסקת, הטמנת חמין בערב יום כפור, הדלקת נרות ביום כיפור",
+          "topicTitle": "כיצד צריך להתוודות, האם יתוודה, סדר ערב יום כיפור, חיוב מחאה, כיצד חיוב מחאה ביחיד וברבים",
+          "hebrewDateRange": "כג-כט תשרי",
+          "gregorianDateRange": {
+            "start": "2026-10-04",
+            "end": "2026-10-10"
+          },
+          "sourceRangeTitle": "מסימן תרז סעיף ג עד סוף סימן תרי",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תרז",
+              "endRef": "סימן תרי"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תרז",
+              "endRef": "סימן תרי"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תרז",
+              "endRef": "סימן תרי"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תרז",
+              "endRef": "סימן תרי"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w7",
+          "issueId": "issue-0243",
+          "weekNumber": 7,
+          "weeksInIssue": 9,
+          "parasha": "נח",
+          "title": "שליל יום הכיפורים דינו כיומו, איסור אכילה ביוה\"כ ושיעור כמותה, איסור רחיצה ביוה\"כ",
+          "topicTitle": "האיסורים בליל יוה\"כ, קניבת ירק ופציעת אגוזים, שיעור אכילה לחיוב, צירוף לחיוב, אכל אוכלים שאינם ראוים",
+          "hebrewDateRange": "ל תשרי - ו חשון",
+          "gregorianDateRange": {
+            "start": "2026-10-11",
+            "end": "2026-10-17"
+          },
+          "sourceRangeTitle": "מסימן תריא סעיף א עד סימן תריג סעיף ד",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריג"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריג"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריג"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריג"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w8",
+          "issueId": "issue-0243",
+          "weekNumber": 8,
+          "weeksInIssue": 9,
+          "parasha": "לך לך",
+          "title": "איסור רחיצה בי\"כ, דיני סיכה ונעילת הסנדל, יום הכפורים אסור בתשה\"מ, הקטנים מתי יתחילו להתענות, דין עוברה ומניקה ויולדת ביוה\"כ",
+          "topicTitle": "רחיצה, איסור סיכה, נעילת מנעל, נעילת מנעל למגן, כיצד ינהג במנעל",
+          "hebrewDateRange": "ז-יג חשון",
+          "gregorianDateRange": {
+            "start": "2026-10-18",
+            "end": "2026-10-24"
+          },
+          "sourceRangeTitle": "מסימן תריג סעיף ה עד סימן תריז סעיף ב",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תריג",
+              "endRef": "סימן תריז"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תריג",
+              "endRef": "סימן תריז"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תריג",
+              "endRef": "סימן תריז"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תריג",
+              "endRef": "סימן תריז"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0243-w9",
+          "issueId": "issue-0243",
+          "weekNumber": 9,
+          "weeksInIssue": 9,
+          "parasha": "וירא",
+          "title": "דין עוברה ומניקה ויולדת ביה\"כ, דין חולה ביה\"כ, סדר ליל יה\"כ, מנהג יפה לקצר בתפלת שחרית",
+          "topicTitle": "הוראת רופא שצריך לאכול, חולה המכחיש את הרופא, הכחשה על הרופא, האם הולכים אחר רוב דעות, מה הדין במסופק",
+          "hebrewDateRange": "יד-כ חשון",
+          "gregorianDateRange": {
+            "start": "2026-10-25",
+            "end": "2026-10-31"
+          },
+          "sourceRangeTitle": "מסימן תריז סעיף ג עד סוף סימן תרכ",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכ"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכ"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכ"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכ"
             }
           },
           "questionIds": [],
