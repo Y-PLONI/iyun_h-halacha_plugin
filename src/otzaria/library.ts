@@ -229,7 +229,12 @@ export async function loadSourceRange(
         offset: text.length, // אוצריא סופרת offset מתחילת ה-section
         limit: MAX_CHUNK,
       });
-      if (!chunk) break;
+      // chunk ריק = הגענו לסוף הספר בדיוק בגבול של MAX_CHUNK; בלי לאפס את
+      // lastChunk ההודעה על טווח חתוך הייתה מתווספת לטקסט שנטען במלואו.
+      if (!chunk) {
+        lastChunk = 0;
+        break;
+      }
       text += chunk;
       lastChunk = chunk.length;
       chunks++;

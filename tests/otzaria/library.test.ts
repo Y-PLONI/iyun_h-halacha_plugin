@@ -248,6 +248,16 @@ describe('loadSourceRange — לפי כותרת הסימן, כמו באוצרי�
     expect(host.callsTo('library.getBookContent')).toHaveLength(1);
   });
 
+  it('סוף הספר בדיוק בגבול chunk — נטען במלואו, בלי הודעת החיתוך', async () => {
+    const heading = `<h2>${siman(2)}</h2>`;
+    // מהכותרת ועד סוף הספר: בדיוק 2 chunks, כך שהקריאה השלישית חוזרת ריקה
+    const tail = 'x'.repeat(2 * 5000 - heading.length - 1);
+    const res = await load(['<h1>ספר</h1>', `<h2>${siman(1)}</h2>`, 'פתיחה', heading, tail], siman(2));
+    expect(host.callsTo('library.getBookContent')).toHaveLength(3);
+    expect(res.text).toBe(`${heading}\n${tail}`);
+    expect(res.text).not.toContain('פתח את הספר באוצריא');
+  });
+
   it('כותרת שה-TOC מכיר אך אינה בטקסט בצורה <hN>…</hN> — שגיאה, ולא תחילת הספר', async () => {
     const lines = simanimLines([1, 2]).map((l) =>
       l === `<h2>${siman(2)}</h2>` ? `<h2><b>${siman(2)}</b></h2>` : l,
