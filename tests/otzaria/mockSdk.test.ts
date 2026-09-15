@@ -76,12 +76,26 @@ describe('installMockOtzaria', () => {
     expect(indexes).toEqual([...indexes].sort((a, b) => a - b));
   });
 
-  it('library.getBookContent מחזיר HTML עם bookId ו-offset', async () => {
+  it('library.getBookContent מתנהג כמו אוצריא: section מעגן, offset/limit בתווים', async () => {
     installMockOtzaria();
-    const res = await call<string>('library.getBookContent', { bookId: 'משנה ברורה', offset: 42 });
-    expect(res.data).toContain('<h3>');
+    const toc = await call<{ text: string; index: number; level: number }[]>('library.getBookToc', {
+      bookId: 'משנה ברורה',
+    });
+    const entry = toc.data.find((e) => e.text === 'סימן תקפא')!;
+    expect(entry.level).toBe(2);
+
+    const res = await call<string>('library.getBookContent', {
+      bookId: 'משנה ברורה',
+      section: '<h2>סימן תקפא</h2>',
+      limit: 300,
+    });
+    expect(res.data.startsWith('<h2>סימן תקפא</h2>\n<h3>סעיף א</h3>')).toBe(true);
     expect(res.data).toContain('משנה ברורה');
-    expect(res.data).toContain('42');
+    expect(res.data).toHaveLength(300);
+
+    // index של ה-TOC הוא מספר שורה — כ-offset בתווים הוא נופל הרבה לפני הסימן
+    const byIndex = await call<string>('library.getBookContent', { bookId: 'משנה ברורה', offset: entry.index });
+    expect(byIndex.data).not.toContain('סימן תקפא');
   });
 
   it('מתודות reader/feedback/ui מחזירות הצלחה', async () => {

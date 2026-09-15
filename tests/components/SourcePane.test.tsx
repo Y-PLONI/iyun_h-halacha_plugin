@@ -5,6 +5,7 @@ import { appStore } from '../../src/state/appStore';
 import { defaultHandlers, installFakeHost, type FakeHost } from '../helpers/host';
 import { resetStores } from '../helpers/app';
 import { makeWeek } from '../helpers/fixtures';
+import { installBook, siman, simanimLines } from '../helpers/otzariaBook';
 
 let host: FakeHost;
 
@@ -14,20 +15,23 @@ function weekWithSources(): ReturnType<typeof makeWeek> {
   refCounter++;
   return makeWeek({
     sourceRefs: {
-      shulchanAruch: { startRef: `סימן א${refCounter}`, endRef: `סימן ב${refCounter}` },
-      mishnaBerurah: { startRef: `סימן א${refCounter}` },
-      biurHalacha: { startRef: `סימן א${refCounter}` },
+      shulchanAruch: { startRef: siman(refCounter), endRef: siman(refCounter + 1) },
+      mishnaBerurah: { startRef: siman(refCounter) },
+      biurHalacha: { startRef: siman(refCounter) },
     },
   });
 }
+
+/** ספר בפורמט אוצריא עם סימנים א..קכ, שבכל אחד השורות שב-body. */
+const allSimanim = Array.from({ length: 120 }, (_, i) => i + 1);
+const bookWith = (body: string[]) => simanimLines(allSimanim, () => body);
 
 beforeEach(() => {
   host = installFakeHost({
     ...defaultHandlers(),
     'library.findBooks': (p) => [{ title: String(p.query), bookId: String(p.query), topics: [] }],
-    'library.getBookToc': () => [{ text: 'סימן א', index: 0, level: 1 }],
-    'library.getBookContent': () => '<h3>סעיף א</h3><b>ד"ה</b> תוכן המקור',
   });
+  installBook(host, bookWith(['<h3>סעיף א</h3>', '<b>ד"ה</b> תוכן המקור']));
   resetStores();
 });
 
@@ -41,7 +45,7 @@ describe('SourcePane — חלוניות מקורות', () => {
 
   it('כותרת החלונית מציגה טווח כשיש endRef שונה', () => {
     render(<SourcePane week={weekWithSources()} />);
-    expect(screen.getByText(/שולחן ערוך · סימן א\d+ – סימן ב\d+/)).toBeInTheDocument();
+    expect(screen.getByText(/שולחן ערוך · סימן \S+ – סימן \S+/)).toBeInTheDocument();
   });
 
   it('שער הציון אינו מוצג (הספר אינו במאגר)', () => {
@@ -65,7 +69,7 @@ describe('SourcePane — חלוניות מקורות', () => {
   });
 
   it('מסיר סקריפטים מתוכן שהתקבל מאוצריא', async () => {
-    host.on('library.getBookContent', () => '<script>alert(1)</script><p>נקי</p>');
+    installBook(host, bookWith(['<script>alert(1)</script><p>נקי</p>']));
     const { container } = render(<SourcePane week={weekWithSources()} />);
     await waitFor(() => expect(container.querySelector('.source-html')).toBeTruthy());
     expect(container.querySelector('.source-html')!.innerHTML).not.toContain('<script');
@@ -170,7 +174,7 @@ describe('SourcePane — פעולות בכותרת', () => {
     const { container } = render(<SourcePane week={week} />);
     await waitFor(() => expect(container.querySelector('.source-html')).toBeTruthy());
     const before = host.callsTo('library.getBookContent').length;
-    host.on('library.getBookContent', () => '<p>תוכן מרוענן</p>');
+    installBook(host, bookWith(['<p>תוכן מרוענן</p>']));
     screen.getAllByTitle('רענן')[0].click();
     await waitFor(() => expect(host.callsTo('library.getBookContent').length).toBeGreaterThan(before));
     await waitFor(() =>

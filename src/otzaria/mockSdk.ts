@@ -1,7 +1,8 @@
 // Mock של Otzaria SDK לפיתוח בדפדפן רגיל (import.meta.env.DEV).
 // מאפשר להריץ את התוסף ללא host אמיתי. storage נופל ל-localStorage דרך storage.ts.
 
-import type { BootPayload, OtzariaResponse, ThemePayload } from './otzaria_plugin';
+import type { BootPayload, OtzariaResponse, ThemePayload, TocEntry } from './otzaria_plugin';
+import { toGematria } from '../export/formDocx';
 
 export function createMockBootPayload(): BootPayload {
   return {
@@ -106,6 +107,57 @@ export function createMockTheme(mode: 'light' | 'dark'): ThemePayload {
   };
 }
 
+// ── ספר בפורמט אוצריא: שורות HTML מאוחות ב-\n, כותרת <hN> בשורה משלה ──
+// שתי הפונקציות משחזרות את ה-host (plugin_bridge_adapter.dart, TocParser) ומשמשות גם בטסטים.
+
+/** getBookToc: לכל שורת כותרת — { text: ללא תגיות, index: מספר השורה, level: N }. */
+export function tocFromLines(lines: string[]): TocEntry[] {
+  const toc: TocEntry[] = [];
+  lines.forEach((line, index) => {
+    const m = /^<h([1-6])/i.exec(line.trimStart());
+    if (!m) return;
+    const text = line.replace(/<[^>]*>/g, '').trim();
+    if (text) toc.push({ text, index, level: Number(m[1]) });
+  });
+  return toc;
+}
+
+/**
+ * getBookContent: offset/limit בתווים (limit עד 5000, ברירת מחדל 1000). section מאותר
+ * ב-indexOf ו-offset נספר ממנו; section שלא נמצא — מתעלמים ממנו בשקט (כמו ב-host).
+ */
+export function sliceBookContent(raw: string, p: Record<string, unknown> = {}): string {
+  const limit = Math.min(typeof p.limit === 'number' ? p.limit : 1000, 5000);
+  let start = typeof p.offset === 'number' ? p.offset : 0;
+  if (typeof p.section === 'string' && p.section) {
+    const idx = raw.indexOf(p.section);
+    if (idx >= 0) start += idx;
+  }
+  const clamp = (n: number) => Math.min(Math.max(n, 0), raw.length);
+  return raw.substring(clamp(start), clamp(start + limit));
+}
+
+const mockBookCache = new Map<string, { lines: string[]; raw: string }>();
+
+function mockBook(bookId: string): { lines: string[]; raw: string } {
+  let book = mockBookCache.get(bookId);
+  if (!book) {
+    const lines = [`<h1>${bookId}</h1>`, '<h2>הקדמה</h2>', 'הקדמת הספר — תצוגת פיתוח.'];
+    for (let n = 1; n <= 697; n++) {
+      const siman = `סימן ${toGematria(n).replace(/["']/g, '')}`;
+      lines.push(
+        `<h2>${siman}</h2>`,
+        '<h3>סעיף א</h3>',
+        `<b>דיבור המתחיל</b> - תצוגת פיתוח עבור ${bookId}, ${siman}. ` +
+          'בסביבת אוצריא יוחזר כאן הטקסט האמיתי מהספר. <sup>1</sup>',
+      );
+    }
+    book = { lines, raw: lines.join('\n') };
+    mockBookCache.set(bookId, book);
+  }
+  return book;
+}
+
 type Listener = (detail: unknown) => void;
 
 export function installMockOtzaria(): void {
@@ -125,19 +177,10 @@ export function installMockOtzaria(): void {
         return ok(mockBooks.filter((b) => b.title.includes(q))) as OtzariaResponse<T>;
       }
       case 'library.getBookToc':
-        return ok([
-          { text: 'סימן תקלט', index: 0, level: 1 },
-          { text: 'סימן תקמ', index: 1200, level: 1 },
-          { text: 'סימן תקמא', index: 2400, level: 1 },
-          { text: 'סימן תקמב', index: 3600, level: 1 },
-        ]) as OtzariaResponse<T>;
+        return ok(tocFromLines(mockBook(String(payload?.bookId ?? '')).lines)) as OtzariaResponse<T>;
       case 'library.getBookContent':
-        // אוצריא מחזירה HTML — מדמים זאת כדי לבדוק את הרינדור (h3/b וכו').
         return ok(
-          `<h3>סעיף א</h3>` +
-            `<b>כיוצא להקנות וכו'</b> - תצוגת פיתוח עבור ${String(payload?.bookId ?? '')} ` +
-            `(offset ${String(payload?.offset ?? 0)}). בסביבת אוצריא יוחזר כאן הטקסט האמיתי מהספר. ` +
-            `<sup>1</sup> ועיין עוד בהמשך. `.repeat(4),
+          sliceBookContent(mockBook(String(payload?.bookId ?? '')).raw, payload),
         ) as OtzariaResponse<T>;
       case 'reader.openBookAtRef':
       case 'reader.openBook':

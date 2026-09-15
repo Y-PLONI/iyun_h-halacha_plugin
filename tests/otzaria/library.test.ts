@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installFakeHost, type FakeHost } from '../helpers/host';
+import { installBook, siman, simanimLines } from '../helpers/otzariaBook';
 import type { BookMeta, TocEntry } from '../../src/otzaria/otzaria_plugin';
 
 type Library = typeof import('../../src/otzaria/library');
@@ -160,72 +161,117 @@ describe('findBestTocEntry', () => {
   });
 });
 
-describe('loadSourceRange', () => {
-  it('טוען טווח לפי ה-TOC ומחזיר את הטקסט', async () => {
+describe('simanNumber', () => {
+  it('מפענח גימטריה, עם או בלי גרשיים, וכולל אותיות סופיות', async () => {
     const lib = await freshLibrary();
-    host.on('library.findBooks', () => [book('משנה ברורה')]);
-    host.on('library.getBookToc', () => toc);
-    host.on('library.getBookContent', () => 'תוכן הסימן');
-    const res = await lib.loadSourceRange('משנה ברורה', 'סימן תקלט', 'סימן תקמ');
-    expect(res).toEqual({ ok: true, text: 'תוכן הסימן' });
-    const call = host.callsTo('library.getBookContent')[0];
-    expect(call.payload.bookId).toBe('משנה ברורה');
-    expect(call.payload.offset).toBe(0);
+    expect(lib.simanNumber('סימן תקפא')).toBe(581);
+    expect(lib.simanNumber('סימן תקפ״א')).toBe(581);
+    expect(lib.simanNumber('סימן  תרך')).toBe(620);
+    expect(lib.simanNumber('סימן טו')).toBe(15);
   });
 
-  it('מגביל כל קריאה ל-5000 תווים ומחבר מספר קריאות', async () => {
+  it('מחזיר null לכותרת שאינה סימן', async () => {
+    const lib = await freshLibrary();
+    expect(lib.simanNumber('הקדמה')).toBeNull();
+    expect(lib.simanNumber('סעיף א')).toBeNull();
+    expect(lib.simanNumber('סימן א1')).toBeNull();
+  });
+});
+
+describe('loadSourceRange — לפי כותרת הסימן, כמו באוצריא', () => {
+  async function load(lines: string[], startRef: string, endRef?: string) {
     const lib = await freshLibrary();
     host.on('library.findBooks', () => [book('משנה ברורה')]);
-    host.on('library.getBookToc', () => [
-      { text: 'סימן א', index: 0, level: 1 },
-      { text: 'סימן ב', index: 12000, level: 1 },
-    ]);
-    host.on('library.getBookContent', (p) => 'x'.repeat(Number(p.limit)));
-    const res = await lib.loadSourceRange('משנה ברורה', 'סימן א', 'סימן ב');
+    installBook(host, lines);
+    return lib.loadSourceRange('משנה ברורה', startRef, endRef);
+  }
+
+  it('טוען בדיוק את טווח הסימנים ולא את תחילת הספר (index ב-TOC הוא מספר שורה)', async () => {
+    const res = await load(simanimLines([1, 2, 3, 4, 5, 6]), siman(3), siman(4));
+    expect(res.ok).toBe(true);
+    expect(res.text).toBe(
+      [`<h2>${siman(3)}</h2>`, `<b>דיבור המתחיל</b> תוכן ${siman(3)}`,
+        `<h2>${siman(4)}</h2>`, `<b>דיבור המתחיל</b> תוכן ${siman(4)}`].join('\n'),
+    );
     const calls = host.callsTo('library.getBookContent');
-    expect(calls.every((c) => Number(c.payload.limit) <= 5000)).toBe(true);
-    expect(calls.length).toBeGreaterThan(1);
-    expect(res.text.length).toBe(14000); // 12000 + 2000 מרווח
+    expect(calls.every((c) => c.payload.section === `<h2>${siman(3)}</h2>`)).toBe(true);
   });
 
-  it('עוצר כשמגיע לסוף הספר (chunk קצר מהמבוקש)', async () => {
-    const lib = await freshLibrary();
-    host.on('library.findBooks', () => [book('משנה ברורה')]);
-    host.on('library.getBookToc', () => [
-      { text: 'סימן א', index: 0, level: 1 },
-      { text: 'סימן ב', index: 12000, level: 1 },
-    ]);
-    host.on('library.getBookContent', () => 'סוף');
-    const res = await lib.loadSourceRange('משנה ברורה', 'סימן א', 'סימן ב');
-    expect(res.text).toBe('סוף');
+  it('ref יחיד — עד הסימן הבא', async () => {
+    const res = await load(simanimLines([1, 2, 3]), siman(2));
+    expect(res.text).toBe(`<h2>${siman(2)}</h2>\n<b>דיבור המתחיל</b> תוכן ${siman(2)}`);
+  });
+
+  it('תת-כותרות בתוך הסימן (סעיף) אינן עוצרות את הטעינה', async () => {
+    const lines = simanimLines([1, 2, 3], (n) => ['<h3>סעיף א</h3>', `א${n}`, '<h3>סעיף ב</h3>', `ב${n}`]);
+    const res = await load(lines, siman(2));
+    expect(res.text).toContain('ב2');
+    expect(res.text).not.toContain(siman(3));
+  });
+
+  it('סימן ההתחלה חסר בספר (כמו בביאור הלכה) — מתחיל מהסימן הקיים הראשון בטווח', async () => {
+    const res = await load(simanimLines([1, 3, 5]), siman(2), siman(4));
+    expect(res.text).toBe(`<h2>${siman(3)}</h2>\n<b>דיבור המתחיל</b> תוכן ${siman(3)}`);
+  });
+
+  it('אין אף סימן בטווח — שגיאה, ולא תוכן אחר', async () => {
+    const res = await load(simanimLines([1, 5]), siman(2), siman(4));
+    expect(res).toEqual({
+      ok: false,
+      text: '',
+      error: `"${siman(2)} – ${siman(4)}" לא נמצא בתוכן העניינים של הספר.`,
+    });
+  });
+
+  it('טווח ארוך נטען בכמה קריאות של עד 5000 תווים ונחתך בדיוק לפני הסימן הבא', async () => {
+    const body = () => ['x'.repeat(3000), 'y'.repeat(3000)];
+    const res = await load(simanimLines([1, 2, 3, 4, 5], body), siman(2), siman(4));
+    const calls = host.callsTo('library.getBookContent');
+    expect(calls.length).toBeGreaterThan(1);
+    expect(calls.every((c) => Number(c.payload.limit) <= 5000)).toBe(true);
+    expect(res.text).toBe(
+      [2, 3, 4].flatMap((n) => [`<h2>${siman(n)}</h2>`, ...body()]).join('\n'),
+    );
+  });
+
+  it('טווח ארוך מהתקרה — נחתך עם הפניה לאוצריא', async () => {
+    const numbers = Array.from({ length: 80 }, (_, i) => i + 1);
+    const res = await load(simanimLines(numbers, () => ['z'.repeat(4000)]), siman(1), siman(80));
+    expect(host.callsTo('library.getBookContent')).toHaveLength(40);
+    expect(res.ok).toBe(true);
+    expect(res.text).toContain('פתח את הספר באוצריא');
+  });
+
+  it('עוצר בסוף הספר', async () => {
+    const res = await load(simanimLines([1, 2]), siman(2), siman(9));
+    expect(res.text).toBe(`<h2>${siman(2)}</h2>\n<b>דיבור המתחיל</b> תוכן ${siman(2)}`);
     expect(host.callsTo('library.getBookContent')).toHaveLength(1);
   });
 
-  it('נופל לחיפוש לפי section כשה-TOC אינו מכיל את ה-ref', async () => {
-    const lib = await freshLibrary();
-    host.on('library.findBooks', () => [book('משנה ברורה')]);
-    host.on('library.getBookToc', () => []);
-    host.on('library.getBookContent', (p) => (p.section ? 'תוכן לפי section' : ''));
-    const res = await lib.loadSourceRange('משנה ברורה', 'סימן תקלט');
-    expect(res).toEqual({ ok: true, text: 'תוכן לפי section' });
-    expect(host.callsTo('library.getBookContent')[0].payload.section).toBe('סימן תקלט');
+  it('כותרת שה-TOC מכיר אך אינה בטקסט בצורה <hN>…</hN> — שגיאה, ולא תחילת הספר', async () => {
+    const lines = simanimLines([1, 2]).map((l) =>
+      l === `<h2>${siman(2)}</h2>` ? `<h2><b>${siman(2)}</b></h2>` : l,
+    );
+    const res = await load(lines, siman(2));
+    expect(res).toEqual({ ok: false, text: '', error: `הכותרת "${siman(2)}" לא נמצאה בטקסט הספר.` });
   });
 
-  it('נופל לתחילת הספר כשגם section ריק', async () => {
-    const lib = await freshLibrary();
-    let sectionTried = false;
-    host.on('library.findBooks', () => [book('משנה ברורה')]);
-    host.on('library.getBookToc', () => []);
-    host.on('library.getBookContent', (p) => {
-      if (p.section) {
-        sectionTried = true;
-        return '';
-      }
-      return 'תחילת הספר';
-    });
-    const res = await lib.loadSourceRange('משנה ברורה', 'סימן תקלט');
-    expect(sectionTried).toBe(true);
-    expect(res).toEqual({ ok: true, text: 'תחילת הספר' });
+  it('כותרת עם גרשיים בספר מתאימה ל-ref בלי גרשיים', async () => {
+    const lines = ['<h1>ספר</h1>', '<h2>סימן ק</h2>', 'א', '<h2>סימן ק״א</h2>', 'ב', '<h2>סימן קב</h2>', 'ג'];
+    const res = await load(lines, 'סימן קא');
+    expect(res.text).toBe('<h2>סימן ק״א</h2>\nב');
+  });
+
+  it('ref שאינו "סימן X" — לפי שם הכותרת המדויק', async () => {
+    const res = await load(simanimLines([1]), 'הקדמה');
+    expect(res.text.startsWith('<h2>הקדמה</h2>')).toBe(true);
+    expect(res.text).not.toContain(siman(1));
+  });
+
+  it('ספר ללא תוכן עניינים — שגיאה', async () => {
+    const res = await load(['שורה', 'עוד שורה'], siman(1));
+    expect(res.ok).toBe(false);
+    expect(res.error).toContain('תוכן העניינים');
   });
 
   it('מחזיר שגיאה מודרכת כשהספר לא נמצא', async () => {
@@ -237,22 +283,12 @@ describe('loadSourceRange', () => {
     expect(res.error).toContain('הגדרות');
   });
 
-  it('מחזיר שגיאה כשאין תוכן בכלל', async () => {
-    const lib = await freshLibrary();
-    host.on('library.findBooks', () => [book('משנה ברורה')]);
-    host.on('library.getBookToc', () => []);
-    host.on('library.getBookContent', () => '');
-    const res = await lib.loadSourceRange('משנה ברורה', 'סימן תקלט');
-    expect(res.ok).toBe(false);
-    expect(res.error).toContain('לא נמצא תוכן');
-  });
-
   it('לוכד חריגות ומחזיר את הודעת השגיאה', async () => {
     const lib = await freshLibrary();
     host.on('library.findBooks', () => [book('משנה ברורה')]);
-    host.on('library.getBookToc', () => toc);
+    installBook(host, simanimLines([1]));
     host.throws('library.getBookContent', new Error('נפילת bridge'));
-    const res = await lib.loadSourceRange('משנה ברורה', 'סימן תקלט');
+    const res = await lib.loadSourceRange('משנה ברורה', siman(1));
     expect(res).toEqual({ ok: false, text: '', error: 'נפילת bridge' });
   });
 });

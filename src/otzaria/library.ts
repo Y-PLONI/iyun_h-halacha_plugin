@@ -102,26 +102,85 @@ export function findBestTocEntry(toc: TocEntry[], ref: string): TocEntry | null 
   return hit ?? null;
 }
 
-async function loadContentChunks(bookId: string, offset: number, totalLimit: number): Promise<string> {
-  let out = '';
-  let pos = offset;
-  let remaining = Math.max(1, totalLimit);
-  let guard = 0;
-  while (remaining > 0 && guard < 12) {
-    const limit = Math.min(MAX_CHUNK, remaining);
-    const chunk = await callOtzaria<string>('library.getBookContent', {
-      bookId,
-      offset: pos,
-      limit,
-    });
-    if (!chunk) break;
-    out += chunk;
-    if (chunk.length < limit) break; // הגענו לסוף הספר
-    pos += chunk.length;
-    remaining -= chunk.length;
-    guard++;
+// תקרת קריאה לטווח אחד: 200 אלף תווים. הטווח השבועי הגדול ביותר בגליונות הוא כ-37 אלף.
+const MAX_RANGE_CHUNKS = 40;
+
+const LETTER_VALUES: Record<string, number> = {
+  א: 1, ב: 2, ג: 3, ד: 4, ה: 5, ו: 6, ז: 7, ח: 8, ט: 9,
+  י: 10, כ: 20, ך: 20, ל: 30, מ: 40, ם: 40, נ: 50, ן: 50, ס: 60, ע: 70, פ: 80, ף: 80, צ: 90, ץ: 90,
+  ק: 100, ר: 200, ש: 300, ת: 400,
+};
+
+/** מספר הסימן מתוך "סימן תקפא" / "סימן תקפ״א". null אם הטקסט אינו כותרת סימן. */
+export function simanNumber(text: string): number | null {
+  const m = /^סימן ([א-ת]+)$/.exec(text.replace(/["'״׳]/g, '').replace(/\s+/g, ' ').trim());
+  if (!m) return null;
+  let n = 0;
+  for (const ch of m[1]) n += LETTER_VALUES[ch] ?? 0;
+  return n || null;
+}
+
+interface TocRange {
+  /** הכותרת הראשונה בטווח שקיימת בספר */
+  first: TocEntry;
+  /** האם כותרת (טקסט נקי) שייכת לטווח — כותרת מחוצה לו מסיימת את הטעינה */
+  inRange: (headingText: string) => boolean;
+}
+
+/**
+ * בוחר מתוך ה-TOC את הכותרת שממנה מתחילים. ref מסוג "סימן X" מושווה לפי ערך מספרי,
+ * כך שסימן שחסר בספר (ביאור הלכה אינו מפרש כל סימן) מוחלף בסימן הקיים הראשון בטווח.
+ */
+function pickTocRange(toc: TocEntry[], startRef: string, endRef?: string): TocRange | null {
+  const a = simanNumber(startRef);
+  const b = endRef ? simanNumber(endRef) : a;
+  if (a !== null && b !== null) {
+    const lo = Math.min(a, b);
+    const hi = Math.max(a, b);
+    const inRange = (t: string) => {
+      const n = simanNumber(t);
+      return n !== null && n >= lo && n <= hi;
+    };
+    const first = toc.find((e) => inRange(e.text));
+    return first ? { first, inRange } : null;
   }
-  return out;
+  const norm = (s: string) => s.replace(/["'״׳]/g, '').replace(/\s+/g, ' ').trim();
+  const first = toc.find((e) => norm(e.text) === norm(startRef));
+  return first ? { first, inRange: (t) => norm(t) === norm(first.text) } : null;
+}
+
+/**
+ * קורא את הקטע הראשון החל משורת הכותרת עצמה, דרך section.
+ * אוצריא מאתרת את section ב-indexOf, וכשהוא לא נמצא היא מחזירה בשקט את תחילת הספר —
+ * לכן מאמתים שהטקסט שחזר אכן פותח בכותרת. רמת ה-TOC אינה מובטחת כתג ה-<hN>, ולכן
+ * מנסים אותה קודם ואחריה את שאר הרמות.
+ */
+async function readFromHeading(
+  bookId: string,
+  entry: TocEntry,
+): Promise<{ heading: string; level: number; text: string } | null> {
+  const levels = [...new Set([entry.level, 1, 2, 3, 4, 5, 6])].filter((l) => l >= 1 && l <= 6);
+  for (const level of levels) {
+    const heading = `<h${level}>${entry.text}</h${level}>`;
+    const text = await callOtzaria<string>('library.getBookContent', {
+      bookId,
+      section: heading,
+      offset: 0,
+      limit: MAX_CHUNK,
+    });
+    if (text?.startsWith(heading)) return { heading, level, text };
+  }
+  return null;
+}
+
+/** מיקום הכותרת הראשונה (ברמת הסימן או מעליה) שמחוץ לטווח, או -1 אם עוד לא הגענו אליה. */
+function findRangeEnd(text: string, level: number, inRange: (t: string) => boolean): number {
+  for (const m of text.matchAll(/\n<h([1-6])[^>]*>(.*?)<\/h\1>/g)) {
+    if (Number(m[1]) > level) continue; // תת-כותרת (למשל "סעיף ו" בביאור הלכה)
+    if (inRange(m[2].replace(/<[^>]*>/g, '').trim())) continue;
+    return m.index!;
+  }
+  return -1;
 }
 
 export interface LoadedSource {
@@ -131,42 +190,56 @@ export interface LoadedSource {
 }
 
 /**
- * טוען טווח מקור לפי startRef..endRef. מאתר offset לפי ה-TOC,
- * ומעריך אורך קריאה. אם ה-TOC לא מכיל את ה-ref — fallback ל-section.
+ * טוען טווח מקור לפי startRef..endRef (כולל סימן הסיום).
+ *
+ * ה-index של getBookToc הוא מספר שורה, ואילו offset של getBookContent נספר בתווים —
+ * ולכן אי אפשר להשתמש בו כ-offset. במקום זאת מעגנים את הקריאה לשורת הכותרת עצמה
+ * (section), וקוראים ממנה והלאה עד הכותרת הראשונה שמחוץ לטווח.
  */
 export async function loadSourceRange(
   bookName: string,
   startRef: string,
   endRef?: string,
 ): Promise<LoadedSource> {
+  const label = endRef && endRef !== startRef ? `${startRef} – ${endRef}` : startRef;
   try {
     // קודם מפענחים את שם הספר ל-bookId אמיתי (שם התצוגה ≠ bookId)
     const bookId = await resolveBookId(bookName);
     if (!bookId) {
       return { ok: false, text: '', error: `הספר "${bookName}" לא נמצא בספרייה. עדכן את שם הספר בהגדרות.` };
     }
-    const toc = await getBookToc(bookId);
-    const start = findBestTocEntry(toc, startRef);
-    const end = endRef ? findBestTocEntry(toc, endRef) : null;
-    if (start) {
-      const offset = Math.max(0, start.index);
-      const estimated = end && end.index > offset
-        ? Math.min(4 * MAX_CHUNK, end.index - offset + 2000)
-        : MAX_CHUNK;
-      const text = await loadContentChunks(bookId, offset, estimated);
-      if (text.trim()) return { ok: true, text };
+    const range = pickTocRange(await getBookToc(bookId), startRef, endRef);
+    if (!range) {
+      return { ok: false, text: '', error: `"${label}" לא נמצא בתוכן העניינים של הספר.` };
     }
-    // fallback: קפיצה לקטע לפי section
-    const sectionText = await callOtzariaSafe<string>(
-      'library.getBookContent',
-      { bookId, section: startRef, limit: MAX_CHUNK },
-      '',
-    );
-    if (sectionText.trim()) return { ok: true, text: sectionText };
-    // fallback אחרון: תחילת הספר
-    const head = await loadContentChunks(bookId, 0, MAX_CHUNK);
-    if (head.trim()) return { ok: true, text: head };
-    return { ok: false, text: '', error: `לא נמצא תוכן עבור "${startRef}" בספר.` };
+    const start = await readFromHeading(bookId, range.first);
+    if (!start) {
+      return { ok: false, text: '', error: `הכותרת "${range.first.text}" לא נמצאה בטקסט הספר.` };
+    }
+
+    let text = start.text;
+    let lastChunk = text.length;
+    let chunks = 1;
+    let end = findRangeEnd(text, start.level, range.inRange);
+    // chunk קצר מ-MAX_CHUNK = הגענו לסוף הספר
+    while (end < 0 && lastChunk === MAX_CHUNK && chunks < MAX_RANGE_CHUNKS) {
+      const chunk = await callOtzaria<string>('library.getBookContent', {
+        bookId,
+        section: start.heading,
+        offset: text.length, // אוצריא סופרת offset מתחילת ה-section
+        limit: MAX_CHUNK,
+      });
+      if (!chunk) break;
+      text += chunk;
+      lastChunk = chunk.length;
+      chunks++;
+      end = findRangeEnd(text, start.level, range.inRange);
+    }
+    if (end >= 0) return { ok: true, text: text.slice(0, end) };
+    if (lastChunk === MAX_CHUNK) {
+      text += '\n<p>… הטווח ארוך מדי לתצוגה כאן — להמשך פתח את הספר באוצריא.</p>';
+    }
+    return { ok: true, text };
   } catch (e) {
     return { ok: false, text: '', error: e instanceof Error ? e.message : 'שגיאה בטעינת המקור' };
   }
