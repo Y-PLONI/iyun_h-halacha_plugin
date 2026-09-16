@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TopBar } from '../../src/components/TopBar';
 import { ToastHost } from '../../src/components/Toast';
 import { appStore } from '../../src/state/appStore';
-import { getIssues } from '../../src/data/localData';
+import { getIssues, getWeeksForIssue } from '../../src/data/localData';
 import { defaultHandlers, installFakeHost, type FakeHost } from '../helpers/host';
 import { prepareExams, resetStores, seedAnswer } from '../helpers/app';
 import { readZipFromBlob } from '../helpers/zip';
@@ -28,6 +28,12 @@ beforeEach(() => {
     downloaded.push({ name: this.download, blob: blobs[blobs.length - 1] });
   });
 });
+
+/** פותח את תפריט הייצוא ובוחר פריט בו. */
+const clickExport = (label: string) => {
+  fireEvent.click(screen.getByTitle('ייצוא ל-Word'));
+  fireEvent.click(screen.getByRole('menuitem', { name: label }));
+};
 
 const renderTopBar = () =>
   render(
@@ -71,7 +77,7 @@ describe('TopBar — תצוגה', () => {
 describe('TopBar — בורר גליונות', () => {
   it('פותח רשימה עם כל הגליונות, הפעיל מסומן', () => {
     renderTopBar();
-    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    fireEvent.click(screen.getByRole('button', { name: /גליון/ }));
     const options = screen.getAllByRole('option');
     expect(options).toHaveLength(getIssues().length);
     const active = options.find((o) => o.getAttribute('aria-selected') === 'true')!;
@@ -80,7 +86,7 @@ describe('TopBar — בורר גליונות', () => {
 
   it('בחירת גליון מחליפה גליון וסוגרת את הרשימה', () => {
     renderTopBar();
-    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    fireEvent.click(screen.getByRole('button', { name: /גליון/ }));
     fireEvent.click(screen.getByRole('option', { name: /גליון 240/ }));
     expect(appStore.get().activeIssueId).toBe('issue-0240');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -88,7 +94,7 @@ describe('TopBar — בורר גליונות', () => {
 
   it('לחיצה מחוץ לרשימה סוגרת אותה', () => {
     renderTopBar();
-    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    fireEvent.click(screen.getByRole('button', { name: /גליון/ }));
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     fireEvent.mouseDown(document.body);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -96,7 +102,7 @@ describe('TopBar — בורר גליונות', () => {
 
   it('לחיצה חוזרת על הבורר סוגרת', () => {
     renderTopBar();
-    const picker = screen.getByRole('button', { expanded: false });
+    const picker = screen.getByRole('button', { name: /גליון/ });
     fireEvent.click(picker);
     fireEvent.click(picker);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -107,7 +113,7 @@ describe('TopBar — ייצוא ל-Word', () => {
   it('מייצא קובץ DOCX לשבוע הפעיל ומציג הודעה', async () => {
     seedAnswer(appStore.get().activeWeekId!, { answerHtml: '<p>תשובה לייצוא</p>', answerText: 'תשובה לייצוא' });
     renderTopBar();
-    fireEvent.click(screen.getByTitle('ייצוא ל-Word'));
+    clickExport('השבוע הנוכחי');
 
     await waitFor(() => expect(downloaded).toHaveLength(1));
     expect(downloaded[0].name).toMatch(/^תשובות עיון ההלכה - גליון \d+ - שבוע \d+\.docx$/);
@@ -121,7 +127,7 @@ describe('TopBar — ייצוא ל-Word', () => {
     const { updateAnswerContent } = await import('../../src/state/answersStore');
     const { getWeek } = await import('../../src/data/localData');
     updateAnswerContent(getWeek(appStore.get().activeWeekId!)!, '<p>טרם נשמר</p>', 'טרם נשמר');
-    fireEvent.click(screen.getByTitle('ייצוא ל-Word'));
+    clickExport('השבוע הנוכחי');
     await waitFor(() =>
       expect(host.callsTo('storage.set').some((c) => c.payload.key === 'answers:v2')).toBe(true),
     );
@@ -130,7 +136,7 @@ describe('TopBar — ייצוא ל-Word', () => {
   it('ללא שבוע פעיל — מציג הנחיה לבחור שבוע', async () => {
     appStore.set({ activeWeekId: null });
     renderTopBar();
-    fireEvent.click(screen.getByTitle('ייצוא ל-Word'));
+    clickExport('השבוע הנוכחי');
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('בחר שבוע לפני ייצוא'));
     expect(downloaded).toHaveLength(0);
   });
@@ -141,8 +147,38 @@ describe('TopBar — ייצוא ל-Word', () => {
       throw new Error('כשל בהמרה');
     });
     renderTopBar();
-    fireEvent.click(screen.getByTitle('ייצוא ל-Word'));
+    clickExport('השבוע הנוכחי');
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('שגיאה בייצוא'));
+  });
+
+  it('מייצא את כל שבועות הגליון לקובץ אחד', async () => {
+    const weeks = getWeeksForIssue(appStore.get().activeIssueId);
+    weeks.forEach((w, i) =>
+      seedAnswer(w.weekId, { answerHtml: `<p>תשובת שבוע ${i + 1}</p>`, answerText: `תשובת שבוע ${i + 1}` }),
+    );
+    renderTopBar();
+    clickExport('כל השבועות בגליון');
+
+    await waitFor(() => expect(downloaded).toHaveLength(1));
+    expect(downloaded[0].name).toMatch(/^תשובות עיון ההלכה - גליון \d+ - כל השבועות\.docx$/);
+    const doc = (await readZipFromBlob(downloaded[0].blob)).find((e) => e.name === 'word/document.xml')!;
+    weeks.forEach((w, i) => {
+      expect(doc.text).toContain(w.parasha);
+      expect(doc.text).toContain(`תשובת שבוע ${i + 1}`);
+    });
+  });
+
+  it('ייצוא כל השבועות אינו תלוי בשבוע פעיל', async () => {
+    appStore.set({ activeWeekId: null });
+    renderTopBar();
+    clickExport('כל השבועות בגליון');
+    await waitFor(() => expect(downloaded).toHaveLength(1));
+  });
+
+  it('בחירה בתפריט סוגרת אותו', async () => {
+    renderTopBar();
+    clickExport('השבוע הנוכחי');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });
 

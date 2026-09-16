@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { getWeek, getExamMeta, getIssues } from '../data/localData';
+import { getWeek, getExamMeta, getIssues, getWeeksForIssue } from '../data/localData';
 import { useApp, setSettingsOpen, setActiveIssue, goToScreen, type ScreenName } from '../state/appStore';
 import { useSettings } from '../state/settingsStore';
 import { saveAnswersNow } from '../state/answersStore';
-import { exportWeekDocx } from '../export/docx';
+import { exportWeekDocx, exportIssueDocx } from '../export/docx';
 import { toast } from './Toast';
 import { Icon } from './Icon';
 import { SendDialog } from './SendDialog';
@@ -18,7 +18,7 @@ export function TopBar() {
 
   const todayLabel = new Date().toLocaleDateString('he-IL');
 
-  const handleExport = async () => {
+  const handleExportWeek = async () => {
     if (!activeWeek) {
       toast('בחר שבוע לפני ייצוא');
       return;
@@ -34,6 +34,35 @@ export function TopBar() {
           dateLabel: todayLabel,
         },
         exam?.issueNumber ?? 0,
+      );
+      toast(`${filename} ירד למחשב`);
+    } catch (e) {
+      toast('שגיאה בייצוא: ' + (e instanceof Error ? e.message : ''));
+    }
+  };
+
+  /** ייצוא כל שבועות הגליון לקובץ אחד. */
+  const handleExportIssue = async () => {
+    if (!exam) {
+      toast('בחר גליון לפני ייצוא');
+      return;
+    }
+    const weeks = getWeeksForIssue(exam.issueId);
+    if (weeks.length === 0) {
+      toast('אין שבועות בגליון זה');
+      return;
+    }
+    await saveAnswersNow();
+    try {
+      const filename = exportIssueDocx(
+        {
+          weeks,
+          settings,
+          issueTitle: exam.title ?? 'עיון ההלכה',
+          hebrewMonth: exam.hebrewMonth ?? '',
+          dateLabel: todayLabel,
+        },
+        exam.issueNumber ?? 0,
       );
       toast(`${filename} ירד למחשב`);
     } catch (e) {
@@ -71,9 +100,7 @@ export function TopBar() {
         ))}
       </nav>
       <div className="topbar-side topbar-left">
-        <button className="icon-btn" title="ייצוא ל-Word" onClick={() => void handleExport()}>
-          <Icon name="download" /> ייצוא
-        </button>
+        <ExportMenu onWeek={() => void handleExportWeek()} onIssue={() => void handleExportIssue()} />
         <button className="icon-btn" title="שליחה במייל" onClick={handleMail}>
           <Icon name="mail" /> מייל
         </button>
@@ -93,6 +120,51 @@ const NAV: { id: ScreenName; label: string }[] = [
   { id: 'questions', label: 'שאלות' },
   { id: 'workspace', label: 'כתיבת תשובות' },
 ];
+
+/** תפריט הייצוא: שבוע נוכחי או כל שבועות הגליון. */
+function ExportMenu({ onWeek, onIssue }: { onWeek: () => void; onIssue: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  const pick = (fn: () => void) => {
+    setOpen(false);
+    fn();
+  };
+
+  return (
+    <div className="popover-anchor" ref={ref}>
+      <button
+        className="icon-btn"
+        title="ייצוא ל-Word"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Icon name="download" /> ייצוא
+        <Icon name="chevron-down" size="0.9em" />
+      </button>
+      {open && (
+        <div className="popover align-start" role="menu">
+          <button className="popover-item" role="menuitem" onClick={() => pick(onWeek)}>
+            השבוע הנוכחי
+          </button>
+          <button className="popover-item" role="menuitem" onClick={() => pick(onIssue)}>
+            כל השבועות בגליון
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface IssueOption {
   id: string;
