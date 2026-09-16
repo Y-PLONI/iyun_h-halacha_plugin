@@ -138,6 +138,32 @@ describe('installMockOtzaria', () => {
     expect(res.data).toEqual(createMockBootPayload().permissions);
   });
 
+  it('storage.get/set/remove/list עובדים ושורדים ריענון (localStorage)', async () => {
+    installMockOtzaria();
+    localStorage.clear();
+    expect((await call<unknown>('storage.get', { key: 'settings:v1' })).data).toBeNull();
+
+    const set = await call<boolean>('storage.set', { key: 'settings:v1', value: { name: 'משה' } });
+    expect(set.success).toBe(true);
+    expect((await call<{ name: string }>('storage.get', { key: 'settings:v1' })).data).toEqual({
+      name: 'משה',
+    });
+
+    await call('storage.set', { key: 'answers:v2', value: { a: 1 } });
+    expect((await call<string[]>('storage.list')).data.sort()).toEqual(['answers:v2', 'settings:v1']);
+
+    await call('storage.remove', { key: 'settings:v1' });
+    expect((await call<unknown>('storage.get', { key: 'settings:v1' })).data).toBeNull();
+    expect((await call<string[]>('storage.list')).data).toEqual(['answers:v2']);
+  });
+
+  it('storage.list אינו מחזיר מפתחות זרים ב-localStorage', async () => {
+    installMockOtzaria();
+    localStorage.clear();
+    localStorage.setItem('other-app:x', '1');
+    await call('storage.set', { key: 'settings:v1', value: {} });
+    expect((await call<string[]>('storage.list')).data).toEqual(['settings:v1']);
+  });
   it('מתודה לא מוכרת מחזירה כשל עם קוד', async () => {
     installMockOtzaria();
     const res = await call('does.not.exist');
