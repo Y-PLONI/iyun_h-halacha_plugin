@@ -1,8 +1,10 @@
 // Mock של Otzaria SDK לפיתוח בדפדפן רגיל (import.meta.env.DEV).
-// מאפשר להריץ את התוסף ללא host אמיתי. storage נופל ל-localStorage דרך storage.ts.
+// מאפשר להריץ את התוסף ללא host אמיתי. storage.* ממומש כאן מעל localStorage — המוק
+// מתקין window.Otzaria, ולכן ה-fallback שב-storage.ts אינו נתפס.
 
 import type { BootPayload, OtzariaResponse, ThemePayload, TocEntry } from './otzaria_plugin';
 import { toGematria } from '../export/formDocx';
+import { DEV_PREFIX } from './storage';
 
 export function createMockBootPayload(): BootPayload {
   return {
@@ -181,6 +183,29 @@ export function installMockOtzaria(): void {
       case 'library.getBookContent':
         return ok(
           sliceBookContent(mockBook(String(payload?.bookId ?? '')).raw, payload),
+        ) as OtzariaResponse<T>;
+      // storage.* — נשמר ב-localStorage תחת קידומת משלו, כדי לדמות את ה-host
+      // שעושה JSON encode/decode בעצמו (מקבלים/מחזירים אובייקט גולמי).
+      case 'storage.get': {
+        const raw = localStorage.getItem(DEV_PREFIX + String(payload?.key ?? ''));
+        return ok(raw === null ? null : JSON.parse(raw)) as OtzariaResponse<T>;
+      }
+      case 'storage.set': {
+        localStorage.setItem(
+          DEV_PREFIX + String(payload?.key ?? ''),
+          JSON.stringify(payload?.value ?? null),
+        );
+        return ok(true) as OtzariaResponse<T>;
+      }
+      case 'storage.remove': {
+        localStorage.removeItem(DEV_PREFIX + String(payload?.key ?? ''));
+        return ok(true) as OtzariaResponse<T>;
+      }
+      case 'storage.list':
+        return ok(
+          Object.keys(localStorage)
+            .filter((k) => k.startsWith(DEV_PREFIX))
+            .map((k) => k.slice(DEV_PREFIX.length)),
         ) as OtzariaResponse<T>;
       case 'reader.openBookAtRef':
       case 'reader.openBook':

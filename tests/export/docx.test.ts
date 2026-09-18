@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildAnswersDocx, downloadBlob, exportWeekDocx } from '../../src/export/docx';
+import { buildAnswersDocx, downloadBlob, exportIssueDocx, exportWeekDocx } from '../../src/export/docx';
 import { answersStore } from '../../src/state/answersStore';
 import { readZipFromBlob } from '../helpers/zip';
 import { makeSettings, makeWeek } from '../helpers/fixtures';
@@ -111,5 +111,128 @@ describe('exportWeekDocx', () => {
     );
     const doc = (await readZipFromBlob(blobs[0])).find((e) => e.name === 'word/document.xml')!;
     expect(doc.text).toContain('גופה של התשובה');
+  });
+});
+
+/** שותל תשובות לשבועות הנתונים בלבד. */
+function seedAnswers(weeks: ReturnType<typeof makeWeek>[]): void {
+  answersStore.set((prev) => ({
+    answers: {
+      ...prev.answers,
+      answersByWeek: Object.fromEntries(
+        weeks.map((w) => [
+          w.weekId,
+          {
+            issueId: w.issueId,
+            weekId: w.weekId,
+            answerHtml: `<p>תשובה ${w.weekNumber}</p>`,
+            answerText: `תשובה ${w.weekNumber}`,
+            status: 'completed' as const,
+            wordCount: 2,
+            lastSavedAt: '',
+          },
+        ]),
+      ),
+    },
+  }));
+}
+
+/** לוכד הורדות ומחזיר את רשימת ה-blobs שירדו. */
+function captureDownloads(): Blob[] {
+  const blobs: Blob[] = [];
+  vi.spyOn(URL, 'createObjectURL').mockImplementation((b: Blob | MediaSource) => {
+    blobs.push(b as Blob);
+    return 'blob:x';
+  });
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  return blobs;
+}
+
+describe('exportIssueDocx', () => {
+  it('מאחד את כל שבועות הגליון לקובץ אחד עם כותרת אחת', async () => {
+    const weeks = [makeWeek({ weekId: 'w1', weekNumber: 1, parasha: 'שלח' }), makeWeek({ weekId: 'w2', weekNumber: 2, parasha: 'קרח' })];
+    answersStore.set((prev) => ({
+      answers: {
+        ...prev.answers,
+        answersByWeek: Object.fromEntries(
+          weeks.map((w) => [
+            w.weekId,
+            {
+              issueId: w.issueId,
+              weekId: w.weekId,
+              answerHtml: `<p>תשובה ${w.weekNumber}</p>`,
+              answerText: `תשובה ${w.weekNumber}`,
+              status: 'completed' as const,
+              wordCount: 2,
+              lastSavedAt: '',
+            },
+          ]),
+        ),
+      },
+    }));
+    const blobs: Blob[] = [];
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((b: Blob | MediaSource) => {
+      blobs.push(b as Blob);
+      return 'blob:x';
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    const filename = exportIssueDocx(
+      {
+        weeks,
+        settings: makeSettings({ name: 'משה' }),
+        issueTitle: 'עיון ההלכה - גליון ר"מ',
+        hebrewMonth: 'סיון תשפ"ו',
+        dateLabel: '1.1.2026',
+      },
+      240,
+    );
+
+    expect(filename).toBe('תשובות עיון ההלכה - גליון 240 - כל השבועות.docx');
+    const doc = (await readZipFromBlob(blobs[0])).find((e) => e.name === 'word/document.xml')!;
+    expect(doc.text).toContain('שלח');
+    expect(doc.text).toContain('קרח');
+    expect(doc.text).toContain('תשובה 1');
+    expect(doc.text).toContain('תשובה 2');
+    expect(doc.text?.match(/משה/g)).toHaveLength(1);
+  });
+  it('מדלג על שבועות שלא נכתבה בהם תשובה', async () => {
+    const weeks = [makeWeek({ weekId: 'w1', weekNumber: 1, parasha: 'שלח' }), makeWeek({ weekId: 'w2', weekNumber: 2, parasha: 'קרח' })];
+    seedAnswers([weeks[0]]);
+    const blobs = captureDownloads();
+
+    exportIssueDocx(
+      {
+        weeks,
+        settings: makeSettings({ name: 'משה' }),
+        issueTitle: 'עיון ההלכה - גליון ר"מ',
+        hebrewMonth: 'סיון תשפ"ו',
+        dateLabel: '1.1.2026',
+      },
+      240,
+    );
+
+    const doc = (await readZipFromBlob(blobs[0])).find((e) => e.name === 'word/document.xml')!;
+    expect(doc.text).toContain('שלח');
+    expect(doc.text).not.toContain('קרח');
+    expect(doc.text).not.toContain('—');
+  });
+
+  it('ללא תשובות כתובות — זורק שגיאה ואינו מוריד קובץ', () => {
+    const weeks = [makeWeek({ weekId: 'w1' })];
+    const blobs = captureDownloads();
+    expect(() =>
+      exportIssueDocx(
+      {
+        weeks,
+        settings: makeSettings({ name: 'משה' }),
+        issueTitle: 'עיון ההלכה - גליון ר"מ',
+        hebrewMonth: 'סיון תשפ"ו',
+        dateLabel: '1.1.2026',
+      },
+      240,
+      ),
+    ).toThrow('אין תשובות כתובות בגליון זה');
+    expect(blobs).toHaveLength(0);
   });
 });

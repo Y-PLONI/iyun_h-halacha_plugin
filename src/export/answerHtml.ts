@@ -26,12 +26,17 @@ function header(settings: SettingsState, issueTitle: string, hebrewMonth: string
   return out;
 }
 
+/** האם נכתבה תשובה של ממש לשבוע (ולא רשומה ריקה). */
+export function hasWrittenAnswer(weekId: string): boolean {
+  const rec = getAnswer(weekId);
+  return Boolean(rec?.answerHtml && rec.answerText.trim());
+}
+
 function weekBlock(week: ScheduleWeek): string[] {
   const out: string[] = [];
   out.push(`<h2>שבוע ${week.weekNumber} - פרשת ${esc(week.parasha)}</h2>`);
   out.push(`<p>${esc(week.sourceRangeTitle)}</p>`);
-  const rec = getAnswer(week.weekId);
-  out.push(rec?.answerHtml && rec.answerText.trim() ? rec.answerHtml : '<p>—</p>');
+  out.push(hasWrittenAnswer(week.weekId) ? getAnswer(week.weekId)!.answerHtml : '<p>—</p>');
   return out;
 }
 

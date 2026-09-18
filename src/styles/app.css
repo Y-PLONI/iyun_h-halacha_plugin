@@ -89,6 +89,8 @@ button { font-family: inherit; color: inherit; }
   white-space: nowrap;
   transition: background 0.12s;
 }
+/* תפריט שנפתח מכפתור בקצה — נפתח לכיוון הפנים כדי לא לחרוג מהמסך */
+.popover.align-start { left: 0; right: auto; }
 .popover-item:hover { background: var(--color-secondary-subtle); }
 .popover-item.active {
   background: var(--color-secondary-container);

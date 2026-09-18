@@ -79,8 +79,12 @@ describe('SendDialog — מילוי אוטומטי', () => {
 });
 
 describe('SendDialog — שליחה', () => {
-  it('מוריד את קובץ התשובות ואת טופס הסימון, ופותח מייל', async () => {
+  // שליחה מתרחשת אחרי שנכתבו תשובות — קובץ התשובות כולל רק שבועות שנענו
+  beforeEach(() => {
     seedAnswer('issue-0240-w1', { answerHtml: '<p>תשובתי</p>', answerText: 'תשובתי', status: 'completed' });
+  });
+
+  it('מוריד את קובץ התשובות ואת טופס הסימון, ופותח מייל', async () => {
     const { onClose } = renderDialog();
     fireEvent.click(screen.getByRole('button', { name: /שלח/ }));
 
@@ -160,6 +164,26 @@ describe('SendDialog — שליחה', () => {
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('2 קבצים ירדו'));
   });
 
+  it('קובץ התשובות כולל את כל שבועות הגליון שנענו, לא רק את השבוע הפעיל', async () => {
+    seedAnswer('issue-0240-w2', { answerHtml: '<p>תשובת שבוע ב</p>', answerText: 'תשובת שבוע ב' });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /שלח/ }));
+    await waitFor(() => expect(downloaded).toHaveLength(2));
+    const doc = (await readZipFromBlob(downloaded[0].blob)).find((e) => e.name === 'word/document.xml')!;
+    expect(doc.text).toContain('תשובתי');
+    expect(doc.text).toContain('תשובת שבוע ב');
+    expect(doc.text).toContain(realWeek('issue-0240-w2').parasha);
+  });
+
+  it('שבועות שלא נענו אינם נכללים בקובץ התשובות', async () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /שלח/ }));
+    await waitFor(() => expect(downloaded).toHaveLength(2));
+    const doc = (await readZipFromBlob(downloaded[0].blob)).find((e) => e.name === 'word/document.xml')!;
+    expect(doc.text).toContain(realWeek('issue-0240-w1').parasha);
+    expect(doc.text).not.toContain(realWeek('issue-0240-w3').parasha);
+  });
+
   it('כשל בהפקת טופס הסימון אינו מונע שליחה', async () => {
     const formDocx = await import('../../src/export/formDocx');
     vi.spyOn(formDocx, 'buildAnswerFormDocx').mockImplementation(() => {
@@ -217,5 +241,18 @@ describe('SendDialog — סגירה ונגישות', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /שולח…/ })).toBeDisabled());
     expect(screen.getByRole('button', { name: 'ביטול' })).toBeDisabled();
     release(true);
+  });
+});
+
+describe('SendDialog — שליחה ללא תשובות', () => {
+  it('מדווח על כשל בייצוא התשובות אך ממשיך בטופס ובמייל', async () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /שלח/ }));
+
+    await waitFor(() => expect(downloaded).toHaveLength(1));
+    expect(downloaded[0].name).toContain('טופס סימון תשובות');
+    await waitFor(() => expect(host.callsTo('feedback.sendEmail')).toHaveLength(1));
+    const { body } = host.callsTo('feedback.sendEmail')[0].payload as Record<string, string>;
+    expect(body).not.toContain('תשובות עיון ההלכה');
   });
 });

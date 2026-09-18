@@ -1,13 +1,14 @@
 // דיאלוג מילוי לפני שליחה: ממלא אוטומטית מה שידוע (שם, קוד, גליון, פרשיות, שבועות
 // שנענו), ומאפשר להשלים/לאשר את שאר השדות (כולל, צורת תשלום, פלפולא). בעת שליחה:
-// מייצא את קובץ התשובות + טופס סימון התשובות הממולא לתיקיית ההורדות, ופותח מייל.
+// מייצא את קובץ התשובות של כל הגליון + טופס סימון התשובות הממולא לתיקיית ההורדות,
+// ופותח מייל. התשובות נשלחות בקובץ אחד, בהתאם לדרישת המערכת.
 
 import { useMemo, useState } from 'react';
 import type { ExamEntry, ScheduleWeek } from '../data/types';
 import { useSettings, updateSettings } from '../state/settingsStore';
 import { getWeeksForIssue } from '../data/localData';
 import { getAnswer, saveAnswersNow } from '../state/answersStore';
-import { exportWeekDocx, downloadBlob } from '../export/docx';
+import { exportIssueDocx, downloadBlob } from '../export/docx';
 import { buildAnswerFormDocx, toGematria, type FormFieldValues } from '../export/formDocx';
 import { sendMail } from '../otzaria/mail';
 import { toast } from './Toast';
@@ -30,12 +31,14 @@ export function SendDialog({ week, exam, onClose }: Props) {
   const settings = useSettings();
   const todayLabel = new Date().toLocaleDateString('he-IL');
 
+  // שבועות הגליון — מקור גם לספירת "שבועות שנענו" וגם לקובץ התשובות המצורף
+  const issueWeeks = useMemo(() => (exam ? getWeeksForIssue(exam.issueId) : [week]), [exam, week]);
+
   // ספירת שבועות שנענו (סטטוס "הושלם") בגליון
-  const completedWeeks = useMemo(() => {
-    if (!exam) return 0;
-    return getWeeksForIssue(exam.issueId).filter((w) => getAnswer(w.weekId)?.status === 'completed')
-      .length;
-  }, [exam]);
+  const completedWeeks = useMemo(
+    () => issueWeeks.filter((w) => getAnswer(w.weekId)?.status === 'completed').length,
+    [issueWeeks],
+  );
 
   const parshiotCount = exam?.parshiot?.length ?? exam?.weeksInIssue ?? '';
   const gematria = issueGematria(exam);
@@ -55,12 +58,12 @@ export function SendDialog({ week, exam, onClose }: Props) {
       updateSettings({ name: name.trim(), personalCode: code.trim(), kollel: kollel.trim() });
       await saveAnswersNow();
 
-      // 1) קובץ התשובות
+      // 1) קובץ התשובות — כל שבועות הגליון בקובץ אחד, כפי שנדרש לשליחה
       let answersFile = '';
       try {
-        answersFile = exportWeekDocx(
+        answersFile = exportIssueDocx(
           {
-            week,
+            weeks: issueWeeks,
             settings: { ...settings, name: name.trim(), personalCode: code.trim() },
             issueTitle: exam?.title ?? 'עיון ההלכה',
             hebrewMonth: exam?.hebrewMonth ?? '',
@@ -143,8 +146,9 @@ export function SendDialog({ week, exam, onClose }: Props) {
         </div>
 
         <p className="hint">
-          הפרטים הידועים מולאו אוטומטית. השלם את החסר ולחץ "שלח" — קובץ התשובות וטופס
-          סימון התשובות הממולא ירדו לתיקיית ההורדות, וייפתח חלון מייל לצירופם.
+          הפרטים הידועים מולאו אוטומטית. השלם את החסר ולחץ "שלח" — קובץ התשובות (כל
+          שבועות הגליון שנענו) וטופס סימון התשובות הממולא ירדו לתיקיית ההורדות, וייפתח
+          חלון מייל לצירופם.
         </p>
 
         <div className="field">
