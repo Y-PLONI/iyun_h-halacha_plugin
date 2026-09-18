@@ -1,7 +1,12 @@
 // ייצוא תשובות ל-DOCX והורדה למשתמש.
 
 import { htmlToOoxml, packageDocx } from './ooxml';
-import { buildWeekAnswersHtml, buildIssueAnswersHtml, type ExportWeekInput } from './answerHtml';
+import {
+  buildWeekAnswersHtml,
+  buildIssueAnswersHtml,
+  hasWrittenAnswer,
+  type ExportWeekInput,
+} from './answerHtml';
 import type { ScheduleWeek, SettingsState } from '../data/types';
 
 export function buildAnswersDocx(html: string): Blob {
@@ -37,10 +42,16 @@ export interface ExportIssueInput {
   dateLabel: string;
 }
 
-/** מייצא את תשובות כל שבועות הגליון לקובץ DOCX אחד ומוריד אותו. מחזיר את שם הקובץ. */
+/**
+ * מייצא את תשובות כל שבועות הגליון לקובץ DOCX אחד ומוריד אותו. מחזיר את שם הקובץ.
+ * נכללים רק שבועות שנכתבה בהם תשובה — קובץ שנשלח באמצע הגליון לא יכיל שבועות ריקים.
+ * זורק שגיאה אם אין אף תשובה כתובה בגליון.
+ */
 export function exportIssueDocx(input: ExportIssueInput, issueNumber: number): string {
   const { weeks, settings, issueTitle, hebrewMonth, dateLabel } = input;
-  const html = buildIssueAnswersHtml(weeks, { issueTitle, hebrewMonth, dateLabel, settings });
+  const answered = weeks.filter((w) => hasWrittenAnswer(w.weekId));
+  if (answered.length === 0) throw new Error('אין תשובות כתובות בגליון זה');
+  const html = buildIssueAnswersHtml(answered, { issueTitle, hebrewMonth, dateLabel, settings });
   const blob = buildAnswersDocx(html);
   const filename = `תשובות עיון ההלכה - גליון ${issueNumber} - כל השבועות.docx`;
   downloadBlob(blob, filename);

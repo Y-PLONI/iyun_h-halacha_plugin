@@ -4,6 +4,7 @@
 
 import type { BootPayload, OtzariaResponse, ThemePayload, TocEntry } from './otzaria_plugin';
 import { toGematria } from '../export/formDocx';
+import { DEV_PREFIX } from './storage';
 
 export function createMockBootPayload(): BootPayload {
   return {
@@ -159,9 +160,6 @@ function mockBook(bookId: string): { lines: string[]; raw: string } {
   return book;
 }
 
-/** קידומת מפתחות ה-storage של המוק (מקבילה לזו שב-storage.ts). */
-const MOCK_STORAGE_PREFIX = 'iyun-halacha:';
-
 type Listener = (detail: unknown) => void;
 
 export function installMockOtzaria(): void {
@@ -189,25 +187,25 @@ export function installMockOtzaria(): void {
       // storage.* — נשמר ב-localStorage תחת קידומת משלו, כדי לדמות את ה-host
       // שעושה JSON encode/decode בעצמו (מקבלים/מחזירים אובייקט גולמי).
       case 'storage.get': {
-        const raw = localStorage.getItem(MOCK_STORAGE_PREFIX + String(payload?.key ?? ''));
+        const raw = localStorage.getItem(DEV_PREFIX + String(payload?.key ?? ''));
         return ok(raw === null ? null : JSON.parse(raw)) as OtzariaResponse<T>;
       }
       case 'storage.set': {
         localStorage.setItem(
-          MOCK_STORAGE_PREFIX + String(payload?.key ?? ''),
+          DEV_PREFIX + String(payload?.key ?? ''),
           JSON.stringify(payload?.value ?? null),
         );
         return ok(true) as OtzariaResponse<T>;
       }
       case 'storage.remove': {
-        localStorage.removeItem(MOCK_STORAGE_PREFIX + String(payload?.key ?? ''));
+        localStorage.removeItem(DEV_PREFIX + String(payload?.key ?? ''));
         return ok(true) as OtzariaResponse<T>;
       }
       case 'storage.list':
         return ok(
           Object.keys(localStorage)
-            .filter((k) => k.startsWith(MOCK_STORAGE_PREFIX))
-            .map((k) => k.slice(MOCK_STORAGE_PREFIX.length)),
+            .filter((k) => k.startsWith(DEV_PREFIX))
+            .map((k) => k.slice(DEV_PREFIX.length)),
         ) as OtzariaResponse<T>;
       case 'reader.openBookAtRef':
       case 'reader.openBook':

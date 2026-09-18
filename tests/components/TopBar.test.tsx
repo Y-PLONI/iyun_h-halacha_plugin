@@ -100,6 +100,14 @@ describe('TopBar — בורר גליונות', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
+  it('Escape סוגר את הרשימה', () => {
+    renderTopBar();
+    fireEvent.click(screen.getByRole('button', { name: /גליון/ }));
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
   it('לחיצה חוזרת על הבורר סוגרת', () => {
     renderTopBar();
     const picker = screen.getByRole('button', { name: /גליון/ });
@@ -169,10 +177,43 @@ describe('TopBar — ייצוא ל-Word', () => {
   });
 
   it('ייצוא כל השבועות אינו תלוי בשבוע פעיל', async () => {
+    seedAnswer(getWeeksForIssue(appStore.get().activeIssueId)[0].weekId, {
+      answerHtml: '<p>תשובה</p>',
+      answerText: 'תשובה',
+    });
     appStore.set({ activeWeekId: null });
     renderTopBar();
     clickExport('כל השבועות בגליון');
     await waitFor(() => expect(downloaded).toHaveLength(1));
+  });
+
+  it('מדלג על שבועות שלא נענו', async () => {
+    const weeks = getWeeksForIssue(appStore.get().activeIssueId);
+    seedAnswer(weeks[0].weekId, { answerHtml: '<p>רק ראשון</p>', answerText: 'רק ראשון' });
+    renderTopBar();
+    clickExport('כל השבועות בגליון');
+
+    await waitFor(() => expect(downloaded).toHaveLength(1));
+    const doc = (await readZipFromBlob(downloaded[0].blob)).find((e) => e.name === 'word/document.xml')!;
+    expect(doc.text).toContain(weeks[0].parasha);
+    expect(doc.text).not.toContain(weeks[1].parasha);
+  });
+
+  it('גליון ללא תשובות כתובות — מציג הנחיה ואינו מוריד קובץ', async () => {
+    renderTopBar();
+    clickExport('כל השבועות בגליון');
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('אין תשובות כתובות בגליון זה'),
+    );
+    expect(downloaded).toHaveLength(0);
+  });
+
+  it('Escape סוגר את תפריט הייצוא', () => {
+    renderTopBar();
+    fireEvent.click(screen.getByTitle('ייצוא ל-Word'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   it('בחירה בתפריט סוגרת אותו', async () => {

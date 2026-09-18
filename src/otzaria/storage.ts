@@ -3,7 +3,8 @@
 
 import { callOtzaria, hasOtzaria } from './sdk';
 
-const DEV_PREFIX = 'iyun-halacha:';
+/** קידומת מפתחות ה-storage ב-localStorage (dev בדפדפן, וגם ה-mock של ה-SDK). */
+export const DEV_PREFIX = 'iyun-halacha:';
 
 /** קריאת ערך. מחזיר null אם לא קיים. בדפדפן dev — נופל ל-localStorage. */
 export async function storageGet<T>(key: string): Promise<T | null> {
