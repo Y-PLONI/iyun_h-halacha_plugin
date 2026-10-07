@@ -50,6 +50,80 @@ function tick(ms = 100): void {
 }
 
 describe('installFocusRestore — חזרה לטאב', () => {
+  it('respects a button focused during the resume delay', () => {
+    const el = makeInput();
+    const button = document.createElement('button');
+    document.body.append(button);
+    el.focus();
+    host.emit('plugin.suspended', null);
+    el.blur();
+    host.emit('plugin.resumed', null);
+    button.focus();
+    tick();
+    expect(document.activeElement).toBe(button);
+  });
+
+  it.each(['readOnly', 'disabled'] as const)('does not restore an input that becomes %s while suspended', (property) => {
+    const el = makeInput();
+    el.focus();
+    host.emit('plugin.suspended', null);
+    el.blur();
+    el[property] = true;
+    const focus = vi.spyOn(el, 'focus');
+    host.emit('plugin.resumed', null);
+    tick();
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('does not restore an editor that becomes noneditable', () => {
+    const el = makeEditor();
+    el.focus();
+    host.emit('plugin.suspended', null);
+    el.blur();
+    el.setAttribute('contenteditable', 'false');
+    const focus = vi.spyOn(el, 'focus');
+    host.emit('plugin.resumed', null);
+    tick();
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it.each(['input', 'textarea'])('preserves backward selection in %s', (tag) => {
+    const el = document.createElement(tag) as HTMLInputElement | HTMLTextAreaElement;
+    el.value = 'abcdef';
+    document.body.append(el);
+    el.focus();
+    el.setSelectionRange(1, 4, 'backward');
+    host.emit('plugin.suspended', null);
+    host.emit('plugin.resumed', null);
+    tick();
+    expect(el.selectionStart).toBe(1);
+    expect(el.selectionEnd).toBe(4);
+    expect(el.selectionDirection).toBe('backward');
+  });
+
+  it('preserves backward selection in the editor', () => {
+    const el = makeEditor('abcdef');
+    el.focus();
+    const selection = window.getSelection()!;
+    selection.setBaseAndExtent(el.firstChild!, 4, el.firstChild!, 1);
+    host.emit('plugin.suspended', null);
+    selection.removeAllRanges();
+    host.emit('plugin.resumed', null);
+    tick();
+    expect(selection.anchorOffset).toBe(4);
+    expect(selection.focusOffset).toBe(1);
+  });
+
+  it('remembers focus on window blur without the host lifecycle events', () => {
+    const el = makeInput();
+    el.focus();
+    window.dispatchEvent(new Event('blur'));
+    el.blur();
+    window.dispatchEvent(new Event('focus'));
+    tick();
+    expect(document.activeElement).toBe(el);
+  });
+
   it('מבצע blur ו-focus מחדש לעורך שהיה במיקוד בעת plugin.resumed', () => {
     const el = makeEditor();
     el.focus();
