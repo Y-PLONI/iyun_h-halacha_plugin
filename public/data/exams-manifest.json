@@ -1,8 +1,35 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.09.02",
-  "updatedAt": "2026-09-02T00:00:00+03:00",
+  "dataVersion": "2026.10.31",
+  "updatedAt": "2026-10-31T00:00:00+03:00",
   "exams": [
+    {
+      "issueId": "issue-0244",
+      "issueNumber": 244,
+      "title": "עיון ההלכה - גליון רמ\"ד",
+      "hebrewMonth": "חשון - כסלו תשפ\"ז",
+      "weeksInIssue": 5,
+      "parshiot": [
+        "חיי שרה",
+        "תולדות",
+        "ויצא",
+        "וישלח",
+        "וישב"
+      ],
+      "version": "1.0.0",
+      "updatedAt": "2026-10-31T00:00:00+03:00",
+      "files": {
+        "questionsJson": null,
+        "pdf": null,
+        "docx": null
+      },
+      "sha256": {
+        "questionsJson": "",
+        "pdf": ""
+      },
+      "licenseStatus": "private",
+      "notes": "נבנה מתוך גליון רמ\"ד - חשון-כסלו תשפ\"ז. שאלות מוצגות ישירות ממסמך ה-Word."
+    },
     {
       "issueId": "issue-0243",
       "issueNumber": 243,

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.09.02",
-  "updatedAt": "2026-09-02T00:00:00+03:00",
-  "defaultIssueId": "issue-0243",
+  "dataVersion": "2026.10.31",
+  "updatedAt": "2026-10-31T00:00:00+03:00",
+  "defaultIssueId": "issue-0244",
   "periods": [
     {
       "periodId": "iyar-sivan-5786",
@@ -1143,6 +1143,225 @@
               "bookId": "שער הציון",
               "startRef": "סימן תריז",
               "endRef": "סימן תרכ"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "periodId": "cheshvan-kislev-5787",
+      "title": "חשון - כסלו תשפ\"ז",
+      "hebrewMonthRange": "חשון - כסלו תשפ\"ז",
+      "gregorianRange": {
+        "start": "2026-11-01",
+        "end": "2026-12-05"
+      },
+      "issueIds": [
+        "issue-0244"
+      ],
+      "weeks": [
+        {
+          "weekId": "issue-0244-w1",
+          "issueId": "issue-0244",
+          "weekNumber": 1,
+          "weeksInIssue": 5,
+          "parasha": "חיי שרה",
+          "title": "סדר קריאת התורה ומילה ביו\"כ, סדר תפלת מנחה, סדר תפלת נעילה, סדר מוצאי יום הכיפורים",
+          "topicTitle": "סדר התפילה, תפילת מנחה, תפילת נעילה יחיד וחזרת הש\"ץ, התקיעה, אור בהבדלה",
+          "hebrewDateRange": "כא-כז חשון",
+          "gregorianDateRange": {
+            "start": "2026-11-01",
+            "end": "2026-11-07"
+          },
+          "sourceRangeTitle": "מסימן תרכא סעיף א עד סוף סימן תרכד",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תרכא",
+              "endRef": "סימן תרכד"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תרכא",
+              "endRef": "סימן תרכד"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תרכא",
+              "endRef": "סימן תרכד"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תרכא",
+              "endRef": "סימן תרכד"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0244-w2",
+          "issueId": "issue-0244",
+          "weekNumber": 2,
+          "weeksInIssue": 5,
+          "parasha": "תולדות",
+          "title": "חזרה כללית",
+          "topicTitle": "ערב יוה\"כ, טבילה בערב יוה\"כ, קבלת תענית, האכילה בערב יוה\"כ, הדלקת נר בליל יום הכפורים",
+          "hebrewDateRange": "כח חשון - ד כסלו",
+          "gregorianDateRange": {
+            "start": "2026-11-08",
+            "end": "2026-11-14"
+          },
+          "sourceRangeTitle": "מסימן תרד סעיף א עד סוף סימן תרי",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרי"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרי"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרי"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תרד",
+              "endRef": "סימן תרי"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0244-w3",
+          "issueId": "issue-0244",
+          "weekNumber": 3,
+          "weeksInIssue": 5,
+          "parasha": "ויצא",
+          "title": "חזרה כללית",
+          "topicTitle": "שתיה ביוה\"כ, איסור רחיצה, נטילת ידים, קטן, האם מתענין",
+          "hebrewDateRange": "ה-יא כסלו",
+          "gregorianDateRange": {
+            "start": "2026-11-15",
+            "end": "2026-11-21"
+          },
+          "sourceRangeTitle": "מסימן תריא סעיף א עד סימן תריז סעיף ב",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריז"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריז"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריז"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תריא",
+              "endRef": "סימן תריז"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0244-w4",
+          "issueId": "issue-0244",
+          "weekNumber": 4,
+          "weeksInIssue": 5,
+          "parasha": "וישלח",
+          "title": "חזרה כללית",
+          "topicTitle": "אכילה בשיעורין, שתיה בשיעורין, הזכרות יוה\"כ ושבת, ליל יום הכיפורים, ניגונים פיוטים ונוסח התפילה",
+          "hebrewDateRange": "יב-יח כסלו",
+          "gregorianDateRange": {
+            "start": "2026-11-22",
+            "end": "2026-11-28"
+          },
+          "sourceRangeTitle": "מסימן תריז סעיף ג עד סוף סימן תרכד",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכד"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכד"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכד"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תריז",
+              "endRef": "סימן תרכד"
+            }
+          },
+          "questionIds": [],
+          "requiredAnswersCount": 0,
+          "totalQuestionsCount": 0,
+          "status": "active"
+        },
+        {
+          "weekId": "issue-0244-w5",
+          "issueId": "issue-0244",
+          "weekNumber": 5,
+          "weeksInIssue": 5,
+          "parasha": "וישב",
+          "title": "חנוכה, טעם מצות סוכה, העושה סוכה תחת האילן או תחת הגג, דיני הישן בסוכה",
+          "topicTitle": "מצות סוכה, סוכה תחת בית או אילן, אילן שחמתו מרובה מצילתו, אילן שחמתו מרובה מצילתו לדעה השניה, תעשה ולא מן העשוי",
+          "hebrewDateRange": "יט-כה כסלו",
+          "gregorianDateRange": {
+            "start": "2026-11-29",
+            "end": "2026-12-05"
+          },
+          "sourceRangeTitle": "מסימן תרכה סעיף א עד סוף סימן תרכו",
+          "sourceRefs": {
+            "shulchanAruch": {
+              "bookId": "שולחן ערוך, אורח חיים",
+              "startRef": "סימן תרכה",
+              "endRef": "סימן תרכו"
+            },
+            "mishnaBerurah": {
+              "bookId": "משנה ברורה",
+              "startRef": "סימן תרכה",
+              "endRef": "סימן תרכו"
+            },
+            "biurHalacha": {
+              "bookId": "ביאור הלכה",
+              "startRef": "סימן תרכה",
+              "endRef": "סימן תרכו"
+            },
+            "shaarHatziyun": {
+              "bookId": "שער הציון",
+              "startRef": "סימן תרכה",
+              "endRef": "סימן תרכו"
             }
           },
           "questionIds": [],
