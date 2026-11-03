@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildAnswersDocx, downloadBlob, exportIssueDocx, exportWeekDocx } from '../../src/export/docx';
+import { buildAnswersDocx, exportIssueDocx, exportWeekDocx } from '../../src/export/docx';
+import { downloadBlob } from '../../src/export/saveFile';
 import { answersStore } from '../../src/state/answersStore';
 import { readZipFromBlob } from '../helpers/zip';
 import { makeSettings, makeWeek } from '../helpers/fixtures';

@@ -48,8 +48,8 @@ function splitName(filename: string): { base: string; ext: string } {
 }
 
 /**
- * שומר את הקובץ. בתוך אוצריא — דיאלוג "שמור בשם"; אם המסלול אינו זמין (גרסה ישנה, חסרה
- * הרשאה) — נופל להורדה דרך הדפדפן. שגיאה אחרי שההעלאה התחילה נזרקת (בלי נפילה שקטה).
+ * שומר את הקובץ. בתוך אוצריא — דיאלוג "שמור בשם"; אם המסלול אינו נתמך (גרסה ישנה / אין SDK) —
+ * נופל להורדה דרך הדפדפן. כל שגיאה אחרת (גם חוסר הרשאה) נזרקת, בלי נפילה שקטה.
  *
  * חשוב: יש לקרוא לפונקציה כמה שיותר קרוב ללחיצת המשתמש, בלי שרשרת await ארוכה לפניה.
  */
@@ -66,10 +66,15 @@ export async function saveBlobAs(blob: Blob, filename: string, dialogTitle?: str
       expectedSize: blob.size,
     });
     if (!begin?.writeToken || !begin.uploadUrl) throw new Error('error.invalid_response');
-  } catch {
-    // המסלול אינו נתמך/מורשה בגרסה הזו — נפילה להורדה דרך הדפדפן
-    downloadBlob(blob, filename);
-    return { filename, status: 'downloaded' };
+  } catch (e) {
+    // נפילה להורדה דרך הדפדפן רק כשהמסלול אינו נתמך בגרסת ה-host (או שה-SDK חסר).
+    // כל שגיאה אחרת (הרשאה, תשובה לא תקינה, כשל פנימי) היא שגיאה אמיתית ונזרקת למשתמש.
+    const msg = e instanceof Error ? e.message : '';
+    if (/^error\.(unsupported|unknown_method|sdk_unavailable)\b/.test(msg)) {
+      downloadBlob(blob, filename);
+      return { filename, status: 'downloaded' };
+    }
+    throw e;
   }
 
   try {

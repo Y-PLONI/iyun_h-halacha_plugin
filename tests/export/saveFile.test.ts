@@ -54,11 +54,28 @@ describe('saveBlobAs', () => {
     expect(out.status).toBe('cancelled');
   });
 
-  it('כשהמסלול אינו נתמך (begin נכשל) — נופל להורדה דרך הדפדפן', async () => {
+  it('כשהמסלול אינו נתמך (error.unsupported) — נופל להורדה דרך הדפדפן', async () => {
     host = installFakeHost({});
-    host.fail('fs.beginBinaryWrite', 'error.permission_denied');
+    host.fail('fs.beginBinaryWrite', 'error.unsupported');
     const out = await saveBlobAs(blob(), 'a.docx');
     expect(out.status).toBe('downloaded');
+  });
+
+  it('כשהמתודה אינה מוכרת ל-host הישן (error.unknown_method) — נופל להורדה', async () => {
+    host = installFakeHost({});
+    const out = await saveBlobAs(blob(), 'a.docx');
+    expect(out.status).toBe('downloaded');
+  });
+
+  it('שגיאת הרשאה ב-begin נזרקת ואינה מדווחת כהורדה', async () => {
+    host = installFakeHost({});
+    host.fail('fs.beginBinaryWrite', 'error.permission_denied');
+    await expect(saveBlobAs(blob(), 'a.docx')).rejects.toThrow('error.permission_denied');
+  });
+
+  it('תשובת begin לא תקינה נזרקת ואינה מדווחת כהורדה', async () => {
+    host = installFakeHost({ 'fs.beginBinaryWrite': {} });
+    await expect(saveBlobAs(blob(), 'a.docx')).rejects.toThrow('error.invalid_response');
   });
 
   it('כשל בהעלאה: מבטל את ההעלאה וזורק שגיאה (בלי נפילה שקטה)', async () => {

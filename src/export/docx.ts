@@ -7,7 +7,7 @@ import {
   hasWrittenAnswer,
   type ExportWeekInput,
 } from './answerHtml';
-import { saveBlobAs, downloadBlob, type SaveOutcome } from './saveFile';
+import { saveBlobAs, type SaveOutcome } from './saveFile';
 import type { ScheduleWeek, SettingsState } from '../data/types';
 
 export function buildAnswersDocx(html: string): Blob {
@@ -46,6 +46,5 @@ export async function exportIssueDocx(input: ExportIssueInput, issueNumber: numb
   return saveBlobAs(blob, filename, 'שמירת תשובות עיון ההלכה');
 }
 
-export { downloadBlob };
 export type { SaveOutcome };
 export type { ExportWeekInput };
