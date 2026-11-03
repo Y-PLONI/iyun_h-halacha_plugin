@@ -56,7 +56,7 @@ describe('exportWeekDocx', () => {
     });
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    const filename = exportWeekDocx(
+    const { filename } = await exportWeekDocx(
       {
         week: makeWeek({ weekNumber: 3, parasha: 'חקת' }),
         settings: makeSettings({ name: 'משה' }),
@@ -99,7 +99,7 @@ describe('exportWeekDocx', () => {
     });
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    exportWeekDocx(
+    await exportWeekDocx(
       {
         week,
         settings: makeSettings(),
@@ -177,7 +177,7 @@ describe('exportIssueDocx', () => {
     });
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    const filename = exportIssueDocx(
+    const { filename } = await exportIssueDocx(
       {
         weeks,
         settings: makeSettings({ name: 'משה' }),
@@ -201,7 +201,7 @@ describe('exportIssueDocx', () => {
     seedAnswers([weeks[0]]);
     const blobs = captureDownloads();
 
-    exportIssueDocx(
+    await exportIssueDocx(
       {
         weeks,
         settings: makeSettings({ name: 'משה' }),
@@ -218,21 +218,21 @@ describe('exportIssueDocx', () => {
     expect(doc.text).not.toContain('—');
   });
 
-  it('ללא תשובות כתובות — זורק שגיאה ואינו מוריד קובץ', () => {
+  it('ללא תשובות כתובות — דוחה בשגיאה ואינו מוריד קובץ', async () => {
     const weeks = [makeWeek({ weekId: 'w1' })];
     const blobs = captureDownloads();
-    expect(() =>
+    await expect(
       exportIssueDocx(
-      {
-        weeks,
-        settings: makeSettings({ name: 'משה' }),
-        issueTitle: 'עיון ההלכה - גליון ר"מ',
-        hebrewMonth: 'סיון תשפ"ו',
-        dateLabel: '1.1.2026',
-      },
-      240,
+        {
+          weeks,
+          settings: makeSettings({ name: 'משה' }),
+          issueTitle: 'עיון ההלכה - גליון ר"מ',
+          hebrewMonth: 'סיון תשפ"ו',
+          dateLabel: '1.1.2026',
+        },
+        240,
       ),
-    ).toThrow('אין תשובות כתובות בגליון זה');
+    ).rejects.toThrow('אין תשובות כתובות בגליון זה');
     expect(blobs).toHaveLength(0);
   });
 });

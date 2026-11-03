@@ -10,7 +10,7 @@ export function createMockBootPayload(): BootPayload {
   return {
     plugin: { id: 'com.chadbedera.iyun-halacha', version: '0.1.0' },
     app: {
-      version: '0.9.92',
+      version: '0.9.97',
       platform: 'macos',
       locale: 'he',
       textDirection: 'rtl',

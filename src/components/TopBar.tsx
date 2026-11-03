@@ -4,6 +4,7 @@ import { useApp, setSettingsOpen, setActiveIssue, goToScreen, type ScreenName } 
 import { useSettings } from '../state/settingsStore';
 import { saveAnswersNow } from '../state/answersStore';
 import { exportWeekDocx, exportIssueDocx } from '../export/docx';
+import { describeOutcome } from '../export/saveFile';
 import { hasWrittenAnswer } from '../export/answerHtml';
 import { toast } from './Toast';
 import { Icon } from './Icon';
@@ -25,9 +26,10 @@ export function TopBar() {
       toast('בחר שבוע לפני ייצוא');
       return;
     }
-    await saveAnswersNow();
+    // הייצוא נקרא לפני השמירה לאחסון, כדי שדיאלוג השמירה ייפתח סמוך ככל האפשר ללחיצה
+    void saveAnswersNow();
     try {
-      const filename = exportWeekDocx(
+      const outcome = await exportWeekDocx(
         {
           week: activeWeek,
           settings,
@@ -37,7 +39,7 @@ export function TopBar() {
         },
         exam?.issueNumber ?? 0,
       );
-      toast(`${filename} ירד למחשב`);
+      toast(describeOutcome(outcome));
     } catch (e) {
       toast('שגיאה בייצוא: ' + (e instanceof Error ? e.message : ''));
     }
@@ -58,9 +60,9 @@ export function TopBar() {
       toast('אין תשובות כתובות בגליון זה');
       return;
     }
-    await saveAnswersNow();
+    void saveAnswersNow();
     try {
-      const filename = exportIssueDocx(
+      const outcome = await exportIssueDocx(
         {
           weeks,
           settings,
@@ -70,7 +72,7 @@ export function TopBar() {
         },
         exam.issueNumber ?? 0,
       );
-      toast(`${filename} ירד למחשב`);
+      toast(describeOutcome(outcome));
     } catch (e) {
       toast('שגיאה בייצוא: ' + (e instanceof Error ? e.message : ''));
     }

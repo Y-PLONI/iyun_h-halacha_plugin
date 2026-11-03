@@ -9,7 +9,7 @@
   "category": "Utilities",
   "entrypoint": "index.html",
   "icon": "icon/icon.png",
-  "minAppVersion": "0.9.92",
+  "minAppVersion": "0.9.97",
   "sdkVersion": "1.x",
   "stability": "beta",
   "permissions": [
@@ -21,6 +21,7 @@
     "plugin.storage.write",
     "ui.feedback",
     "feedback.send_email",
+    "fs.user_files.write",
     "notifications.send",
     "notifications.system",
     "published_data.write",
