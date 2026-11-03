@@ -27,7 +27,11 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [sizes, setSizes] = useState<number[]>(() => panes.map((p) => p.defaultSize));
   const [collapsed, setCollapsed] = useState<boolean[]>(() => panes.map(() => false));
-  const drag = useRef<{ index: number; startPos: number; startSizes: number[] } | null>(null);
+  const drag = useRef<{ index: number; startPos: number; startSizes: number[]; latest: number[] } | null>(null);
+
+  // (כשמספר החלוניות משתנה בין רינדורים — למשל חלונית שמופיעה אחרי בדיקה אסינכרונית —
+  // עובדים על גדלי ברירת המחדל באורך הנכון עד שהגדלים השמורים נטענים, כדי לא לקבל NaN.)
+  const sizesNow = sizes.length === panes.length ? sizes : panes.map((p) => p.defaultSize);
 
   // טעינת גדלים שמורים
   useEffect(() => {
@@ -35,7 +39,13 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
     void (async () => {
       const saved = await storageGet<Record<string, number[]>>(STORAGE_KEYS.splitSizes);
       const arr = saved?.[storageKey];
-      if (alive && Array.isArray(arr) && arr.length === panes.length) setSizes(arr);
+      if (!alive) return;
+      if (Array.isArray(arr) && arr.length === panes.length) {
+        setSizes(arr);
+      } else {
+        // אין ערך שמור באורך תואם: גוזרים גדלים מהחלוניות הנוכחיות
+        setSizes(panes.map((p) => p.defaultSize));
+      }
     })();
     return () => {
       alive = false;
@@ -58,7 +68,7 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
     (e: PointerEvent) => {
       const d = drag.current;
       const el = containerRef.current;
-      if (!d || !el) return;
+      if (!d || !el || !panes[d.index] || !panes[d.index + 1]) return;
       const total = isHoriz ? el.clientWidth : el.clientHeight;
       if (total <= 0) return;
       const pos = isHoriz ? e.clientX : e.clientY;
@@ -82,6 +92,7 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
       }
       next[a] = na;
       next[b] = nb;
+      d.latest = next;
       setSizes(next);
     },
     [isHoriz, panes],
@@ -89,10 +100,7 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
 
   const endDrag = useCallback(() => {
     if (drag.current) {
-      setSizes((s) => {
-        void persist(s);
-        return s;
-      });
+      void persist(drag.current.latest);
     }
     drag.current = null;
     document.body.style.userSelect = '';
@@ -105,7 +113,8 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
     drag.current = {
       index,
       startPos: isHoriz ? e.clientX : e.clientY,
-      startSizes: [...sizes],
+      startSizes: [...sizesNow],
+      latest: [...sizesNow],
     };
     document.body.style.userSelect = 'none';
     window.addEventListener('pointermove', onPointerMove);
@@ -123,9 +132,6 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
   };
 
   // חישוב flex-basis אפקטיבי בהתחשב בקיפול
-  // (כשמספר החלוניות משתנה בין רינדורים — למשל חלונית שמופיעה אחרי בדיקה אסינכרונית —
-  // חוזרים לברירות המחדל עד שהגדלים השמורים נטענים, כדי לא לקבל NaN.)
-  const sizesNow = sizes.length === panes.length ? sizes : panes.map((p) => p.defaultSize);
   const effective = panes.map((_, i) =>
     collapsed[i] ? COLLAPSED : Math.max(sizesNow[i], panes[i].minSize),
   );

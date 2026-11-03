@@ -202,3 +202,49 @@ describe('SplitPane — שחזור גדלים', () => {
     });
   });
 });
+
+describe('SplitPane — שינוי מספר החלוניות', () => {
+  const nPanes = (n: number): PaneDef[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `p${i}`,
+      title: `חלונית ${i}`,
+      minSize: 10,
+      defaultSize: 100 / n,
+      content: <div>תוכן {i}</div>,
+    }));
+
+  const allBases = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('.pane')).map((el) => parseFloat((el as HTMLElement).style.flexBasis));
+
+  it('גרירה עובדת אחרי שמספר החלוניות עלה מ-3 ל-4', () => {
+    const { container, rerender } = render(<SplitPane direction="horizontal" panes={nPanes(3)} storageKey="grow" />);
+    rerender(<SplitPane direction="horizontal" panes={nPanes(4)} storageKey="grow" />);
+    stubContainerWidth(container, 1000);
+    const before = allBases(container);
+    expect(before).toHaveLength(4);
+    fireEvent.pointerDown(container.querySelectorAll('.resizer')[1], { clientX: 500 });
+    fireEvent(window, new PointerEvent('pointermove', { clientX: 600 }));
+    const after = allBases(container);
+    fireEvent(window, new PointerEvent('pointerup'));
+    expect(after).toHaveLength(4);
+    after.forEach((v) => expect(Number.isFinite(v)).toBe(true));
+    expect(after[1]).toBeCloseTo(before[1] - 10, 1);
+    expect(after[2]).toBeCloseTo(before[2] + 10, 1);
+  });
+
+  it('גרירה עובדת אחרי שמספר החלוניות ירד מ-4 ל-3', () => {
+    const { container, rerender } = render(<SplitPane direction="horizontal" panes={nPanes(4)} storageKey="shrink" />);
+    rerender(<SplitPane direction="horizontal" panes={nPanes(3)} storageKey="shrink" />);
+    stubContainerWidth(container, 1000);
+    const before = allBases(container);
+    expect(before).toHaveLength(3);
+    fireEvent.pointerDown(container.querySelectorAll('.resizer')[1], { clientX: 500 });
+    fireEvent(window, new PointerEvent('pointermove', { clientX: 600 }));
+    const after = allBases(container);
+    fireEvent(window, new PointerEvent('pointerup'));
+    expect(after).toHaveLength(3);
+    after.forEach((v) => expect(Number.isFinite(v)).toBe(true));
+    expect(after[1]).toBeCloseTo(before[1] - 10, 1);
+    expect(after[2]).toBeCloseTo(before[2] + 10, 1);
+  });
+});
