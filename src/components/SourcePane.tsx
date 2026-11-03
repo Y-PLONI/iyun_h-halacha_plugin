@@ -90,6 +90,7 @@ export function SourcePane({ week }: SourcePaneProps) {
           <button
             className="icon-btn mini"
             title="רענן"
+            aria-label="רענן"
             onClick={() => bumpReload(role, cacheKey)}
           >
             <Icon name="sync" size="1em" />
@@ -97,6 +98,7 @@ export function SourcePane({ week }: SourcePaneProps) {
           <button
             className="icon-btn mini"
             title="פתח באוצריא"
+            aria-label="פתח באוצריא"
             onClick={() => void handleOpen()}>
             <Icon name="open" size="1em" />
           </button>

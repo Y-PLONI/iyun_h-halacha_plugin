@@ -28,6 +28,12 @@ const renderDialog = () =>
 const settings = () => settingsStore.get().settings;
 
 describe('SettingsDialog — מסגרת', () => {
+  it('Escape סוגר את חלון ההגדרות', () => {
+    renderDialog();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(appStore.get().settingsOpen).toBe(false);
+  });
+
   it('בחירת פריסת "תשובה מתחת לשאלות" נשמרת בהגדרות', () => {
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: 'תשובה מתחת לשאלות' }));

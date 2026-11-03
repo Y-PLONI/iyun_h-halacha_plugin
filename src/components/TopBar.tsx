@@ -109,7 +109,7 @@ export function TopBar() {
       </nav>
       <div className="topbar-side topbar-left">
         <ExportMenu onWeek={() => void handleExportWeek()} onIssue={() => void handleExportIssue()} />
-        <button className="icon-btn" title="שליחה במייל" onClick={handleMail}>
+        <button className="icon-btn" title="שליחה במייל" aria-label="שליחה במייל" onClick={handleMail}>
           <Icon name="mail" /> מייל
         </button>
         <button className="icon-btn square" title="הגדרות" aria-label="הגדרות" onClick={() => setSettingsOpen(true)}>
@@ -143,6 +143,7 @@ function ExportMenu({ onWeek, onIssue }: { onWeek: () => void; onIssue: () => vo
       <button
         className="icon-btn"
         title="ייצוא ל-Word"
+        aria-label="ייצוא ל-Word"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggle}

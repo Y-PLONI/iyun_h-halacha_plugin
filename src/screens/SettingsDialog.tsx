@@ -5,6 +5,7 @@ import { autoDetectBookId } from '../otzaria/library';
 import { setSettingsOpen } from '../state/appStore';
 import { toast } from '../components/Toast';
 import { Icon } from '../components/Icon';
+import { useEscape } from '../components/useEscape';
 import {
   checkNotificationPermissions,
   notificationsAvailable,
@@ -32,6 +33,7 @@ export function SettingsDialog() {
     void flushSettings();
     setSettingsOpen(false);
   };
+  useEscape(close);
 
   const detectBooks = async () => {
     setDetecting(true);
@@ -49,9 +51,9 @@ export function SettingsDialog() {
 
   return (
     <div className="overlay-scrim" onClick={close}>
-      <div className="overlay-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
         <div className="settings-head">
-          <h2>הגדרות</h2>
+          <h2 id="settings-title">הגדרות</h2>
           <button className="icon-btn square" title="סגור" aria-label="סגור" onClick={close}>
             <Icon name="dismiss" />
           </button>
@@ -146,24 +148,24 @@ function SubmitTab() {
   return (
     <>
       <div className="field">
-        <label>שם</label>
-        <input className="input" value={settings.name} onChange={(e) => updateSettings({ name: e.target.value })} />
+        <label htmlFor="set-1">שם</label>
+        <input id="set-1" className="input" value={settings.name} onChange={(e) => updateSettings({ name: e.target.value })} />
       </div>
       <div className="field">
-        <label>קוד אישי</label>
-        <input className="input" value={settings.personalCode} onChange={(e) => updateSettings({ personalCode: e.target.value })} />
+        <label htmlFor="set-2">קוד אישי</label>
+        <input id="set-2" className="input" value={settings.personalCode} onChange={(e) => updateSettings({ personalCode: e.target.value })} />
       </div>
       <div className="field">
-        <label>כולל</label>
-        <input className="input" value={settings.kollel} onChange={(e) => updateSettings({ kollel: e.target.value })} />
+        <label htmlFor="set-3">כולל</label>
+        <input id="set-3" className="input" value={settings.kollel} onChange={(e) => updateSettings({ kollel: e.target.value })} />
       </div>
       <div className="field">
-        <label>המייל שלי (שולח)</label>
-        <input className="input" type="email" value={settings.senderEmail} onChange={(e) => updateSettings({ senderEmail: e.target.value })} />
+        <label htmlFor="set-4">המייל שלי (שולח)</label>
+        <input id="set-4" className="input" type="email" value={settings.senderEmail} onChange={(e) => updateSettings({ senderEmail: e.target.value })} />
       </div>
       <div className="field">
-        <label>מייל יעד לשליחת תשובות</label>
-        <input className="input" type="email" value={settings.recipientEmail} onChange={(e) => updateSettings({ recipientEmail: e.target.value })} />
+        <label htmlFor="set-5">מייל יעד לשליחת תשובות</label>
+        <input id="set-5" className="input" type="email" value={settings.recipientEmail} onChange={(e) => updateSettings({ recipientEmail: e.target.value })} />
       </div>
     </>
   );
@@ -179,15 +181,15 @@ function SourcesTab({ detecting, detectBooks }: { detecting: boolean; detectBook
       </button>
       {SOURCE_ROLES.map((role: SourceRole) => (
         <div className="field" key={role} style={{ marginTop: 10 }}>
-          <label>{SOURCE_ROLE_LABELS[role]}</label>
-          <input className="input" value={settings.bookIds[role]} onChange={(e) => setBookId(role, e.target.value)} />
+          <label htmlFor="set-6">{SOURCE_ROLE_LABELS[role]}</label>
+          <input id="set-6" className="input" value={settings.bookIds[role]} onChange={(e) => setBookId(role, e.target.value)} />
         </div>
       ))}
 
       <div className="section-title">שמירה אוטומטית</div>
       <div className="field">
-        <label>השהיית שמירה (מילישניות)</label>
-        <input
+        <label htmlFor="set-7">השהיית שמירה (מילישניות)</label>
+        <input id="set-7"
           className="input"
           type="number"
           min={300}
@@ -239,8 +241,8 @@ function RemindersTab() {
       </label>
 
       <div className="field" style={{ marginTop: 12, opacity: settings.remindersEnabled ? 1 : 0.5 }}>
-        <label>יום בשבוע</label>
-        <select
+        <label htmlFor="set-8">יום בשבוע</label>
+        <select id="set-8"
           className="input"
           value={settings.reminderWeekday}
           disabled={!settings.remindersEnabled}
@@ -255,8 +257,8 @@ function RemindersTab() {
       </div>
 
       <div className="field" style={{ opacity: settings.remindersEnabled ? 1 : 0.5 }}>
-        <label>שעה</label>
-        <input
+        <label htmlFor="set-9">שעה</label>
+        <input id="set-9"
           className="input"
           type="time"
           style={{ width: 'auto', minWidth: 140 }}

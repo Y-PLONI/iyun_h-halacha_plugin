@@ -14,6 +14,7 @@ import { buildAnswerFormDocx, toGematria, type FormFieldValues } from '../export
 import { sendMail } from '../otzaria/mail';
 import { toast } from './Toast';
 import { Icon } from './Icon';
+import { useEscape } from './useEscape';
 
 interface Props {
   week: ScheduleWeek;
@@ -51,6 +52,8 @@ export function SendDialog({ week, exam, onClose }: Props) {
   const [pilpula, setPilpula] = useState(false);
   const [weeks, setWeeks] = useState(String(completedWeeks || ''));
   const [sending, setSending] = useState(false);
+  // לא סוגרים באמצע שליחה (דיאלוגי השמירה פתוחים)
+  useEscape(onClose, !sending);
 
   const handleSend = async () => {
     setSending(true);
@@ -153,9 +156,9 @@ export function SendDialog({ week, exam, onClose }: Props) {
 
   return (
     <div className="overlay-scrim" onClick={onClose}>
-      <div className="overlay-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="send-title" onClick={(e) => e.stopPropagation()}>
         <div className="settings-head">
-          <h2>שליחת תשובות במייל</h2>
+          <h2 id="send-title">שליחת תשובות במייל</h2>
           <button className="icon-btn square" title="סגור" aria-label="סגור" onClick={onClose}>
             <Icon name="dismiss" />
           </button>
@@ -168,20 +171,21 @@ export function SendDialog({ week, exam, onClose }: Props) {
         </p>
 
         <div className="field">
-          <label>שם פרטי ומשפחה</label>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="send-name">שם פרטי ומשפחה</label>
+          <input id="send-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="field">
-          <label>קוד אישי</label>
-          <input className="input" value={code} onChange={(e) => setCode(e.target.value)} />
+          <label htmlFor="send-code">קוד אישי</label>
+          <input id="send-code" className="input" value={code} onChange={(e) => setCode(e.target.value)} />
         </div>
         <div className="field">
-          <label>כולל</label>
-          <input className="input" value={kollel} onChange={(e) => setKollel(e.target.value)} />
+          <label htmlFor="send-kollel">כולל</label>
+          <input id="send-kollel" className="input" value={kollel} onChange={(e) => setKollel(e.target.value)} />
         </div>
         <div className="field">
-          <label>צורת התשלום על הגליון</label>
+          <label htmlFor="send-payment">צורת התשלום על הגליון</label>
           <input
+            id="send-payment"
             className="input"
             value={payment}
             placeholder="לדוגמה: נדרים פלוס"
@@ -189,8 +193,9 @@ export function SendDialog({ week, exam, onClose }: Props) {
           />
         </div>
         <div className="field">
-          <label>מספר שבועות שנענו</label>
+          <label htmlFor="send-weeks">מספר שבועות שנענו</label>
           <input
+            id="send-weeks"
             className="input"
             type="number"
             min={0}

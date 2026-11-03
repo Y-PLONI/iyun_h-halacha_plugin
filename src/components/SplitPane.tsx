@@ -182,6 +182,7 @@ function FragmentPane({
             <button
               className="icon-btn mini"
               title={collapsed ? 'הרחב' : 'כווץ'}
+              aria-label={collapsed ? 'הרחב' : 'כווץ'}
               onClick={onCollapse}
             >
               <Icon name={collapsed ? 'chevron-down' : 'chevron-up'} size="1em" />
@@ -195,6 +196,8 @@ function FragmentPane({
           className={`resizer ${direction}`}
           onPointerDown={onResizerDown}
           onDoubleClick={onResizerDouble}
+          role="separator"
+          aria-orientation={direction === 'horizontal' ? 'vertical' : 'horizontal'}
           title="גרור לשינוי גודל · לחיצה כפולה לאיפוס"
         />
       )}

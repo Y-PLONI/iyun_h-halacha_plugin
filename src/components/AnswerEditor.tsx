@@ -71,19 +71,19 @@ export function AnswerEditor({ week }: { week: ScheduleWeek }) {
   return (
     <div className="pane-stack">
       <div className="answer-toolbar">
-        <button className="fmt-btn" title="מודגש" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('bold')}>
+        <button className="fmt-btn" title="מודגש" aria-label="מודגש" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('bold')}>
           <Icon name="bold" />
         </button>
-        <button className="fmt-btn" title="נטוי" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('italic')}>
+        <button className="fmt-btn" title="נטוי" aria-label="נטוי" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('italic')}>
           <Icon name="italic" />
         </button>
-        <button className="fmt-btn" title="קו תחתון" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('underline')}>
+        <button className="fmt-btn" title="קו תחתון" aria-label="קו תחתון" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('underline')}>
           <Icon name="underline" />
         </button>
         <span className="fmt-sep" />
         <button
           className="fmt-btn"
-          title="רשימה ממוספרת"
+          title="רשימה ממוספרת" aria-label="רשימה ממוספרת"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => cmd('insertOrderedList')}
         >
@@ -91,20 +91,20 @@ export function AnswerEditor({ week }: { week: ScheduleWeek }) {
         </button>
         <button
           className="fmt-btn"
-          title="רשימת תבליטים"
+          title="רשימת תבליטים" aria-label="רשימת תבליטים"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => cmd('insertUnorderedList')}
         >
           <Icon name="list-bullet" />
         </button>
         <span className="fmt-sep" />
-        <button className="fmt-btn" title="בטל" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('undo')}>
+        <button className="fmt-btn" title="בטל" aria-label="בטל" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('undo')}>
           <Icon name="undo" />
         </button>
-        <button className="fmt-btn" title="חזור" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('redo')}>
+        <button className="fmt-btn" title="חזור" aria-label="חזור" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd('redo')}>
           <Icon name="redo" />
         </button>
-        <button className="fmt-btn" title="ניקוי עיצוב" onMouseDown={(e) => e.preventDefault()} onClick={clearFormat}>
+        <button className="fmt-btn" title="ניקוי עיצוב" aria-label="ניקוי עיצוב" onMouseDown={(e) => e.preventDefault()} onClick={clearFormat}>
           <Icon name="clear-format" />
         </button>
       </div>
@@ -113,6 +113,9 @@ export function AnswerEditor({ week }: { week: ScheduleWeek }) {
         ref={editorRef}
         className="answer-area"
         contentEditable
+        role="textbox"
+        aria-multiline="true"
+        aria-label="תשובה"
         dir="rtl"
         data-placeholder="כתוב כאן את תשובותיך לשבוע זה…"
         onInput={handleInput}
