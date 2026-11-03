@@ -128,39 +128,6 @@ describe('autoDetectBookId', () => {
   });
 });
 
-describe('findBestTocEntry', () => {
-  it('התאמה מדויקת', async () => {
-    const lib = await freshLibrary();
-    expect(lib.findBestTocEntry(toc, 'סימן תקמ')?.index).toBe(1200);
-  });
-
-  it('מתעלם מגרשיים/גרשים בהשוואה', async () => {
-    const lib = await freshLibrary();
-    const entries = [{ text: 'סימן תקמ"א', index: 500, level: 1 }] as TocEntry[];
-    expect(lib.findBestTocEntry(entries, 'סימן תקמא')?.index).toBe(500);
-  });
-
-  it('בוחר את ההתאמה החלקית הארוכה ביותר', async () => {
-    const lib = await freshLibrary();
-    const entries = [
-      { text: 'סימן', index: 10, level: 1 },
-      { text: 'סימן תקמא סעיף ב', index: 20, level: 2 },
-    ] as TocEntry[];
-    expect(lib.findBestTocEntry(entries, 'סימן תקמא סעיף ב סוף')?.index).toBe(20);
-  });
-
-  it('מחזיר null ל-toc ריק או ref ריק', async () => {
-    const lib = await freshLibrary();
-    expect(lib.findBestTocEntry([], 'סימן א')).toBeNull();
-    expect(lib.findBestTocEntry(toc, '')).toBeNull();
-  });
-
-  it('מחזיר null כשאין שום התאמה', async () => {
-    const lib = await freshLibrary();
-    expect(lib.findBestTocEntry(toc, 'הלכות שבת')).toBeNull();
-  });
-});
-
 describe('simanNumber', () => {
   it('מפענח גימטריה, עם או בלי גרשיים, וכולל אותיות סופיות', async () => {
     const lib = await freshLibrary();

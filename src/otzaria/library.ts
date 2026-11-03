@@ -83,25 +83,6 @@ export async function resolveBookId(nameOrId: string): Promise<string | null> {
   return resolved;
 }
 
-/** בוחר את ערך ה-TOC הקרוב ביותר ל-ref נתון (contains / נורמליזציה). */
-export function findBestTocEntry(toc: TocEntry[], ref: string): TocEntry | null {
-  if (!toc.length || !ref) return null;
-  const norm = (s: string) => s.replace(/["'״׳]/g, '').replace(/\s+/g, ' ').trim();
-  const target = norm(ref);
-  // 1. התאמה מדויקת
-  let hit = toc.find((e) => norm(e.text) === target);
-  if (hit) return hit;
-  // 2. הכי ארוך שמוכל ב-ref או שמכיל את ה-ref
-  const candidates = toc
-    .filter((e) => {
-      const t = norm(e.text);
-      return t.includes(target) || target.includes(t);
-    })
-    .sort((a, b) => norm(b.text).length - norm(a.text).length);
-  hit = candidates[0];
-  return hit ?? null;
-}
-
 // תקרת קריאה לטווח אחד: 200 אלף תווים. הטווח השבועי הגדול ביותר בגליונות הוא כ-37 אלף.
 const MAX_RANGE_CHUNKS = 40;
 
@@ -187,6 +168,8 @@ export interface LoadedSource {
   ok: boolean;
   text: string;
   error?: string;
+  /** true כשהכשל נובע מספר שלא נמצא בספרייה (ולכן הגדרת שם הספר עשויה לעזור) */
+  missingBook?: boolean;
 }
 
 /**
@@ -206,7 +189,12 @@ export async function loadSourceRange(
     // קודם מפענחים את שם הספר ל-bookId אמיתי (שם התצוגה ≠ bookId)
     const bookId = await resolveBookId(bookName);
     if (!bookId) {
-      return { ok: false, text: '', error: `הספר "${bookName}" לא נמצא בספרייה. עדכן את שם הספר בהגדרות.` };
+      return {
+        ok: false,
+        text: '',
+        missingBook: true,
+        error: `הספר "${bookName}" לא נמצא בספרייה. עדכן את שם הספר בהגדרות.`,
+      };
     }
     const range = pickTocRange(await getBookToc(bookId), startRef, endRef);
     if (!range) {

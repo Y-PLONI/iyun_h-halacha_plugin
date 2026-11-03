@@ -123,7 +123,12 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
   };
 
   // חישוב flex-basis אפקטיבי בהתחשב בקיפול
-  const effective = panes.map((_, i) => (collapsed[i] ? COLLAPSED : Math.max(sizes[i], panes[i].minSize)));
+  // (כשמספר החלוניות משתנה בין רינדורים — למשל חלונית שמופיעה אחרי בדיקה אסינכרונית —
+  // חוזרים לברירות המחדל עד שהגדלים השמורים נטענים, כדי לא לקבל NaN.)
+  const sizesNow = sizes.length === panes.length ? sizes : panes.map((p) => p.defaultSize);
+  const effective = panes.map((_, i) =>
+    collapsed[i] ? COLLAPSED : Math.max(sizesNow[i], panes[i].minSize),
+  );
   const sum = effective.reduce((s, v) => s + v, 0) || 1;
 
   return (
@@ -174,7 +179,11 @@ function FragmentPane({
           <span className="pane-title">{pane.title}</span>
           {!collapsed && pane.headerActions}
           {pane.collapsible && (
-            <button className="icon-btn mini" title={collapsed ? 'הרחב' : 'כווץ'} onClick={onCollapse}>
+            <button
+              className="icon-btn mini"
+              title={collapsed ? 'הרחב' : 'כווץ'}
+              onClick={onCollapse}
+            >
               <Icon name={collapsed ? 'chevron-down' : 'chevron-up'} size="1em" />
             </button>
           )}
