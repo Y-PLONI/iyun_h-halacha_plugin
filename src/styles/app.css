@@ -508,6 +508,7 @@ select.input, .select-inline { cursor: pointer; width: auto; min-width: 220px; }
 /* ── Settings overlay (side panel, per design guide) ─── */
 .overlay-scrim {
   position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.32);
   background: color-mix(in srgb, var(--color-scrim) 32%, transparent);
   z-index: 1000;
   animation: fadeIn 0.18s ease-out;

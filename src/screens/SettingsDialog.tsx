@@ -181,8 +181,8 @@ function SourcesTab({ detecting, detectBooks }: { detecting: boolean; detectBook
       </button>
       {SOURCE_ROLES.map((role: SourceRole) => (
         <div className="field" key={role} style={{ marginTop: 10 }}>
-          <label htmlFor="set-6">{SOURCE_ROLE_LABELS[role]}</label>
-          <input id="set-6" className="input" value={settings.bookIds[role]} onChange={(e) => setBookId(role, e.target.value)} />
+          <label htmlFor={`set-book-${role}`}>{SOURCE_ROLE_LABELS[role]}</label>
+          <input id={`set-book-${role}`} className="input" value={settings.bookIds[role]} onChange={(e) => setBookId(role, e.target.value)} />
         </div>
       ))}
 

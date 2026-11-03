@@ -18,16 +18,20 @@ export function TopBar() {
   const issues = getIssues();
   const activeWeek = app.activeWeekId ? getWeek(app.activeWeekId) : null;
   const [sendOpen, setSendOpen] = useState(false);
+  // מצב ייצוא פעיל: מנטרל את כפתורי הייצוא כדי למנוע דיאלוגי שמירה כפולים
+  const [busy, setBusy] = useState(false);
 
   const todayLabel = new Date().toLocaleDateString('he-IL');
 
   const handleExportWeek = async () => {
+    if (busy) return;
     if (!activeWeek) {
       toast('בחר שבוע לפני ייצוא');
       return;
     }
     // הייצוא נקרא לפני השמירה לאחסון, כדי שדיאלוג השמירה ייפתח סמוך ככל האפשר ללחיצה
     void saveAnswersNow();
+    setBusy(true);
     try {
       const outcome = await exportWeekDocx(
         {
@@ -42,11 +46,14 @@ export function TopBar() {
       toast(describeOutcome(outcome));
     } catch (e) {
       toast('שגיאה בייצוא: ' + (e instanceof Error ? e.message : ''));
+    } finally {
+      setBusy(false);
     }
   };
 
   /** ייצוא כל שבועות הגליון לקובץ אחד. */
   const handleExportIssue = async () => {
+    if (busy) return;
     if (!exam) {
       toast('בחר גליון לפני ייצוא');
       return;
@@ -61,6 +68,7 @@ export function TopBar() {
       return;
     }
     void saveAnswersNow();
+    setBusy(true);
     try {
       const outcome = await exportIssueDocx(
         {
@@ -75,6 +83,8 @@ export function TopBar() {
       toast(describeOutcome(outcome));
     } catch (e) {
       toast('שגיאה בייצוא: ' + (e instanceof Error ? e.message : ''));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -108,7 +118,7 @@ export function TopBar() {
         ))}
       </nav>
       <div className="topbar-side topbar-left">
-        <ExportMenu onWeek={() => void handleExportWeek()} onIssue={() => void handleExportIssue()} />
+        <ExportMenu busy={busy} onWeek={() => void handleExportWeek()} onIssue={() => void handleExportIssue()} />
         <button className="icon-btn" title="שליחה במייל" aria-label="שליחה במייל" onClick={handleMail}>
           <Icon name="mail" /> מייל
         </button>
@@ -130,7 +140,7 @@ const NAV: { id: ScreenName; label: string }[] = [
 ];
 
 /** תפריט הייצוא: שבוע נוכחי או כל שבועות הגליון. */
-function ExportMenu({ onWeek, onIssue }: { onWeek: () => void; onIssue: () => void }) {
+function ExportMenu({ onWeek, onIssue, busy }: { onWeek: () => void; onIssue: () => void; busy: boolean }) {
   const { open, ref, toggle, close } = usePopover();
 
   const pick = (fn: () => void) => {
@@ -146,17 +156,19 @@ function ExportMenu({ onWeek, onIssue }: { onWeek: () => void; onIssue: () => vo
         aria-label="ייצוא ל-Word"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-busy={busy}
+        disabled={busy}
         onClick={toggle}
       >
-        <Icon name="download" /> ייצוא
+        <Icon name="download" /> {busy ? 'מייצא…' : 'ייצוא'}
         <Icon name="chevron-down" size="0.9em" />
       </button>
       {open && (
         <div className="popover align-start" role="menu">
-          <button className="popover-item" role="menuitem" onClick={() => pick(onWeek)}>
+          <button className="popover-item" role="menuitem" disabled={busy} onClick={() => pick(onWeek)}>
             השבוע הנוכחי
           </button>
-          <button className="popover-item" role="menuitem" onClick={() => pick(onIssue)}>
+          <button className="popover-item" role="menuitem" disabled={busy} onClick={() => pick(onIssue)}>
             כל השבועות בגליון
           </button>
         </div>

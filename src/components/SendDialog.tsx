@@ -155,11 +155,11 @@ export function SendDialog({ week, exam, onClose }: Props) {
   };
 
   return (
-    <div className="overlay-scrim" onClick={onClose}>
+    <div className="overlay-scrim" onClick={sending ? undefined : onClose}>
       <div className="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="send-title" onClick={(e) => e.stopPropagation()}>
         <div className="settings-head">
           <h2 id="send-title">שליחת תשובות במייל</h2>
-          <button className="icon-btn square" title="סגור" aria-label="סגור" onClick={onClose}>
+          <button className="icon-btn square" title="סגור" aria-label="סגור" onClick={onClose} disabled={sending}>
             <Icon name="dismiss" />
           </button>
         </div>
