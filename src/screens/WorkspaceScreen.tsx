@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSettings } from '../state/settingsStore';
 import { getWeek } from '../data/localData';
 import { useApp } from '../state/appStore';
 import { AnswerEditor } from '../components/AnswerEditor';
@@ -11,6 +12,7 @@ type NarrowTab = 'exam' | 'answer' | 'sources';
 
 export function WorkspaceScreen() {
   const app = useApp();
+  const { workspaceLayout } = useSettings();
   const week = app.activeWeekId ? getWeek(app.activeWeekId) : null;
   const [narrowTab, setNarrowTab] = useState<NarrowTab>('answer');
 
@@ -46,6 +48,30 @@ export function WorkspaceScreen() {
           {narrowTab === 'answer' && answerContent}
           {narrowTab === 'sources' && sourcesContent}
         </div>
+      </div>
+    );
+  }
+
+  // ── מסך רחב, פריסה "שאלות מעל תשובה": שתי עמודות ──
+  // סדר RTL: [מבחן מעל תשובה] (ימין) | מקורות (שמאל)
+  if (workspaceLayout === 'stacked') {
+    const inner: PaneDef[] = [
+      { id: 'exam', title: 'מבחן', minSize: 15, defaultSize: 45, collapsible: true, content: examContent },
+      { id: 'answer', title: 'תשובה', minSize: 20, defaultSize: 55, content: answerContent },
+    ];
+    const outer: PaneDef[] = [
+      {
+        id: 'work',
+        title: 'שאלות ותשובה',
+        minSize: 30,
+        defaultSize: 55,
+        content: <SplitPane direction="vertical" panes={inner} storageKey="workspace-stacked-inner-v1" />,
+      },
+      { id: 'sources', title: 'מקורות', minSize: 20, defaultSize: 45, collapsible: true, content: sourcesContent },
+    ];
+    return (
+      <div className="workspace">
+        <SplitPane direction="horizontal" panes={outer} storageKey="workspace-stacked-v1" />
       </div>
     );
   }

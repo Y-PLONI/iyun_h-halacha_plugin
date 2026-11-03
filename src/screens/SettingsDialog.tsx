@@ -102,6 +102,25 @@ function AppearanceTab() {
       </div>
 
       <div className="field">
+        <label id="set-layout-label">פריסת מסך כתיבת התשובות</label>
+        <div className="segmented" role="group" aria-labelledby="set-layout-label">
+          <button
+            className={`seg${settings.workspaceLayout === 'three' ? ' active' : ''}`}
+            onClick={() => updateSettings({ workspaceLayout: 'three' })}
+          >
+            שלוש חלוניות
+          </button>
+          <button
+            className={`seg${settings.workspaceLayout === 'stacked' ? ' active' : ''}`}
+            onClick={() => updateSettings({ workspaceLayout: 'stacked' })}
+          >
+            תשובה מתחת לשאלות
+          </button>
+        </div>
+        <p className="hint">"שלוש חלוניות" — מבחן | תשובה | מקורות. "תשובה מתחת לשאלות" — המבחן והתשובה בעמודה אחת, והמקורות לצידן.</p>
+      </div>
+
+      <div className="field">
         <label>גודל גופן · {settings.uiFontSize}px</label>
         <div className="size-row">
           <input

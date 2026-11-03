@@ -20,6 +20,20 @@ beforeEach(() => {
   appStore.set({ activeIssueId: 'issue-0240', activeWeekId: 'issue-0240-w1', screen: 'workspace' });
 });
 
+describe('WorkspaceScreen — פריסת "תשובה מתחת לשאלות"', () => {
+  it('מציג מבחן מעל תשובה בעמודה אחת, והמקורות לצידה', () => {
+    resetStores({ workspaceLayout: 'stacked' });
+    const { container } = render(<WorkspaceScreen />);
+    const titles = [...container.querySelectorAll('.pane > .pane-header > .pane-title')].map((el) => el.textContent);
+    expect(titles[0]).toBe('שאלות ותשובה');
+    expect(titles).toContain('מבחן');
+    expect(titles).toContain('תשובה');
+    expect(titles).toContain('מקורות');
+    expect(container.querySelector('.answer-area')).toBeInTheDocument();
+    expect(container.querySelectorAll('.exam-q').length).toBeGreaterThan(0);
+  });
+});
+
 describe('WorkspaceScreen — מסך רחב', () => {
   it('מציג שלוש חלוניות: מבחן, תשובה, מקורות', () => {
     render(<WorkspaceScreen />);

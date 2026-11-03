@@ -28,6 +28,12 @@ const renderDialog = () =>
 const settings = () => settingsStore.get().settings;
 
 describe('SettingsDialog — מסגרת', () => {
+  it('בחירת פריסת "תשובה מתחת לשאלות" נשמרת בהגדרות', () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: 'תשובה מתחת לשאלות' }));
+    expect(settings().workspaceLayout).toBe('stacked');
+  });
+
   it('מציג חמש כרטיסיות, מראה פעילה כברירת מחדל', () => {
     renderDialog();
     for (const label of ['מראה', 'שליחה', 'מקורות', 'התראות', 'אודות']) {
