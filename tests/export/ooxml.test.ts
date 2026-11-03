@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { escapeXml, htmlToOoxml, makeZip, packageDocx } from '../../src/export/ooxml';
 import { crc32, readZipEntries, readZipFromBlob } from '../helpers/zip';
 
+/** סימן-פסקה עברי (RTL + שפת bidi עברית): הסמן בפסקה ריקה נשאר עברי. */
+const PMARK = '<w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/><w:lang w:val="en-US" w:bidi="he-IL"/></w:rPr>';
+
 describe('escapeXml', () => {
   it('מקודד &, < ו->', () => {
     expect(escapeXml('a & b < c > d')).toBe('a &amp; b &lt; c &gt; d');
@@ -64,7 +67,7 @@ describe('htmlToOoxml', () => {
   it('מוסיף rtl ושפה עברית לכל run', () => {
     const xml = htmlToOoxml('<p>טקסט</p>');
     expect(xml).toContain('<w:rtl/>');
-    expect(xml).toContain('<w:lang w:val="he-IL" w:bidi="he-IL"/>');
+    expect(xml).toContain('<w:lang w:val="en-US" w:bidi="he-IL"/>');
     expect(xml).toContain('w:cs="David"');
   });
 
@@ -105,7 +108,7 @@ describe('htmlToOoxml', () => {
   });
 
   it('ממיר br לפסקה ריקה', () => {
-    expect(htmlToOoxml('<br>')).toBe('<w:p><w:pPr><w:bidi/></w:pPr></w:p>');
+    expect(htmlToOoxml('<br>')).toBe('<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>' + PMARK + '</w:pPr></w:p>');
   });
 
   it('פורק div/blockquote שמכילים בלוקים לפסקאות נפרדות', () => {
@@ -124,8 +127,8 @@ describe('htmlToOoxml', () => {
   });
 
   it('קלט ריק מחזיר פסקה ריקה אחת', () => {
-    expect(htmlToOoxml('')).toBe('<w:p><w:pPr><w:bidi/></w:pPr></w:p>');
-    expect(htmlToOoxml('   ')).toBe('<w:p><w:pPr><w:bidi/></w:pPr></w:p>');
+    expect(htmlToOoxml('')).toBe('<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>' + PMARK + '</w:pPr></w:p>');
+    expect(htmlToOoxml('   ')).toBe('<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>' + PMARK + '</w:pPr></w:p>');
   });
 
   it('שומר על סדר הפסקאות', () => {
@@ -179,7 +182,7 @@ describe('packageDocx', () => {
     const entries = await readZipFromBlob(packageDocx('<w:p/>'));
     const settings = entries.find((e) => e.name === 'word/settings.xml')!;
     expect(settings.text).toContain('<w:bidi/>');
-    expect(settings.text).toContain('w:themeFontLang w:val="he-IL"');
+    expect(settings.text).toContain('w:themeFontLang w:val="en-US"');
   });
 
   it('Content_Types כולל override לכל חלק XML', async () => {
@@ -188,5 +191,31 @@ describe('packageDocx', () => {
     expect(ct.text).toContain('/word/document.xml');
     expect(ct.text).toContain('/word/styles.xml');
     expect(ct.text).toContain('/word/settings.xml');
+  });
+});
+
+describe('כיוון ושפה בעריכה ב-Word', () => {
+  it('כל פסקה (כולל ריקה, כותרת ורשימה) נושאת bidi וסימן-פסקה RTL עברי', () => {
+    const xml = htmlToOoxml('<h1>כותרת</h1><p>טקסט</p><br><ol><li>א</li></ol>');
+    const paras = xml.match(/<w:p>.*?<\/w:p>/g)!;
+    expect(paras.length).toBeGreaterThanOrEqual(4);
+    for (const p of paras) {
+      expect(p).toContain('<w:bidi/>');
+      expect(p).toContain('<w:pPr>');
+      expect(p).toMatch(/<w:pPr>.*<w:rPr><w:rFonts w:cs="David" w:hint="cs"\/><w:rtl\/><w:lang w:val="en-US" w:bidi="he-IL"\/><\/w:rPr><\/w:pPr>/);
+    }
+  });
+
+  it('שפת הטקסט הלטינית אינה he-IL בשום מקום (כמו ב-Word עצמו)', async () => {
+    const doc = packageDocx(htmlToOoxml('<p>שלום</p>'));
+    const entries = await readZipFromBlob(doc);
+    for (const e of entries) {
+      expect(e.text ?? '', e.name).not.toContain('w:val="he-IL"');
+    }
+  });
+
+  it('ברשימות הסדר ind לפני jc (סדר התקני של ה-schema)', () => {
+    const xml = htmlToOoxml('<ul><li>א</li></ul>');
+    expect(xml.indexOf('<w:ind')).toBeLessThan(xml.indexOf('<w:jc'));
   });
 });

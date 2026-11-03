@@ -6,6 +6,12 @@ const NR = 'http://schemas.openxmlformats.org/package/2006/relationships';
 const NC = 'http://schemas.openxmlformats.org/package/2006/content-types';
 const NO = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
+// שפת הטקסט בקובץ: כמו ב-Word עצמו (ר' תבנית answer-form.docx) — שפה לטינית en-US ושפת ה-bidi
+// עברית. הצהרה של he-IL על הצד הלטיני מבלבלת את Word בבחירת שפת המקלדת והכיוון בעריכה.
+const LANG = '<w:lang w:val="en-US" w:bidi="he-IL"/>';
+// תכונות סימן-הפסקה: כך הסמן בפסקה ריקה/בסוף פסקה נשאר בעברית ובכיוון RTL.
+const PMARK = `<w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/>${LANG}</w:rPr>`;
+
 export function escapeXml(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -75,7 +81,7 @@ export function htmlToOoxml(html: string): string {
     if (node.nodeType === Node.TEXT_NODE) {
       const t = node.textContent ?? '';
       if (!t) return '';
-      const rpr = `<w:rPr><w:rFonts w:cs="David" w:hint="cs"/>${extra}<w:rtl/><w:lang w:val="he-IL" w:bidi="he-IL"/></w:rPr>`;
+      const rpr = `<w:rPr><w:rFonts w:cs="David" w:hint="cs"/>${extra}<w:rtl/>${LANG}</w:rPr>`;
       return `<w:r>${rpr}<w:t xml:space="preserve">${escapeXml(t)}</w:t></w:r>`;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
@@ -94,19 +100,19 @@ export function htmlToOoxml(html: string): string {
     if (node.nodeType === Node.TEXT_NODE) {
       const t = (node.textContent ?? '').trim();
       if (!t) return '';
-      return `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/><w:lang w:val="he-IL" w:bidi="he-IL"/></w:rPr><w:t xml:space="preserve">${escapeXml(t)}</w:t></w:r></w:p>`;
+      return `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr><w:r><w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/>${LANG}</w:rPr><w:t xml:space="preserve">${escapeXml(t)}</w:t></w:r></w:p>`;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
     const el = node as HTMLElement;
     const tag = el.tagName.toLowerCase();
-    const pBase = `<w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>`;
+    const pBase = `<w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr>`;
 
-    if (tag === 'br') return `<w:p><w:pPr><w:bidi/></w:pPr></w:p>`;
+    if (tag === 'br') return `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr></w:p>`;
     if (tag === 'ul' || tag === 'ol') {
       return Array.from(el.querySelectorAll('li'))
         .map(
           (li, i) =>
-            `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/><w:ind w:right="360"/></w:pPr><w:r><w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/></w:rPr><w:t xml:space="preserve">${tag === 'ol' ? `${i + 1}. ` : '• '}</w:t></w:r>${runs(li)}</w:p>`,
+            `<w:p><w:pPr><w:bidi/><w:ind w:right="360"/><w:jc w:val="right"/>${PMARK}</w:pPr><w:r><w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/></w:rPr><w:t xml:space="preserve">${tag === 'ol' ? `${i + 1}. ` : '• '}</w:t></w:r>${runs(li)}</w:p>`,
         )
         .join('');
     }
@@ -117,7 +123,7 @@ export function htmlToOoxml(html: string): string {
     );
     const headings: Record<string, string> = { h1: 'Heading1', h2: 'Heading2', h3: 'Heading3' };
     if (headings[tag]) {
-      return `<w:p><w:pPr><w:pStyle w:val="${headings[tag]}"/><w:bidi/><w:jc w:val="right"/></w:pPr>${runs(el)}</w:p>`;
+      return `<w:p><w:pPr><w:pStyle w:val="${headings[tag]}"/><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr>${runs(el)}</w:p>`;
     }
     if ((tag === 'div' || tag === 'blockquote' || tag === 'section') && hasBlock) {
       return kids.map(para).join('');
@@ -129,7 +135,7 @@ export function htmlToOoxml(html: string): string {
   }
 
   const result = Array.from(tmp.childNodes).map(para).join('');
-  return result || `<w:p><w:pPr><w:bidi/></w:pPr></w:p>`;
+  return result || `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr></w:p>`;
 }
 
 /** עוטף body מסוג OOXML לחבילת DOCX מלאה ומחזיר Blob. */
@@ -157,7 +163,7 @@ export function packageDocx(bodyXml: string): Blob {
   const SETTINGS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:settings xmlns:w="${NW}">
   <w:defaultTabStop w:val="720"/>
-  <w:themeFontLang w:val="he-IL" w:bidi="he-IL"/>
+  <w:themeFontLang w:val="en-US" w:bidi="he-IL"/>
   <w:bidi/>
   <w:compat>
     <w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/>
@@ -170,7 +176,7 @@ export function packageDocx(bodyXml: string): Blob {
     <w:rPrDefault><w:rPr>
       <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="David"/>
       <w:rtl/>
-      <w:lang w:val="he-IL" w:bidi="he-IL"/>
+      <w:lang w:val="en-US" w:bidi="he-IL"/>
     </w:rPr></w:rPrDefault>
     <w:pPrDefault><w:pPr>
       <w:bidi/>
@@ -180,7 +186,7 @@ export function packageDocx(bodyXml: string): Blob {
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
     <w:name w:val="Normal"/>
     <w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>
-    <w:rPr><w:rFonts w:cs="David"/><w:rtl/><w:lang w:val="he-IL" w:bidi="he-IL"/></w:rPr>
+    <w:rPr><w:rFonts w:cs="David"/><w:rtl/>${LANG}</w:rPr>
   </w:style>
   <w:style w:type="paragraph" w:styleId="Heading1">
     <w:name w:val="heading 1"/><w:basedOn w:val="Normal"/>
