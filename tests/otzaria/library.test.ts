@@ -96,6 +96,41 @@ describe('resolveBookId — בחירת הספר הנכון', () => {
   });
 });
 
+describe('זיהוי שם ספר בניסוחים חלופיים', () => {
+  it('שם בלי פסיק ("שולחן ערוך אורח חיים") מזוהה בניסוח עם פסיק', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) =>
+      p.query === 'שולחן ערוך, אורח חיים' ? [book('שולחן ערוך, אורח חיים')] : [],
+    );
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(host.callsTo('library.findBooks').map((c) => c.payload.query)).toEqual([
+      'שולחן ערוך אורח חיים',
+      'שולחן ערוך, אורח חיים',
+    ]);
+  });
+
+  it('שם עם גרשיים ופיסוק נוסף מנסה גם גרסה מנורמלת', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) => (p.query === 'משנה ברורה' ? [book('משנה ברורה')] : []));
+    await expect(lib.resolveBookId('משנה ברורה.')).resolves.toBe('משנה ברורה');
+  });
+
+  it('autoDetectBookId משתמש באותם ניסוחים', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) =>
+      p.query === 'שולחן ערוך, אורח חיים' ? [book('שולחן ערוך, אורח חיים')] : [],
+    );
+    await expect(lib.autoDetectBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+  });
+
+  it('אחרי הצלחה בניסוח הראשון לא שולחים שאילתות נוספות', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', () => [book('משנה ברורה')]);
+    await lib.resolveBookId('משנה ברורה');
+    expect(host.callsTo('library.findBooks')).toHaveLength(1);
+  });
+});
+
 describe('autoDetectBookId', () => {
   it('מחזיר התאמה מדויקת', async () => {
     const lib = await freshLibrary();

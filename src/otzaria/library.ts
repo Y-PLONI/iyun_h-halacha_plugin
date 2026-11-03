@@ -17,6 +17,26 @@ function normName(s: string): string {
     .trim();
 }
 
+/**
+ * מנסה כמה ניסוחים של אותה שאילתה (כפי שהוקלדה, בלי פיסוק, ועם פסיק אחרי "שולחן ערוך")
+ * ומחזיר את התוצאות של הראשון שמצא משהו. אוצריא מחפשת לפי הכתיב המדויק, ולכן שם נכון
+ * שהוקלד בלי הפסיק ("שולחן ערוך אורח חיים") לא נמצא בניסוח אחד אבל כן בניסוח אחר.
+ */
+async function findBooksLenient(query: string, limit = 10): Promise<BookMeta[]> {
+  const q = query.trim();
+  const variants = [q];
+  const plain = normName(q);
+  if (plain && plain !== q) variants.push(plain);
+  const withComma = plain.replace(/^(שולחן ערוך|שו"ע) (?!,)/, (_m, g: string) => `${g}, `);
+  if (withComma !== plain && !variants.includes(withComma)) variants.push(withComma);
+  for (const v of variants) {
+    if (!v) continue;
+    const found = await findBooks(v, limit);
+    if (found.length) return found;
+  }
+  return [];
+}
+
 /** האם הכותרת היא של מפרש על ספר אחר (למשל "מטה יהונתן על שולחן ערוך"). */
 function isCommentaryTitle(title: string): boolean {
   return / על /.test(title);
@@ -48,7 +68,7 @@ function pickBestBook(books: BookMeta[], wantedName: string): BookMeta | null {
  * מחזיר את ה-bookId אם יש התאמה מדויקת או התאמה יחידה (ללא מפרשים), אחרת null.
  */
 export async function autoDetectBookId(wantedName: string): Promise<string | null> {
-  const books = await findBooks(wantedName, 10);
+  const books = await findBooksLenient(wantedName, 10);
   if (books.length === 0) return null;
   const target = normName(wantedName);
   const exact = books.find((b) => normName(b.title) === target || b.bookId === wantedName);
@@ -77,7 +97,7 @@ const bookIdCache = new Map<string, string | null>();
 export async function resolveBookId(nameOrId: string): Promise<string | null> {
   if (!nameOrId) return null;
   if (bookIdCache.has(nameOrId)) return bookIdCache.get(nameOrId)!;
-  const books = await findBooks(nameOrId, 10);
+  const books = await findBooksLenient(nameOrId, 10);
   const resolved = pickBestBook(books, nameOrId)?.bookId ?? null;
   bookIdCache.set(nameOrId, resolved);
   return resolved;
