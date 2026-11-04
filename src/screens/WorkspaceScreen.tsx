@@ -63,6 +63,8 @@ export function WorkspaceScreen() {
       {
         id: 'work',
         title: 'שאלות ותשובה',
+        // לחלוניות המקוננות (מבחן/תשובה) כותרות משלהן — בלי כותרת כפולה מעליהן
+        headerless: true,
         minSize: 30,
         defaultSize: 55,
         content: <SplitPane direction="vertical" panes={inner} storageKey="workspace-stacked-inner-v1" />,

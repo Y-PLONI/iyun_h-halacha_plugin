@@ -40,6 +40,14 @@ describe('SplitPane — רינדור', () => {
     expect(basisOf(container, 1)).toBeCloseTo(60, 1);
   });
 
+  it('החלוניות מתכווצות (flex-shrink) כדי לפנות מקום למפרידים — בלי גלישה של המכל', () => {
+    const { container } = render(<SplitPane direction="horizontal" panes={panes()} storageKey="k" />);
+    for (const el of container.querySelectorAll<HTMLElement>('.pane')) {
+      expect(el.style.flexGrow).toBe('0');
+      expect(el.style.flexShrink).toBe('1');
+    }
+  });
+
   it('מרנדר מפריד בין חלוניות בלבד', () => {
     const { container } = render(<SplitPane direction="horizontal" panes={panes()} storageKey="k" />);
     expect(container.querySelectorAll('.resizer')).toHaveLength(1);
@@ -57,6 +65,21 @@ describe('SplitPane — רינדור', () => {
     withActions[0].headerActions = <button>פעולה</button>;
     render(<SplitPane direction="horizontal" panes={withActions} storageKey="k" />);
     expect(screen.getByRole('button', { name: 'פעולה' })).toBeInTheDocument();
+  });
+
+  it('חלונית headerless: בלי כותרת וכפתור כיווץ, התוכן מוצג, והכותרת משמשת כשם נגיש', () => {
+    const p = panes();
+    p[0] = { ...p[0], headerless: true };
+    const { container } = render(<SplitPane direction="horizontal" panes={p} storageKey="k" />);
+    const first = container.querySelectorAll('.pane')[0];
+    expect(first.querySelector('.pane-header')).toBeNull();
+    expect(screen.queryByText('חלונית א')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('כווץ')).not.toBeInTheDocument();
+    expect(screen.getByText('תוכן א')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'חלונית א' })).toBe(first);
+    // החלונית השנייה רגילה, והמפריד ביניהן נשאר
+    expect(container.querySelectorAll('.pane')[1].querySelector('.pane-header')).not.toBeNull();
+    expect(container.querySelectorAll('.resizer')).toHaveLength(1);
   });
 });
 
@@ -246,5 +269,98 @@ describe('SplitPane — שינוי מספר החלוניות', () => {
     after.forEach((v) => expect(Number.isFinite(v)).toBe(true));
     expect(after[1]).toBeCloseTo(before[1] - 10, 1);
     expect(after[2]).toBeCloseTo(before[2] + 10, 1);
+  });
+
+  const collapsiblePanes = (n: number): PaneDef[] => nPanes(n).map((p) => ({ ...p, collapsible: true }));
+
+  it('כיווץ החלונית הרביעית עובד אחרי שמספר החלוניות עלה מ-3 ל-4', () => {
+    const { container, rerender } = render(
+      <SplitPane direction="vertical" panes={collapsiblePanes(3)} storageKey="grow-c" />,
+    );
+    rerender(<SplitPane direction="vertical" panes={collapsiblePanes(4)} storageKey="grow-c" />);
+    expect(screen.getAllByTitle('כווץ')).toHaveLength(4);
+    fireEvent.click(screen.getAllByTitle('כווץ')[3]);
+    expect(screen.queryByText('תוכן 3')).not.toBeInTheDocument();
+    expect(screen.getByText('תוכן 0')).toBeInTheDocument();
+    expect(basisOf(container, 3)).toBeLessThan(10);
+    fireEvent.click(screen.getByTitle('הרחב'));
+    expect(screen.getByText('תוכן 3')).toBeInTheDocument();
+  });
+
+  it('מצב הכיווץ צמוד לחלונית (לפי id) ולא לאינדקס כשחלונית מוסרת', () => {
+    const { rerender } = render(<SplitPane direction="vertical" panes={collapsiblePanes(4)} storageKey="shrink-c" />);
+    // מכווצים את p2, ואז מסירים את p1 — p2 עובר לאינדקס 1 וצריך להישאר מכווץ
+    fireEvent.click(screen.getAllByTitle('כווץ')[2]);
+    const without1 = collapsiblePanes(4).filter((p) => p.id !== 'p1');
+    rerender(<SplitPane direction="vertical" panes={without1} storageKey="shrink-c" />);
+    expect(screen.queryByText('תוכן 2')).not.toBeInTheDocument();
+    expect(screen.getByText('תוכן 3')).toBeInTheDocument();
+    expect(screen.getAllByTitle('כווץ')).toHaveLength(2);
+    fireEvent.click(screen.getAllByTitle('כווץ')[1]);
+    expect(screen.queryByText('תוכן 3')).not.toBeInTheDocument();
+  });
+
+  const savedSizes = async () =>
+    ((await window.Otzaria.call('storage.get', { key: 'split-sizes:v2' })).data ?? {}) as Record<string, number[]>;
+
+  /** גרירה של המפריד הראשון ב-100px (מתוך 1000) ושמירה. */
+  const dragFirstResizer = (container: HTMLElement) => {
+    stubContainerWidth(container, 1000);
+    fireEvent.pointerDown(container.querySelector('.resizer')!, { clientX: 500 });
+    fireEvent(window, new PointerEvent('pointermove', { clientX: 600 }));
+    fireEvent(window, new PointerEvent('pointerup'));
+  };
+
+  it('גדלים שמורים (פורמט ישן) של 3 חלוניות נטענים, ו-4 חלוניות מתחילות מברירת המחדל', async () => {
+    await window.Otzaria.call('storage.set', { key: 'split-sizes:v2', value: { legacy: [50, 30, 20] } as never });
+    const { container, rerender } = render(<SplitPane direction="vertical" panes={nPanes(3)} storageKey="legacy" />);
+    await waitFor(() => expect(basisOf(container, 0)).toBeCloseTo(50, 1));
+    const loadsBefore = host.callsTo('storage.get').length;
+    rerender(<SplitPane direction="vertical" panes={nPanes(4)} storageKey="legacy" />);
+    // מחכים שהטעינה מחדש (בעקבות שינוי מספר החלוניות) תסתיים — ורק אז בודקים שלא הוחלו גדלים
+    // באורך שגוי, אלא ברירת המחדל
+    await waitFor(() => expect(host.callsTo('storage.get').length).toBeGreaterThan(loadsBefore));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(basisOf(container, 0)).toBeCloseTo(25, 1);
+    // חזרה ל-3 חלוניות: הגדלים הישנים עדיין שם ונטענים
+    rerender(<SplitPane direction="vertical" panes={nPanes(3)} storageKey="legacy" />);
+    await waitFor(() => expect(basisOf(container, 0)).toBeCloseTo(50, 1));
+    expect((await savedSizes()).legacy).toEqual([50, 30, 20]);
+  });
+
+  it('לכל מספר חלוניות נשמרים גדלים משלו, בלי לדרוס את הגדלים הישנים', async () => {
+    await window.Otzaria.call('storage.set', { key: 'split-sizes:v2', value: { both: [50, 30, 20] } as never });
+    const four = render(<SplitPane direction="horizontal" panes={nPanes(4)} storageKey="both" />);
+    await waitFor(() => expect(host.callsTo('storage.get').length).toBeGreaterThan(0));
+    dragFirstResizer(four.container);
+    await waitFor(async () => expect((await savedSizes())['both#4']?.[0]).toBeCloseTo(15, 1));
+    expect((await savedSizes()).both).toEqual([50, 30, 20]);
+    four.unmount();
+
+    // remount: כל layout טוען את הגדלים שלו
+    const again4 = render(<SplitPane direction="horizontal" panes={nPanes(4)} storageKey="both" />);
+    await waitFor(() => expect(basisOf(again4.container, 0)).toBeCloseTo(15, 1));
+    again4.unmount();
+    const again3 = render(<SplitPane direction="horizontal" panes={nPanes(3)} storageKey="both" />);
+    await waitFor(() => expect(basisOf(again3.container, 0)).toBeCloseTo(50, 1));
+
+    // שמירה ב-3 חלוניות ממשיכה לכתוב למפתח הראשי, ולא נוגעת ב-#4
+    dragFirstResizer(again3.container);
+    await waitFor(async () => expect((await savedSizes()).both[0]).toBeCloseTo(40, 1));
+    expect((await savedSizes())['both#4'][0]).toBeCloseTo(15, 1);
+  });
+
+  it('כשאין שום ערך שמור — השמירה הראשונה הולכת למפתח הראשי', async () => {
+    const { container } = render(<SplitPane direction="horizontal" panes={nPanes(4)} storageKey="fresh" />);
+    dragFirstResizer(container);
+    await waitFor(async () => expect((await savedSizes()).fresh?.[0]).toBeCloseTo(15, 1));
+    expect((await savedSizes())['fresh#4']).toBeUndefined();
+  });
+
+  it('מתעלם מערכים שמורים פגומים (לא מספרים)', async () => {
+    await window.Otzaria.call('storage.set', { key: 'split-sizes:v2', value: { bad: [10, null, 'x'] } as never });
+    const { container } = render(<SplitPane direction="horizontal" panes={nPanes(3)} storageKey="bad" />);
+    await waitFor(() => expect(host.callsTo('storage.get').length).toBeGreaterThan(0));
+    await waitFor(() => expect(basisOf(container, 0)).toBeCloseTo(100 / 3, 1));
   });
 });

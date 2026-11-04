@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SourcePane } from '../../src/components/SourcePane';
 import { appStore } from '../../src/state/appStore';
 import { defaultHandlers, installFakeHost, type FakeHost } from '../helpers/host';
@@ -62,6 +62,44 @@ describe('SourcePane — חלוניות מקורות', () => {
     render(<SourcePane week={week} />);
     await waitFor(() => expect(screen.getAllByText(/לא נמצא בספרייה/).length).toBeGreaterThan(0));
     expect(screen.queryByText(/שער הציון/)).not.toBeInTheDocument();
+  });
+
+  it('שער הציון ניתן לכיווץ אחרי שהופיע (מעבר מ-3 ל-4 חלוניות)', async () => {
+    const week = weekWithSources();
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
+    const { container } = render(<SourcePane week={week} />);
+    await screen.findByText(/שער הציון ·/);
+    expect(screen.getAllByTitle('כווץ')).toHaveLength(4);
+    const shaarPane = () => container.querySelectorAll('.pane')[3];
+    expect(shaarPane().querySelector('.pane-body')).toBeTruthy();
+    fireEvent.click(screen.getAllByTitle('כווץ')[3]);
+    expect(shaarPane().querySelector('.pane-body')).toBeNull();
+    expect(screen.getAllByTitle('הרחב')).toHaveLength(1);
+  });
+
+  it('בכניסה חוזרת שער הציון מוצג מיד (בלי להמתין לבדיקה מחדש)', async () => {
+    const week = weekWithSources();
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
+    const first = render(<SourcePane week={week} />);
+    await screen.findByText(/שער הציון ·/);
+    first.unmount();
+    render(<SourcePane week={week} />);
+    // סינכרוני — כבר ברינדור הראשון יש 4 חלוניות
+    expect(screen.getByText(/שער הציון ·/)).toBeInTheDocument();
+    expect(screen.getAllByTitle('כווץ')).toHaveLength(4);
+  });
+
+  it('שינוי שם הספר בהגדרות פוסל את התוצאה הקודמת', async () => {
+    const week = weekWithSources();
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
+    const first = render(<SourcePane week={week} />);
+    await screen.findByText(/שער הציון ·/);
+    first.unmount();
+    withMissingBook();
+    render(<SourcePane week={week} />);
+    expect(screen.queryByText(/שער הציון ·/)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText(/לא נמצא בספרייה/).length).toBeGreaterThan(0));
+    expect(screen.queryByText(/שער הציון ·/)).not.toBeInTheDocument();
   });
 
   it('שבוע ללא מקורות מציג הודעה', () => {

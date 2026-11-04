@@ -26,25 +26,37 @@ const DISPLAY_ROLES: { role: SourceRole; defaultSize: number; optional?: boolean
   { role: 'shaarHatziyun', defaultSize: 14, optional: true },
 ];
 
-/** האם ספר אופציונלי קיים בספרייה (null = עדיין נבדק). */
+/**
+ * תוצאת הבדיקה האחרונה לכל שם ספר — כדי שבכניסה חוזרת למסך החלונית האופציונלית תופיע מיד
+ * (בלי קפיצה מ-3 ל-4 חלוניות). המפתח הוא שם הספר, כך ששינוי ההגדרה פוסל את הערך מעצמו.
+ */
+const availabilityCache = new Map<string, boolean>();
+
+/** האם ספר אופציונלי קיים בספרייה (null = עדיין נבדק, בלי תוצאה קודמת). */
 function useBookAvailable(bookId: string): boolean | null {
-  const [available, setAvailable] = useState<boolean | null>(null);
+  const [state, setState] = useState<{ bookId: string; available: boolean } | null>(null);
   useEffect(() => {
-    if (!bookId) {
-      setAvailable(false);
-      return;
-    }
+    if (!bookId) return;
     let alive = true;
-    setAvailable(null);
+    // בדיקה מחדש גם כשיש ערך ב-cache (הספרייה עשויה להשתנות)
     void resolveBookId(bookId).then(
-      (id) => alive && setAvailable(!!id),
-      () => alive && setAvailable(false),
+      (id) => {
+        availabilityCache.set(bookId, !!id);
+        if (alive) setState({ bookId, available: !!id });
+      },
+      () => {
+        availabilityCache.delete(bookId);
+        if (alive) setState({ bookId, available: false });
+      },
     );
     return () => {
       alive = false;
     };
   }, [bookId]);
-  return available;
+  if (!bookId) return false;
+  // תוצאה של הבדיקה הנוכחית; עד שהיא מגיעה — הערך האחרון שידוע על הספר הזה
+  if (state?.bookId === bookId) return state.available;
+  return availabilityCache.get(bookId) ?? null;
 }
 
 export function SourcePane({ week }: SourcePaneProps) {
