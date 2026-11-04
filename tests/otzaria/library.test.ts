@@ -131,6 +131,93 @@ describe('זיהוי שם ספר בניסוחים חלופיים', () => {
   });
 });
 
+// כותרות אמיתיות מ-seforim.db, בסדר הספרייה. הספר עצמו אחרי המפרשים, כמו בספרייה האמיתית.
+const LIBRARY_TITLES = [
+  'באר הגולה על שולחן ערוך אורח חיים',
+  'אוצר ההלכה על שולחן ערוך אורח חיים חלק א',
+  'חק יעקב על שולחן ערוך אורח חיים',
+  'טורי זהב על שולחן ערוך אורח חיים',
+  'כף החיים על שולחן ערוך אורח חיים',
+  'חכמת שלמה על שולחן ערוך, אורח חיים',
+  'שולחן ערוך, אורח חיים',
+  'הערות על משנה ברורה',
+  'משנה ברורה',
+  'ביאור הלכה',
+  'שער הציון',
+];
+
+/** אוצריא עד 0.9.98: תת-מחרוזת מדויקת בכותרת, לפי סדר הספרייה, עד limit. */
+function substringHost(titles = LIBRARY_TITLES) {
+  host.on('library.findBooks', (p) =>
+    titles
+      .filter((t) => t.includes(String(p.query)))
+      .slice(0, Number(p.limit))
+      .map((t) => book(t)),
+  );
+}
+
+const queries = () => host.callsTo('library.findBooks').map((c) => c.payload.query);
+
+describe('findBooksLenient — איחוד ניסוחים מול חיפוש אמיתי', () => {
+  it('בלי פסיק: הניסוח הראשון מחזיר רק מפרשים — נבחר הספר שנמצא בניסוח עם הפסיק', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(queries()).toEqual(['שולחן ערוך אורח חיים', 'שולחן ערוך, אורח חיים']);
+  });
+
+  it('autoDetectBookId: בלי פסיק — מזהה את הספר ולא מחזיר null בגלל המפרשים', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.autoDetectBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+  });
+
+  it('שו"ע אורח חיים מתורגם לכותרת "שולחן ערוך, אורח חיים"', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.resolveBookId('שו"ע אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(queries()).toEqual(['שו"ע אורח חיים', 'שוע אורח חיים', 'שולחן ערוך, אורח חיים']);
+  });
+
+  it('שו״ע (גרשיים עבריים) ו-autoDetectBookId', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.autoDetectBookId('שו״ע אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+  });
+
+  it.each(['שולחן ערוך, אורח חיים', 'משנה ברורה', 'ביאור הלכה', 'שער הציון'])(
+    'ברירת המחדל "%s" נפתרת לספר עצמו בשאילתה אחת, ולא למפרש עליו',
+    async (name) => {
+      const lib = await freshLibrary();
+      substringHost();
+      await expect(lib.resolveBookId(name)).resolves.toBe(name);
+      await expect(lib.autoDetectBookId(name)).resolves.toBe(name);
+      expect(queries()).toEqual([name, name]);
+    },
+  );
+
+  it('מנוע החיפוש המדורג (אוצריא 0.10+) — הספר ראשון כבר בשאילתה בלי הפסיק', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', () => [
+      book('שולחן ערוך, אורח חיים'),
+      book('באר הגולה על שולחן ערוך אורח חיים'),
+    ]);
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(queries()).toEqual(['שולחן ערוך אורח חיים']);
+  });
+
+  it('בלי התאמה מדויקת באף ניסוח — מנסה את כולם ונופל לספר בסיס מתוך האיחוד', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) =>
+      p.query === 'שולחן ערוך אורח חיים'
+        ? [book('באר הגולה על שולחן ערוך אורח חיים')]
+        : [book('באר הגולה על שולחן ערוך אורח חיים'), book('שולחן ערוך השלם, אורח חיים')],
+    );
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך השלם, אורח חיים');
+    expect(queries()).toEqual(['שולחן ערוך אורח חיים', 'שולחן ערוך, אורח חיים']);
+  });
+});
+
 describe('autoDetectBookId', () => {
   it('מחזיר התאמה מדויקת', async () => {
     const lib = await freshLibrary();
