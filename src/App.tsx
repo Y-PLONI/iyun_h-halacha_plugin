@@ -9,6 +9,7 @@ import { setBooted, setIsNarrow } from './state/appStore';
 import { initReminders } from './state/reminders';
 import { AppShell } from './components/AppShell';
 import { ToastHost } from './components/Toast';
+import { installFocusRestore } from './utils/restoreFocus';
 
 const NARROW_BREAKPOINT = 760;
 
@@ -96,6 +97,8 @@ export function App() {
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, []);
+
+  useEffect(() => installFocusRestore(), []);
 
   if (!ready) {
     return (

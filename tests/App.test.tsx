@@ -175,13 +175,16 @@ describe('App — responsive ושמירה', () => {
 // נשאר אחרון בקובץ: הטסט טוען עותק טרי של האפליקציה ומחליף את רישום המודולים.
 describe('App — תיאום תזכורות ב-boot', () => {
   it('מתזמן התראות לפי ההגדרות השמורות', async () => {
+    // מודולים טריים: initReminders מאתחל פעם אחת בלבד לכל חיי המודול
+    vi.resetModules();
+    // resetModules clears the exam cache; convert fresh documents before testing boot.
+    const { loadExams } = await import('../src/data/examLoader');
+    await loadExams();
+    const { App: FreshApp } = await import('../src/App');
     await window.Otzaria.call('storage.set', {
       key: 'settings:v1',
       value: { remindersEnabled: true, desktopNotifications: true, calendarReminders: false } as never,
     });
-    // מודולים טריים: initReminders מאתחל פעם אחת בלבד לכל חיי המודול
-    vi.resetModules();
-    const { App: FreshApp } = await import('../src/App');
     render(<FreshApp />);
     await act(async () => {
       host.emit('plugin.boot', {});
