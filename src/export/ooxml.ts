@@ -10,10 +10,21 @@ const NO = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 // עברית. הצהרה של he-IL על הצד הלטיני מבלבלת את Word בבחירת שפת המקלדת והכיוון בעריכה.
 const LANG = '<w:lang w:val="en-US" w:bidi="he-IL"/>';
 // תכונות סימן-הפסקה: כך הסמן בפסקה ריקה/בסוף פסקה נשאר בעברית ובכיוון RTL.
-const PMARK = `<w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/>${LANG}</w:rPr>`;
+const PMARK = runProps();
+
+/**
+ * תווים שאסורים ב-XML 1.0 (תווי בקרה מלבד טאב/שורה חדשה, ו-U+FFFE/U+FFFF). למשל VT (\v) מגיע
+ * בהדבקת טקסט שהועתק מ-Word (שבירת שורה ידנית) — ובלי סינון Word מסרב לפתוח את הקובץ.
+ */
+// eslint-disable-next-line no-control-regex
+const XML_INVALID = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g;
 
 export function escapeXml(s: string): string {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s)
+    .replace(XML_INVALID, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 /** ZIP builder ללא דחיסה (store). */
@@ -72,70 +83,194 @@ export function makeZip(files: { name: string; text: string }[]): Uint8Array {
   return cat(...parts, cdBuf, eocd);
 }
 
+/** עיצוב תווים שנצבר מתגיות HTML מקוננות. */
+interface RunFmt {
+  b?: boolean;
+  i?: boolean;
+  u?: boolean;
+}
+
+/**
+ * מאפייני run (rPr) — תמיד באותו סדר של ה-schema (CT_RPr):
+ * rFonts, b, bCs, i, iCs, u, rtl, lang. כך כל run (כולל קידומת תבליט/מספור) נושא גופן,
+ * כיוון ושפה זהים, וקינון בסדר שונה (<u><b>) לא מייצר XML בסדר לא תקני או כפילויות.
+ */
+function runProps(fmt: RunFmt = {}): string {
+  return (
+    '<w:rPr><w:rFonts w:cs="David" w:hint="cs"/>' +
+    (fmt.b ? '<w:b/><w:bCs/>' : '') +
+    (fmt.i ? '<w:i/><w:iCs/>' : '') +
+    (fmt.u ? '<w:u w:val="single"/>' : '') +
+    `<w:rtl/>${LANG}</w:rPr>`
+  );
+}
+
+function textRun(text: string, fmt?: RunFmt): string {
+  return `<w:r>${runProps(fmt)}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`;
+}
+
+/**
+ * מאפייני פסקה (pPr) בסדר ה-schema (CT_PPr): pStyle, bidi, ind, rPr (אחרון).
+ *
+ * כיוון: בפסקת bidi, Word מפרש את left/right של jc ושל ind כצד ההתחלה/הסוף של הפסקה (ולא
+ * כצד פיזי) — כך Word עצמו כותב הזחת רשימה עברית: <w:ind w:left="720" .../> (ר' exams-src).
+ * לכן: בלי jc בכלל (ברירת המחדל בפסקת bidi היא יישור לצד ההתחלה = ימין, כמו בקבצי Word),
+ * והזחה מצד ההתחלה (ימין) נכתבת ב-w:left.
+ */
+function paraProps(opts: { style?: string; indentStart?: number } = {}): string {
+  return (
+    '<w:pPr>' +
+    (opts.style ? `<w:pStyle w:val="${opts.style}"/>` : '') +
+    '<w:bidi/>' +
+    (opts.indentStart ? `<w:ind w:left="${opts.indentStart}"/>` : '') +
+    `${PMARK}</w:pPr>`
+  );
+}
+
+/** הזחה (twips) לכל רמת קינון ברשימה. */
+const LIST_INDENT = 360;
+const BLOCK_TAGS = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'SECTION']);
+const LIST_TAGS = new Set(['UL', 'OL']);
+
+/**
+ * האם יש בטקסט תוכן שהדפדפן מציג. רק רווחים "רגילים" של HTML נחשבים ריקים — לא NBSP
+ * (‎String.trim‎ מסיר גם אותו, אבל contentEditable מכניס NBSP כרווח גלוי).
+ */
+function hasText(s: string | null | undefined): boolean {
+  return /[^ \t\n\r\f]/.test(s ?? '');
+}
+
+function isBlock(n: Node): boolean {
+  return n.nodeType === Node.ELEMENT_NODE && BLOCK_TAGS.has((n as Element).tagName);
+}
+
+/**
+ * האם יש תוכן (טקסט או <br> נוסף) אחרי הצומת, בתוך אותו בלוק? <br> בלי תוכן אחריו הוא
+ * "ממלא מקום" של contentEditable (שורה ריקה <p><br></p>, או "a<br><br>" אחרי Shift+Enter
+ * בסוף שורה) — הוא לא שבירת שורה אמיתית. רשימות מקוננות אינן חלק מהפסקה הנוכחית.
+ */
+function hasContentAfter(node: Node, block: Node): boolean {
+  for (let n: Node | null = node; n && n !== block; n = n.parentNode) {
+    for (let s = n.nextSibling; s; s = s.nextSibling) {
+      if (s.nodeType === Node.TEXT_NODE) {
+        if (hasText(s.textContent)) return true;
+      } else if (s.nodeType === Node.ELEMENT_NODE) {
+        const e = s as Element;
+        if (LIST_TAGS.has(e.tagName)) continue;
+        if (e.tagName === 'BR' || hasText(e.textContent) || e.querySelector('br')) return true;
+      }
+    }
+  }
+  return false;
+}
+
 /** המרת HTML מנוקה (p/strong/em/u/ol/ul/li/blockquote/br) ל-OOXML body. */
 export function htmlToOoxml(html: string): string {
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
 
-  function runs(node: Node, extra = ''): string {
+  /** runs של תוכן inline בתוך `block`. רשימות מקוננות מדולגות (הן פסקאות משלהן). */
+  function runs(node: Node, block: Node, fmt: RunFmt = {}): string {
     if (node.nodeType === Node.TEXT_NODE) {
       const t = node.textContent ?? '';
-      if (!t) return '';
-      const rpr = `<w:rPr><w:rFonts w:cs="David" w:hint="cs"/>${extra}<w:rtl/>${LANG}</w:rPr>`;
-      return `<w:r>${rpr}<w:t xml:space="preserve">${escapeXml(t)}</w:t></w:r>`;
+      return t ? textRun(t, fmt) : '';
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
-    const el = node as HTMLElement;
-    const tag = el.tagName.toLowerCase();
-    let add = extra;
-    if (tag === 'strong' || tag === 'b') add += '<w:b/><w:bCs/>';
-    if (tag === 'em' || tag === 'i') add += '<w:i/><w:iCs/>';
-    if (tag === 'u') add += '<w:u w:val="single"/>';
-    return Array.from(el.childNodes)
-      .map((c) => runs(c, add))
+    const tag = (node as HTMLElement).tagName.toLowerCase();
+    if (tag === 'br') {
+      // Shift+Enter: שבירת שורה בתוך הפסקה, באותו עיצוב run
+      return hasContentAfter(node, block) ? `<w:r>${runProps(fmt)}<w:br/></w:r>` : '';
+    }
+    if (tag === 'ul' || tag === 'ol') return '';
+    const next: RunFmt = {
+      b: fmt.b || tag === 'strong' || tag === 'b',
+      i: fmt.i || tag === 'em' || tag === 'i',
+      u: fmt.u || tag === 'u',
+    };
+    return Array.from(node.childNodes)
+      .map((c) => runs(c, block, next))
       .join('');
   }
 
-  function para(node: Node): string {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const t = (node.textContent ?? '').trim();
-      if (!t) return '';
-      return `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr><w:r><w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/>${LANG}</w:rPr><w:t xml:space="preserve">${escapeXml(t)}</w:t></w:r></w:p>`;
-    }
-    if (node.nodeType !== Node.ELEMENT_NODE) return '';
-    const el = node as HTMLElement;
-    const tag = el.tagName.toLowerCase();
-    const pBase = `<w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr>`;
+  const emptyPara = `<w:p>${paraProps()}</w:p>`;
+  const plainPara = (el: Node) => `<w:p>${paraProps()}${runs(el, el)}</w:p>`;
 
-    if (tag === 'br') return `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr></w:p>`;
-    if (tag === 'ul' || tag === 'ol') {
-      return Array.from(el.querySelectorAll('li'))
-        .map(
-          (li, i) =>
-            `<w:p><w:pPr><w:bidi/><w:ind w:right="360"/><w:jc w:val="right"/>${PMARK}</w:pPr><w:r><w:rPr><w:rFonts w:cs="David" w:hint="cs"/><w:rtl/></w:rPr><w:t xml:space="preserve">${tag === 'ol' ? `${i + 1}. ` : '• '}</w:t></w:r>${runs(li)}</w:p>`,
-        )
-        .join('');
-    }
-    const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'ul', 'ol', 'blockquote', 'br'];
-    const kids = Array.from(el.childNodes);
-    const hasBlock = kids.some(
-      (k) => k.nodeType === Node.ELEMENT_NODE && blockTags.includes((k as HTMLElement).tagName.toLowerCase()),
-    );
-    const headings: Record<string, string> = { h1: 'Heading1', h2: 'Heading2', h3: 'Heading3' };
-    if (headings[tag]) {
-      return `<w:p><w:pPr><w:pStyle w:val="${headings[tag]}"/><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr>${runs(el)}</w:p>`;
-    }
-    if ((tag === 'div' || tag === 'blockquote' || tag === 'section') && hasBlock) {
-      return kids.map(para).join('');
-    }
-    if (['p', 'h4', 'li', 'blockquote'].includes(tag) || !hasBlock) {
-      return `<w:p>${pBase}${runs(el)}</w:p>`;
-    }
-    return kids.map(para).join('');
+  /**
+   * רשימה: רק ילדים ישירים — כל li פסקה (קידומת + הטקסט שלו בלבד), ואחריה הרשימות המקוננות
+   * שלו ברמת הזחה עמוקה יותר. רשימה שהיא ילד ישיר של ol/ul (כך Chrome מקנן ב"הגדל הזחה")
+   * מוצגת כרמה מקוננת של הפריט הקודם.
+   */
+  function list(el: Element, level: number): string {
+    const ordered = el.tagName === 'OL';
+    let n = 0;
+    return Array.from(el.children)
+      .map((child) => {
+        if (LIST_TAGS.has(child.tagName)) return list(child, level + 1);
+        if (child.tagName !== 'LI') return '';
+        n += 1;
+        const prefix = textRun(ordered ? `${n}. ` : '• ');
+        const own = `<w:p>${paraProps({ indentStart: LIST_INDENT * level })}${prefix}${runs(child, child)}</w:p>`;
+        const nested = Array.from(child.querySelectorAll('ol, ul'))
+          .filter((l) => l.parentElement?.closest('li, ol, ul') === child)
+          .map((l) => list(l, level + 1))
+          .join('');
+        return own + nested;
+      })
+      .join('');
   }
 
-  const result = Array.from(tmp.childNodes).map(para).join('');
-  return result || `<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>${PMARK}</w:pPr></w:p>`;
+  /**
+   * רצף צמתים בתוך מכל: בלוקים מומרים כל אחד לפסקאות, וצמתי inline רצופים (טקסט, עיצוב, <br>)
+   * מקובצים לפסקה אחת — כמו שהם מוצגים (למשל "a<br>b" בראש העורך הוא פסקה אחת עם שבירת שורה).
+   */
+  function blocks(nodes: Node[]): string {
+    let out = '';
+    let group: Node[] = [];
+    const flush = () => {
+      if (!group.length) return;
+      const wrap = document.createElement('span');
+      for (const g of group) wrap.appendChild(g.cloneNode(true));
+      group = [];
+      if (!hasText(wrap.textContent)) {
+        // בלי טקסט: כל <br> בודד (מחוץ לפסקה) הוא שורה ריקה
+        out += emptyPara.repeat(wrap.querySelectorAll('br').length);
+        return;
+      }
+      const first = wrap.firstChild;
+      const last = wrap.lastChild;
+      if (first?.nodeType === Node.TEXT_NODE) first.textContent = (first.textContent ?? '').replace(/^[ \t\n\r\f]+/, '');
+      if (last?.nodeType === Node.TEXT_NODE) last.textContent = (last.textContent ?? '').replace(/[ \t\n\r\f]+$/, '');
+      out += plainPara(wrap);
+    };
+    for (const node of nodes) {
+      if (isBlock(node)) {
+        flush();
+        out += para(node as Element);
+      } else if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE) {
+        group.push(node);
+      }
+    }
+    flush();
+    return out;
+  }
+
+  function para(el: Element): string {
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'ul' || tag === 'ol') return list(el, 1);
+    // בלוק בלי טקסט ובלי <br> (למשל <p></p> שנוצר מ-<div><div>x</div></div> אחרי המיפוי DIV→P)
+    // גובהו 0 בעורך — לא מייצרים עבורו פסקה ריקה ב-Word. שורה ריקה אמיתית היא <p><br></p>.
+    if (!hasText(el.textContent) && !el.querySelector('br')) return '';
+    const kids = Array.from(el.childNodes);
+    const headings: Record<string, string> = { h1: 'Heading1', h2: 'Heading2', h3: 'Heading3' };
+    if (headings[tag]) {
+      return `<w:p>${paraProps({ style: headings[tag] })}${runs(el, el)}</w:p>`;
+    }
+    // מכל שמכיל בלוקים: מפרקים לפסקאות (inline רצוף ביניהם — פסקה אחת)
+    if (kids.some(isBlock)) return blocks(kids);
+    return plainPara(el);
+  }
+
+  return blocks(Array.from(tmp.childNodes)) || emptyPara;
 }
 
 /** עוטף body מסוג OOXML לחבילת DOCX מלאה ומחזיר Blob. */
@@ -180,27 +315,26 @@ export function packageDocx(bodyXml: string): Blob {
     </w:rPr></w:rPrDefault>
     <w:pPrDefault><w:pPr>
       <w:bidi/>
-      <w:jc w:val="right"/>
     </w:pPr></w:pPrDefault>
   </w:docDefaults>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
     <w:name w:val="Normal"/>
-    <w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>
+    <w:pPr><w:bidi/></w:pPr>
     <w:rPr><w:rFonts w:cs="David"/><w:rtl/>${LANG}</w:rPr>
   </w:style>
   <w:style w:type="paragraph" w:styleId="Heading1">
     <w:name w:val="heading 1"/><w:basedOn w:val="Normal"/>
-    <w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>
+    <w:pPr><w:bidi/></w:pPr>
     <w:rPr><w:rFonts w:cs="David"/><w:b/><w:bCs/><w:sz w:val="40"/><w:szCs w:val="40"/><w:rtl/></w:rPr>
   </w:style>
   <w:style w:type="paragraph" w:styleId="Heading2">
     <w:name w:val="heading 2"/><w:basedOn w:val="Normal"/>
-    <w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>
+    <w:pPr><w:bidi/></w:pPr>
     <w:rPr><w:rFonts w:cs="David"/><w:b/><w:bCs/><w:color w:val="2E74B5"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:rtl/></w:rPr>
   </w:style>
   <w:style w:type="paragraph" w:styleId="Heading3">
     <w:name w:val="heading 3"/><w:basedOn w:val="Normal"/>
-    <w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>
+    <w:pPr><w:bidi/></w:pPr>
     <w:rPr><w:rFonts w:cs="David"/><w:b/><w:bCs/><w:color w:val="1F3763"/><w:sz w:val="26"/><w:szCs w:val="26"/><w:rtl/></w:rPr>
   </w:style>
 </w:styles>`;
