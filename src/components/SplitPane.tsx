@@ -10,6 +10,11 @@ export interface PaneDef {
   /** גודל ברירת מחדל באחוזים */
   defaultSize: number;
   collapsible?: boolean;
+  /**
+   * חלונית בלי כותרת משלה — למשל חלונית שכל תוכנה הוא SplitPane מקונן שלחלוניותיו כותרות
+   * משלהן (אחרת מוצגת כותרת כפולה). אין לה כפתור כיווץ ולא headerActions.
+   */
+  headerless?: boolean;
   headerActions?: ReactNode;
   content: ReactNode;
 }
@@ -23,19 +28,45 @@ interface SplitPaneProps {
 
 const COLLAPSED = 3; // אחוז לתצוגה מקופלת (רק כותרת)
 
+type SavedSizes = Record<string, number[]>;
+
+/**
+ * מפתח משני לגדלים של layout במספר חלוניות אחר מזה שכבר שמור תחת storageKey
+ * (למשל חלונית אופציונלית שמופיעה רק לפעמים) — כך לכל מספר חלוניות נשמרים גדלים משלו.
+ */
+const countKey = (storageKey: string, count: number) => `${storageKey}#${count}`;
+
+function isSizes(v: unknown, count: number): v is number[] {
+  return Array.isArray(v) && v.length === count && v.every((x) => typeof x === 'number' && Number.isFinite(x));
+}
+
+/** הגדלים השמורים למספר החלוניות הנתון: קודם המפתח הראשי (תאימות לאחור), אחר כך המשני. */
+function pickSaved(saved: SavedSizes | null | undefined, storageKey: string, count: number): number[] | null {
+  const primary = saved?.[storageKey];
+  if (isSizes(primary, count)) return primary;
+  const secondary = saved?.[countKey(storageKey, count)];
+  return isSizes(secondary, count) ? secondary : null;
+}
+
 export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [sizes, setSizes] = useState<number[]>(() => panes.map((p) => p.defaultSize));
-  const [collapsed, setCollapsed] = useState<boolean[]>(() => panes.map(() => false));
-  const drag = useRef<{ index: number; startPos: number; startSizes: number[] } | null>(null);
+  // מצב הכיווץ לפי id של החלונית (ולא לפי אינדקס), כדי שיישאר נכון כשחלוניות נוספות/מוסרות
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const drag = useRef<{ index: number; startPos: number; startSizes: number[]; latest: number[] } | null>(null);
+
+  // (כשמספר החלוניות משתנה בין רינדורים — למשל חלונית שמופיעה אחרי בדיקה אסינכרונית —
+  // עובדים על גדלי ברירת המחדל באורך הנכון עד שהגדלים השמורים נטענים, כדי לא לקבל NaN.)
+  const sizesNow = sizes.length === panes.length ? sizes : panes.map((p) => p.defaultSize);
 
   // טעינת גדלים שמורים
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const saved = await storageGet<Record<string, number[]>>(STORAGE_KEYS.splitSizes);
-      const arr = saved?.[storageKey];
-      if (alive && Array.isArray(arr) && arr.length === panes.length) setSizes(arr);
+      const saved = await storageGet<SavedSizes>(STORAGE_KEYS.splitSizes);
+      if (!alive) return;
+      // אין ערך שמור באורך תואם: גוזרים גדלים מהחלוניות הנוכחיות
+      setSizes(pickSaved(saved, storageKey, panes.length) ?? panes.map((p) => p.defaultSize));
     })();
     return () => {
       alive = false;
@@ -45,8 +76,12 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
 
   const persist = useCallback(
     async (next: number[]) => {
-      const saved = (await storageGet<Record<string, number[]>>(STORAGE_KEYS.splitSizes)) ?? {};
-      saved[storageKey] = next;
+      const saved = (await storageGet<SavedSizes>(STORAGE_KEYS.splitSizes)) ?? {};
+      // המפתח הראשי שומר על הפורמט הקיים; רק אם כבר שמור בו layout במספר חלוניות אחר,
+      // הגדלים נשמרים במפתח משני — כדי לא לדרוס את הגדלים של ה-layout האחר.
+      const primary = saved[storageKey];
+      if (!Array.isArray(primary) || primary.length === next.length) saved[storageKey] = next;
+      else saved[countKey(storageKey, next.length)] = next;
       await storageSet(STORAGE_KEYS.splitSizes, saved);
     },
     [storageKey],
@@ -58,7 +93,7 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
     (e: PointerEvent) => {
       const d = drag.current;
       const el = containerRef.current;
-      if (!d || !el) return;
+      if (!d || !el || !panes[d.index] || !panes[d.index + 1]) return;
       const total = isHoriz ? el.clientWidth : el.clientHeight;
       if (total <= 0) return;
       const pos = isHoriz ? e.clientX : e.clientY;
@@ -82,6 +117,7 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
       }
       next[a] = na;
       next[b] = nb;
+      d.latest = next;
       setSizes(next);
     },
     [isHoriz, panes],
@@ -89,10 +125,7 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
 
   const endDrag = useCallback(() => {
     if (drag.current) {
-      setSizes((s) => {
-        void persist(s);
-        return s;
-      });
+      void persist(drag.current.latest);
     }
     drag.current = null;
     document.body.style.userSelect = '';
@@ -105,7 +138,8 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
     drag.current = {
       index,
       startPos: isHoriz ? e.clientX : e.clientY,
-      startSizes: [...sizes],
+      startSizes: [...sizesNow],
+      latest: [...sizesNow],
     };
     document.body.style.userSelect = 'none';
     window.addEventListener('pointermove', onPointerMove);
@@ -118,12 +152,12 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
     void persist(def);
   };
 
-  const toggleCollapse = (index: number) => {
-    setCollapsed((c) => c.map((v, i) => (i === index ? !v : v)));
+  const toggleCollapse = (id: string) => {
+    setCollapsed((c) => ({ ...c, [id]: !c[id] }));
   };
 
   // חישוב flex-basis אפקטיבי בהתחשב בקיפול
-  const effective = panes.map((_, i) => (collapsed[i] ? COLLAPSED : Math.max(sizes[i], panes[i].minSize)));
+  const effective = panes.map((p, i) => (collapsed[p.id] ? COLLAPSED : Math.max(sizesNow[i], p.minSize)));
   const sum = effective.reduce((s, v) => s + v, 0) || 1;
 
   return (
@@ -136,10 +170,10 @@ export function SplitPane({ direction, panes, storageKey }: SplitPaneProps) {
           key={pane.id}
           pane={pane}
           basis={(effective[i] / sum) * 100}
-          collapsed={collapsed[i]}
+          collapsed={!!collapsed[pane.id]}
           showResizer={i < panes.length - 1}
           direction={direction}
-          onCollapse={() => toggleCollapse(i)}
+          onCollapse={() => toggleCollapse(pane.id)}
           onResizerDown={(e) => startDrag(i, e)}
           onResizerDouble={resetSizes}
         />
@@ -169,16 +203,30 @@ function FragmentPane({
 }) {
   return (
     <>
-      <div className="pane" style={{ flex: `0 0 ${basis}%`, minWidth: 0, minHeight: 0 }}>
-        <div className="pane-header">
-          <span className="pane-title">{pane.title}</span>
-          {!collapsed && pane.headerActions}
-          {pane.collapsible && (
-            <button className="icon-btn mini" title={collapsed ? 'הרחב' : 'כווץ'} onClick={onCollapse}>
-              <Icon name={collapsed ? 'chevron-down' : 'chevron-up'} size="1em" />
-            </button>
-          )}
-        </div>
+      <div
+        className="pane"
+        role={pane.headerless ? 'region' : undefined}
+        aria-label={pane.headerless ? pane.title : undefined}
+        // flex-shrink 1: סכום ה-basis הוא 100%, והמפרידים (4px כל אחד) נוספים עליו — החלוניות
+        // מתכווצות יחסית כדי לפנות להם מקום, אחרת המכל גולש (פס גלילה מיותר/חיתוך החלונית האחרונה).
+        style={{ flex: `0 1 ${basis}%`, minWidth: 0, minHeight: 0 }}
+      >
+        {!pane.headerless && (
+          <div className="pane-header">
+            <span className="pane-title">{pane.title}</span>
+            {!collapsed && pane.headerActions}
+            {pane.collapsible && (
+              <button
+                className="icon-btn mini"
+                title={collapsed ? 'הרחב' : 'כווץ'}
+                aria-label={collapsed ? 'הרחב' : 'כווץ'}
+                onClick={onCollapse}
+              >
+                <Icon name={collapsed ? 'chevron-down' : 'chevron-up'} size="1em" />
+              </button>
+            )}
+          </div>
+        )}
         {!collapsed && <div className="pane-body">{pane.content}</div>}
       </div>
       {showResizer && (
@@ -186,6 +234,8 @@ function FragmentPane({
           className={`resizer ${direction}`}
           onPointerDown={onResizerDown}
           onDoubleClick={onResizerDouble}
+          role="separator"
+          aria-orientation={direction === 'horizontal' ? 'vertical' : 'horizontal'}
           title="גרור לשינוי גודל · לחיצה כפולה לאיפוס"
         />
       )}

@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   fontMode: 'default',
   uiFontSize: 16,
   sourcePaneMode: 'three',
+  workspaceLayout: 'three',
   lastOpenIssueId: 'issue-0240',
   lastOpenWeekId: 'issue-0240-w1',
   remindersEnabled: false,

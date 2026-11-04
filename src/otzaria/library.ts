@@ -17,23 +17,71 @@ function normName(s: string): string {
     .trim();
 }
 
+/**
+ * ניסוחים חלופיים לשם ספר: כפי שהוקלד, בלי פיסוק, ובכתיב הכותרת באוצריא — "שולחן ערוך, X"
+ * (גם עבור שו"ע X). הבדיקה על הגרסה המנורמלת, שבה גרשיים ופסיקים כבר הוסרו ("שו"ע" → "שוע").
+ */
+function nameVariants(query: string): string[] {
+  const q = query.trim();
+  const plain = normName(q);
+  const withComma = plain.replace(/^(?:שולחן ערוך|שוע) (?=\S)/, 'שולחן ערוך, ');
+  return [...new Set([q, plain, withComma])].filter(Boolean);
+}
+
+interface LenientResult {
+  /** איחוד התוצאות של כל הניסוחים שנוסו, לפי סדר הניסוחים, בלי כפילויות */
+  books: BookMeta[];
+  /** השמות המנורמלים של כל הניסוחים — התאמה מדויקת לכל אחד מהם נחשבת מדויקת */
+  targets: string[];
+}
+
+function isExactMatch(b: BookMeta, targets: string[], wantedName: string): boolean {
+  return b.bookId === wantedName || targets.includes(normName(b.title));
+}
+
+/**
+ * מחפש את השם בכמה ניסוחים ומאחד את התוצאות. עוצר רק כשנמצאה התאמה מדויקת: גרסאות אוצריא
+ * עד 0.9.98 מחפשות תת-מחרוזת מדויקת בכותרת, ולכן "שולחן ערוך אורח חיים" (בלי פסיק) מחזיר
+ * רק מפרשים ("באר הגולה על שולחן ערוך אורח חיים") — והספר עצמו נמצא רק בניסוח עם הפסיק.
+ */
+async function findBooksLenient(wantedName: string, limit = 10): Promise<LenientResult> {
+  const variants = nameVariants(wantedName);
+  const targets = [...new Set(variants.map(normName))];
+  const books: BookMeta[] = [];
+  const seen = new Set<string>();
+  for (const v of variants) {
+    for (const b of await findBooks(v, limit)) {
+      const key = b.bookId ?? b.title;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      books.push(b);
+    }
+    if (books.some((b) => isExactMatch(b, targets, wantedName))) break;
+  }
+  return { books, targets };
+}
+
 /** האם הכותרת היא של מפרש על ספר אחר (למשל "מטה יהונתן על שולחן ערוך"). */
 function isCommentaryTitle(title: string): boolean {
   return / על /.test(title);
 }
 
+function startsWithAny(b: BookMeta, targets: string[]): boolean {
+  const title = normName(b.title);
+  return targets.some((t) => title.startsWith(t));
+}
+
 /**
- * בוחר את הספר המתאים ביותר לשם מבוקש מתוך תוצאות findBooks.
- * סדר עדיפויות: התאמה מדויקת (אחרי נרמול פיסוק) → מתחיל בשם → ספר בסיס (לא מפרש) → הראשון.
- * מחזיר null אם אין תוצאות.
+ * בוחר את הספר המתאים ביותר לשם מבוקש מתוך תוצאות findBooksLenient.
+ * סדר עדיפויות: התאמה מדויקת לאחד הניסוחים (אחרי נרמול פיסוק) → מתחיל באחד הניסוחים →
+ * ספר בסיס (לא מפרש) → הראשון. מחזיר null אם אין תוצאות.
  */
-function pickBestBook(books: BookMeta[], wantedName: string): BookMeta | null {
+function pickBestBook({ books, targets }: LenientResult, wantedName: string): BookMeta | null {
   if (!books.length) return null;
-  const target = normName(wantedName);
   const wantedIsCommentary = isCommentaryTitle(wantedName);
-  const exact = books.find((b) => normName(b.title) === target || b.bookId === wantedName);
+  const exact = books.find((b) => isExactMatch(b, targets, wantedName));
   if (exact) return exact;
-  const starts = books.find((b) => normName(b.title).startsWith(target));
+  const starts = books.find((b) => startsWithAny(b, targets));
   if (starts) return starts;
   // הימנעות ממפרשים ("X על Y") כשהשם המבוקש אינו של מפרש — מונע זיהוי שו"ע כפירוש
   if (!wantedIsCommentary) {
@@ -48,15 +96,12 @@ function pickBestBook(books: BookMeta[], wantedName: string): BookMeta | null {
  * מחזיר את ה-bookId אם יש התאמה מדויקת או התאמה יחידה (ללא מפרשים), אחרת null.
  */
 export async function autoDetectBookId(wantedName: string): Promise<string | null> {
-  const books = await findBooks(wantedName, 10);
+  const { books, targets } = await findBooksLenient(wantedName, 10);
   if (books.length === 0) return null;
-  const target = normName(wantedName);
-  const exact = books.find((b) => normName(b.title) === target || b.bookId === wantedName);
+  const exact = books.find((b) => isExactMatch(b, targets, wantedName));
   if (exact) return exact.bookId;
-  // התאמה יחידה שמתחילה בשם המבוקש (אחרי נרמול), בלי לכלול מפרשים
-  const starts = books.filter(
-    (b) => normName(b.title).startsWith(target) && !isCommentaryTitle(b.title),
-  );
+  // התאמה יחידה שמתחילה באחד הניסוחים (אחרי נרמול), בלי לכלול מפרשים
+  const starts = books.filter((b) => startsWithAny(b, targets) && !isCommentaryTitle(b.title));
   if (starts.length === 1) return starts[0].bookId;
   if (books.length === 1) return books[0].bookId;
   return null;
@@ -77,29 +122,9 @@ const bookIdCache = new Map<string, string | null>();
 export async function resolveBookId(nameOrId: string): Promise<string | null> {
   if (!nameOrId) return null;
   if (bookIdCache.has(nameOrId)) return bookIdCache.get(nameOrId)!;
-  const books = await findBooks(nameOrId, 10);
-  const resolved = pickBestBook(books, nameOrId)?.bookId ?? null;
+  const resolved = pickBestBook(await findBooksLenient(nameOrId, 10), nameOrId)?.bookId ?? null;
   bookIdCache.set(nameOrId, resolved);
   return resolved;
-}
-
-/** בוחר את ערך ה-TOC הקרוב ביותר ל-ref נתון (contains / נורמליזציה). */
-export function findBestTocEntry(toc: TocEntry[], ref: string): TocEntry | null {
-  if (!toc.length || !ref) return null;
-  const norm = (s: string) => s.replace(/["'״׳]/g, '').replace(/\s+/g, ' ').trim();
-  const target = norm(ref);
-  // 1. התאמה מדויקת
-  let hit = toc.find((e) => norm(e.text) === target);
-  if (hit) return hit;
-  // 2. הכי ארוך שמוכל ב-ref או שמכיל את ה-ref
-  const candidates = toc
-    .filter((e) => {
-      const t = norm(e.text);
-      return t.includes(target) || target.includes(t);
-    })
-    .sort((a, b) => norm(b.text).length - norm(a.text).length);
-  hit = candidates[0];
-  return hit ?? null;
 }
 
 // תקרת קריאה לטווח אחד: 200 אלף תווים. הטווח השבועי הגדול ביותר בגליונות הוא כ-37 אלף.
@@ -187,6 +212,8 @@ export interface LoadedSource {
   ok: boolean;
   text: string;
   error?: string;
+  /** true כשהכשל נובע מספר שלא נמצא בספרייה (ולכן הגדרת שם הספר עשויה לעזור) */
+  missingBook?: boolean;
 }
 
 /**
@@ -206,7 +233,12 @@ export async function loadSourceRange(
     // קודם מפענחים את שם הספר ל-bookId אמיתי (שם התצוגה ≠ bookId)
     const bookId = await resolveBookId(bookName);
     if (!bookId) {
-      return { ok: false, text: '', error: `הספר "${bookName}" לא נמצא בספרייה. עדכן את שם הספר בהגדרות.` };
+      return {
+        ok: false,
+        text: '',
+        missingBook: true,
+        error: `הספר "${bookName}" לא נמצא בספרייה. עדכן את שם הספר בהגדרות.`,
+      };
     }
     const range = pickTocRange(await getBookToc(bookId), startRef, endRef);
     if (!range) {

@@ -197,6 +197,8 @@ export interface SettingsState {
   fontMode: FontMode;
   uiFontSize: number;
   sourcePaneMode: 'one' | 'three';
+  /** פריסת מסך כתיבת התשובות: שלוש חלוניות זו לצד זו, או שאלות מעל התשובה ולצדן המקורות */
+  workspaceLayout: 'three' | 'stacked';
   lastOpenIssueId: string;
   lastOpenWeekId: string;
   /** ── התראות ותזכורות ── */

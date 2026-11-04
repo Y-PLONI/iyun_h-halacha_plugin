@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ScheduleWeek, SourceRef, SourceRole } from '../data/types';
 import { SOURCE_ROLE_LABELS } from '../data/types';
-import { loadSourceRange, openInOtzaria, type LoadedSource } from '../otzaria/library';
+import { loadSourceRange, openInOtzaria, resolveBookId, type LoadedSource } from '../otzaria/library';
 import { useSettings } from '../state/settingsStore';
 import { setSettingsOpen } from '../state/appStore';
 import { toast } from './Toast';
@@ -17,13 +17,47 @@ interface SourcePaneProps {
 }
 
 // סדר התצוגה והגדלים היחסיים (מ"ב עיקרי).
-// הערה: 'shaarHatziyun' (שער הציון) הושמט כרגע — הספר אינו קיים במאגר הספרים.
-// כשיתווסף, מוסיפים שורה: { role: 'shaarHatziyun', defaultSize: 14 } והגדלים יתאזנו.
-const DISPLAY_ROLES: { role: SourceRole; defaultSize: number }[] = [
-  { role: 'shulchanAruch', defaultSize: 24 },
-  { role: 'mishnaBerurah', defaultSize: 48 },
-  { role: 'biurHalacha', defaultSize: 28 },
+// שער הציון (optional) מוצג רק אם הספר נמצא בספריית המשתמש — אחרת החלונית מוסתרת
+// בלי הודעת שגיאה, כדי לא להציק למי שאין לו את הספר.
+const DISPLAY_ROLES: { role: SourceRole; defaultSize: number; optional?: boolean }[] = [
+  { role: 'shulchanAruch', defaultSize: 22 },
+  { role: 'mishnaBerurah', defaultSize: 40 },
+  { role: 'biurHalacha', defaultSize: 24 },
+  { role: 'shaarHatziyun', defaultSize: 14, optional: true },
 ];
+
+/**
+ * תוצאת הבדיקה האחרונה לכל שם ספר — כדי שבכניסה חוזרת למסך החלונית האופציונלית תופיע מיד
+ * (בלי קפיצה מ-3 ל-4 חלוניות). המפתח הוא שם הספר, כך ששינוי ההגדרה פוסל את הערך מעצמו.
+ */
+const availabilityCache = new Map<string, boolean>();
+
+/** האם ספר אופציונלי קיים בספרייה (null = עדיין נבדק, בלי תוצאה קודמת). */
+function useBookAvailable(bookId: string): boolean | null {
+  const [state, setState] = useState<{ bookId: string; available: boolean } | null>(null);
+  useEffect(() => {
+    if (!bookId) return;
+    let alive = true;
+    // בדיקה מחדש גם כשיש ערך ב-cache (הספרייה עשויה להשתנות)
+    void resolveBookId(bookId).then(
+      (id) => {
+        availabilityCache.set(bookId, !!id);
+        if (alive) setState({ bookId, available: !!id });
+      },
+      () => {
+        availabilityCache.delete(bookId);
+        if (alive) setState({ bookId, available: false });
+      },
+    );
+    return () => {
+      alive = false;
+    };
+  }, [bookId]);
+  if (!bookId) return false;
+  // תוצאה של הבדיקה הנוכחית; עד שהיא מגיעה — הערך האחרון שידוע על הספר הזה
+  if (state?.bookId === bookId) return state.available;
+  return availabilityCache.get(bookId) ?? null;
+}
 
 export function SourcePane({ week }: SourcePaneProps) {
   const settings = useSettings();
@@ -34,10 +68,15 @@ export function SourcePane({ week }: SourcePaneProps) {
     setReloadKeys((k) => ({ ...k, [role]: (k[role] ?? 0) + 1 }));
   };
 
+  const shaarRef = week.sourceRefs.shaarHatziyun;
+  const shaarBookId = settings.bookIds.shaarHatziyun || shaarRef?.bookId || '';
+  const shaarAvailable = useBookAvailable(shaarRef ? shaarBookId : '');
+
   const panes: PaneDef[] = [];
-  for (const { role, defaultSize } of DISPLAY_ROLES) {
+  for (const { role, defaultSize, optional } of DISPLAY_ROLES) {
     const ref = week.sourceRefs[role];
     if (!ref) continue;
+    if (optional && shaarAvailable !== true) continue;
     const bookId = settings.bookIds[role] || ref.bookId || '';
     const refLabel =
       ref.endRef && ref.endRef !== ref.startRef ? `${ref.startRef} – ${ref.endRef}` : ref.startRef;
@@ -63,11 +102,16 @@ export function SourcePane({ week }: SourcePaneProps) {
           <button
             className="icon-btn mini"
             title="רענן"
+            aria-label="רענן"
             onClick={() => bumpReload(role, cacheKey)}
           >
             <Icon name="sync" size="1em" />
           </button>
-          <button className="icon-btn mini" title="פתח באוצריא" onClick={() => void handleOpen()}>
+          <button
+            className="icon-btn mini"
+            title="פתח באוצריא"
+            aria-label="פתח באוצריא"
+            onClick={() => void handleOpen()}>
             <Icon name="open" size="1em" />
           </button>
         </>
@@ -101,7 +145,7 @@ function SourceContent({
 
   useEffect(() => {
     if (!bookId) {
-      setState({ ok: false, text: '', error: 'לא הוגדר ספר. הגדר את שם הספר בהגדרות.' });
+      setState({ ok: false, text: '', missingBook: true, error: 'לא הוגדר ספר. הגדר את שם הספר בהגדרות.' });
       return;
     }
     const cached = cache.get(cacheKey);
@@ -134,11 +178,13 @@ function SourceContent({
       {!loading && state && !state.ok && (
         <>
           {state.error}
-          <div style={{ marginTop: 8 }}>
-            <button className="btn-secondary" onClick={() => setSettingsOpen(true)}>
-              הגדר ספר
-            </button>
-          </div>
+          {state.missingBook && (
+            <div style={{ marginTop: 8 }}>
+              <button className="btn-secondary" onClick={() => setSettingsOpen(true)}>
+                הגדר ספר
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

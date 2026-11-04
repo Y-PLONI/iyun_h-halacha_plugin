@@ -96,6 +96,128 @@ describe('resolveBookId — בחירת הספר הנכון', () => {
   });
 });
 
+describe('זיהוי שם ספר בניסוחים חלופיים', () => {
+  it('שם בלי פסיק ("שולחן ערוך אורח חיים") מזוהה בניסוח עם פסיק', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) =>
+      p.query === 'שולחן ערוך, אורח חיים' ? [book('שולחן ערוך, אורח חיים')] : [],
+    );
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(host.callsTo('library.findBooks').map((c) => c.payload.query)).toEqual([
+      'שולחן ערוך אורח חיים',
+      'שולחן ערוך, אורח חיים',
+    ]);
+  });
+
+  it('שם עם גרשיים ופיסוק נוסף מנסה גם גרסה מנורמלת', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) => (p.query === 'משנה ברורה' ? [book('משנה ברורה')] : []));
+    await expect(lib.resolveBookId('משנה ברורה.')).resolves.toBe('משנה ברורה');
+  });
+
+  it('autoDetectBookId משתמש באותם ניסוחים', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) =>
+      p.query === 'שולחן ערוך, אורח חיים' ? [book('שולחן ערוך, אורח חיים')] : [],
+    );
+    await expect(lib.autoDetectBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+  });
+
+  it('אחרי הצלחה בניסוח הראשון לא שולחים שאילתות נוספות', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', () => [book('משנה ברורה')]);
+    await lib.resolveBookId('משנה ברורה');
+    expect(host.callsTo('library.findBooks')).toHaveLength(1);
+  });
+});
+
+// כותרות אמיתיות מ-seforim.db, בסדר הספרייה. הספר עצמו אחרי המפרשים, כמו בספרייה האמיתית.
+const LIBRARY_TITLES = [
+  'באר הגולה על שולחן ערוך אורח חיים',
+  'אוצר ההלכה על שולחן ערוך אורח חיים חלק א',
+  'חק יעקב על שולחן ערוך אורח חיים',
+  'טורי זהב על שולחן ערוך אורח חיים',
+  'כף החיים על שולחן ערוך אורח חיים',
+  'חכמת שלמה על שולחן ערוך, אורח חיים',
+  'שולחן ערוך, אורח חיים',
+  'הערות על משנה ברורה',
+  'משנה ברורה',
+  'ביאור הלכה',
+  'שער הציון',
+];
+
+/** אוצריא עד 0.9.98: תת-מחרוזת מדויקת בכותרת, לפי סדר הספרייה, עד limit. */
+function substringHost(titles = LIBRARY_TITLES) {
+  host.on('library.findBooks', (p) =>
+    titles
+      .filter((t) => t.includes(String(p.query)))
+      .slice(0, Number(p.limit))
+      .map((t) => book(t)),
+  );
+}
+
+const queries = () => host.callsTo('library.findBooks').map((c) => c.payload.query);
+
+describe('findBooksLenient — איחוד ניסוחים מול חיפוש אמיתי', () => {
+  it('בלי פסיק: הניסוח הראשון מחזיר רק מפרשים — נבחר הספר שנמצא בניסוח עם הפסיק', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(queries()).toEqual(['שולחן ערוך אורח חיים', 'שולחן ערוך, אורח חיים']);
+  });
+
+  it('autoDetectBookId: בלי פסיק — מזהה את הספר ולא מחזיר null בגלל המפרשים', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.autoDetectBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+  });
+
+  it('שו"ע אורח חיים מתורגם לכותרת "שולחן ערוך, אורח חיים"', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.resolveBookId('שו"ע אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(queries()).toEqual(['שו"ע אורח חיים', 'שוע אורח חיים', 'שולחן ערוך, אורח חיים']);
+  });
+
+  it('שו״ע (גרשיים עבריים) ו-autoDetectBookId', async () => {
+    const lib = await freshLibrary();
+    substringHost();
+    await expect(lib.autoDetectBookId('שו״ע אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+  });
+
+  it.each(['שולחן ערוך, אורח חיים', 'משנה ברורה', 'ביאור הלכה', 'שער הציון'])(
+    'ברירת המחדל "%s" נפתרת לספר עצמו בשאילתה אחת, ולא למפרש עליו',
+    async (name) => {
+      const lib = await freshLibrary();
+      substringHost();
+      await expect(lib.resolveBookId(name)).resolves.toBe(name);
+      await expect(lib.autoDetectBookId(name)).resolves.toBe(name);
+      expect(queries()).toEqual([name, name]);
+    },
+  );
+
+  it('מנוע החיפוש המדורג (אוצריא 0.10+) — הספר ראשון כבר בשאילתה בלי הפסיק', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', () => [
+      book('שולחן ערוך, אורח חיים'),
+      book('באר הגולה על שולחן ערוך אורח חיים'),
+    ]);
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך, אורח חיים');
+    expect(queries()).toEqual(['שולחן ערוך אורח חיים']);
+  });
+
+  it('בלי התאמה מדויקת באף ניסוח — מנסה את כולם ונופל לספר בסיס מתוך האיחוד', async () => {
+    const lib = await freshLibrary();
+    host.on('library.findBooks', (p) =>
+      p.query === 'שולחן ערוך אורח חיים'
+        ? [book('באר הגולה על שולחן ערוך אורח חיים')]
+        : [book('באר הגולה על שולחן ערוך אורח חיים'), book('שולחן ערוך השלם, אורח חיים')],
+    );
+    await expect(lib.resolveBookId('שולחן ערוך אורח חיים')).resolves.toBe('שולחן ערוך השלם, אורח חיים');
+    expect(queries()).toEqual(['שולחן ערוך אורח חיים', 'שולחן ערוך, אורח חיים']);
+  });
+});
+
 describe('autoDetectBookId', () => {
   it('מחזיר התאמה מדויקת', async () => {
     const lib = await freshLibrary();
@@ -125,39 +247,6 @@ describe('autoDetectBookId', () => {
     const lib = await freshLibrary();
     host.on('library.findBooks', () => []);
     await expect(lib.autoDetectBookId('כלום')).resolves.toBeNull();
-  });
-});
-
-describe('findBestTocEntry', () => {
-  it('התאמה מדויקת', async () => {
-    const lib = await freshLibrary();
-    expect(lib.findBestTocEntry(toc, 'סימן תקמ')?.index).toBe(1200);
-  });
-
-  it('מתעלם מגרשיים/גרשים בהשוואה', async () => {
-    const lib = await freshLibrary();
-    const entries = [{ text: 'סימן תקמ"א', index: 500, level: 1 }] as TocEntry[];
-    expect(lib.findBestTocEntry(entries, 'סימן תקמא')?.index).toBe(500);
-  });
-
-  it('בוחר את ההתאמה החלקית הארוכה ביותר', async () => {
-    const lib = await freshLibrary();
-    const entries = [
-      { text: 'סימן', index: 10, level: 1 },
-      { text: 'סימן תקמא סעיף ב', index: 20, level: 2 },
-    ] as TocEntry[];
-    expect(lib.findBestTocEntry(entries, 'סימן תקמא סעיף ב סוף')?.index).toBe(20);
-  });
-
-  it('מחזיר null ל-toc ריק או ref ריק', async () => {
-    const lib = await freshLibrary();
-    expect(lib.findBestTocEntry([], 'סימן א')).toBeNull();
-    expect(lib.findBestTocEntry(toc, '')).toBeNull();
-  });
-
-  it('מחזיר null כשאין שום התאמה', async () => {
-    const lib = await freshLibrary();
-    expect(lib.findBestTocEntry(toc, 'הלכות שבת')).toBeNull();
   });
 });
 
