@@ -1,11 +1,13 @@
 // זרימת ה-boot של התוסף: theme, טעינת הגדרות/תשובות/מבחנים, responsive, שמירה בסגירה.
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { App } from '../src/App';
 import { createMockTheme } from '../src/otzaria/mockSdk';
 import { defaultHandlers, installFakeHost, type FakeHost } from './helpers/host';
 import { prepareExams } from './helpers/app';
+import { installBook } from './helpers/otzariaBook';
+import { openWorkspace } from '../src/state/appStore';
 
 let host: FakeHost;
 
@@ -30,6 +32,73 @@ async function bootApp(boot: Record<string, unknown> = {}) {
 
 afterEach(() => {
   vi.useRealTimers();
+});
+
+describe('App — מיקוד בחזרה לטאב', () => {
+  async function openEditor() {
+    const { container } = await bootApp();
+    await act(async () => openWorkspace('issue-0240-w1'));
+    const editor = container.querySelector<HTMLElement>('.answer-area')!;
+    editor.focus();
+    expect(editor).toHaveFocus();
+    return editor;
+  }
+
+  function resumeTab() {
+    window.dispatchEvent(new Event('blur'));
+    host.emit('plugin.suspended', null);
+    host.emit('plugin.resumed', null);
+    window.dispatchEvent(new Event('focus'));
+  }
+
+  afterEach(() => window.getSelection()?.removeAllRanges());
+
+  it('משאיר לעורך ממוקד את הסמן והבחירה שבניהול ה-WebView', async () => {
+    const editor = await openEditor();
+    const text = editor.appendChild(document.createTextNode('תשובה לדוגמה'));
+    const selection = window.getSelection()!;
+    selection.setBaseAndExtent(text, 5, text, 1);
+    const onBlur = vi.fn();
+    editor.addEventListener('blur', onBlur);
+
+    vi.useFakeTimers();
+    resumeTab();
+    act(() => vi.advanceTimersByTime(100));
+
+    expect(editor).toHaveFocus();
+    expect(onBlur).not.toHaveBeenCalled();
+    expect(selection.anchorNode).toBe(text);
+    expect(selection.anchorOffset).toBe(5);
+    expect(selection.focusNode).toBe(text);
+    expect(selection.focusOffset).toBe(1);
+  });
+
+  it('שומר על סימון טקסט בחלונית המקורות כשחוזרים אליה בגרירה', async () => {
+    const bookId = 'מקור לבדיקת מיקוד';
+    await window.Otzaria.call('storage.set', {
+      key: 'settings:v1',
+      value: { bookIds: { mishnaBerurah: bookId } },
+    });
+    host.on('library.findBooks', ({ query }) => query === bookId ? [{ title: bookId, bookId }] : []);
+    installBook(host, ['<h2>סימן תקלט</h2>', '<p>טקסט לסימון</p>']);
+    const editor = await openEditor();
+    const source = await screen.findByText('טקסט לסימון');
+    const selection = window.getSelection()!;
+    selection.collapse(editor, 0);
+
+    vi.useFakeTimers();
+    resumeTab();
+    fireEvent.pointerDown(source);
+    // ב-jsdom גרירה אינה מעבירה פוקוס או יוצרת בחירה בעצמה.
+    editor.blur();
+    selection.selectAllChildren(source);
+    act(() => vi.advanceTimersByTime(100));
+    fireEvent.pointerUp(source);
+
+    expect(document.body).toHaveFocus();
+    expect(selection.toString()).toBe('טקסט לסימון');
+    expect(selection.anchorNode).toBe(source);
+  });
 });
 
 describe('App — עליית התוסף', () => {
@@ -175,16 +244,13 @@ describe('App — responsive ושמירה', () => {
 // נשאר אחרון בקובץ: הטסט טוען עותק טרי של האפליקציה ומחליף את רישום המודולים.
 describe('App — תיאום תזכורות ב-boot', () => {
   it('מתזמן התראות לפי ההגדרות השמורות', async () => {
-    // מודולים טריים: initReminders מאתחל פעם אחת בלבד לכל חיי המודול
-    vi.resetModules();
-    // resetModules clears the exam cache; convert fresh documents before testing boot.
-    const { loadExams } = await import('../src/data/examLoader');
-    await loadExams();
-    const { App: FreshApp } = await import('../src/App');
     await window.Otzaria.call('storage.set', {
       key: 'settings:v1',
       value: { remindersEnabled: true, desktopNotifications: true, calendarReminders: false } as never,
     });
+    // מודולים טריים: initReminders מאתחל פעם אחת בלבד לכל חיי המודול
+    vi.resetModules();
+    const { App: FreshApp } = await import('../src/App');
     render(<FreshApp />);
     await act(async () => {
       host.emit('plugin.boot', {});
