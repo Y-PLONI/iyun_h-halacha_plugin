@@ -20,6 +20,47 @@ beforeEach(() => {
   appStore.set({ activeIssueId: 'issue-0240', activeWeekId: 'issue-0240-w1', screen: 'workspace' });
 });
 
+describe('WorkspaceScreen — פריסת "תשובה מתחת לשאלות"', () => {
+  it('מציג מבחן מעל תשובה בעמודה אחת, והמקורות לצידה', () => {
+    resetStores({ workspaceLayout: 'stacked' });
+    const { container } = render(<WorkspaceScreen />);
+    const titles = [...container.querySelectorAll('.pane > .pane-header > .pane-title')].map((el) => el.textContent);
+    // לעמודת "שאלות ותשובה" אין כותרת משלה — רק לחלוניות המקוננות בה (בלי כותרת כפולה)
+    expect(titles.slice(0, 3)).toEqual(['מבחן', 'תשובה', 'מקורות']);
+    expect(titles).not.toContain('שאלות ותשובה');
+    expect(screen.getByRole('region', { name: 'שאלות ותשובה' })).toBeInTheDocument();
+    expect(container.querySelector('.answer-area')).toBeInTheDocument();
+    expect(container.querySelectorAll('.exam-q').length).toBeGreaterThan(0);
+  });
+
+  it('מבחן ותשובה מקוננים בעמודה הימנית (מבחן מעל תשובה), המקורות בעמודה השנייה', () => {
+    resetStores({ workspaceLayout: 'stacked' });
+    const { container } = render(<WorkspaceScreen />);
+    const [work, sources] = [...container.querySelectorAll('.workspace > div > .pane')];
+    const titlesIn = (el: Element) =>
+      [...el.querySelectorAll('.pane .pane > .pane-header > .pane-title')].map((t) => t.textContent);
+    expect(titlesIn(work)).toEqual(['מבחן', 'תשובה']);
+    expect(work.querySelector('.answer-area')).toBeInTheDocument();
+    expect(sources.querySelector(':scope > .pane-header > .pane-title')).toHaveTextContent('מקורות');
+    expect(sources.querySelector('.answer-area')).not.toBeInTheDocument();
+  });
+
+  it('בפריסה המוערמת: המבחן והמקורות ניתנים לכיווץ, התשובה לא', () => {
+    resetStores({ workspaceLayout: 'stacked' });
+    const { container } = render(<WorkspaceScreen />);
+    const collapsible = (title: string) => {
+      const header = [...container.querySelectorAll('.pane > .pane-header')].find(
+        (h) => h.querySelector('.pane-title')?.textContent === title,
+      );
+      expect(header, title).toBeTruthy();
+      return !!header!.querySelector('[title="כווץ"]');
+    };
+    expect(collapsible('מבחן')).toBe(true);
+    expect(collapsible('תשובה')).toBe(false);
+    expect(collapsible('מקורות')).toBe(true);
+  });
+});
+
 describe('WorkspaceScreen — מסך רחב', () => {
   it('מציג שלוש חלוניות: מבחן, תשובה, מקורות', () => {
     render(<WorkspaceScreen />);

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SourcePane } from '../../src/components/SourcePane';
 import { appStore } from '../../src/state/appStore';
 import { defaultHandlers, installFakeHost, type FakeHost } from '../helpers/host';
@@ -48,11 +48,58 @@ describe('SourcePane — חלוניות מקורות', () => {
     expect(screen.getByText(/שולחן ערוך · סימן \S+ – סימן \S+/)).toBeInTheDocument();
   });
 
-  it('שער הציון אינו מוצג (הספר אינו במאגר)', () => {
+  it('שער הציון מוצג כשהספר קיים בספרייה', async () => {
     const week = weekWithSources();
-    week.sourceRefs.shaarHatziyun = { startRef: 'סימן א' };
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
     render(<SourcePane week={week} />);
+    expect(await screen.findByText(/שער הציון ·/)).toBeInTheDocument();
+  });
+
+  it('שער הציון מוסתר (בלי שגיאה) כשהספר אינו בספרייה', async () => {
+    withMissingBook();
+    const week = weekWithSources();
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
+    render(<SourcePane week={week} />);
+    await waitFor(() => expect(screen.getAllByText(/לא נמצא בספרייה/).length).toBeGreaterThan(0));
     expect(screen.queryByText(/שער הציון/)).not.toBeInTheDocument();
+  });
+
+  it('שער הציון ניתן לכיווץ אחרי שהופיע (מעבר מ-3 ל-4 חלוניות)', async () => {
+    const week = weekWithSources();
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
+    const { container } = render(<SourcePane week={week} />);
+    await screen.findByText(/שער הציון ·/);
+    expect(screen.getAllByTitle('כווץ')).toHaveLength(4);
+    const shaarPane = () => container.querySelectorAll('.pane')[3];
+    expect(shaarPane().querySelector('.pane-body')).toBeTruthy();
+    fireEvent.click(screen.getAllByTitle('כווץ')[3]);
+    expect(shaarPane().querySelector('.pane-body')).toBeNull();
+    expect(screen.getAllByTitle('הרחב')).toHaveLength(1);
+  });
+
+  it('בכניסה חוזרת שער הציון מוצג מיד (בלי להמתין לבדיקה מחדש)', async () => {
+    const week = weekWithSources();
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
+    const first = render(<SourcePane week={week} />);
+    await screen.findByText(/שער הציון ·/);
+    first.unmount();
+    render(<SourcePane week={week} />);
+    // סינכרוני — כבר ברינדור הראשון יש 4 חלוניות
+    expect(screen.getByText(/שער הציון ·/)).toBeInTheDocument();
+    expect(screen.getAllByTitle('כווץ')).toHaveLength(4);
+  });
+
+  it('שינוי שם הספר בהגדרות פוסל את התוצאה הקודמת', async () => {
+    const week = weekWithSources();
+    week.sourceRefs.shaarHatziyun = { startRef: siman(refCounter) };
+    const first = render(<SourcePane week={week} />);
+    await screen.findByText(/שער הציון ·/);
+    first.unmount();
+    withMissingBook();
+    render(<SourcePane week={week} />);
+    expect(screen.queryByText(/שער הציון ·/)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText(/לא נמצא בספרייה/).length).toBeGreaterThan(0));
+    expect(screen.queryByText(/שער הציון ·/)).not.toBeInTheDocument();
   });
 
   it('שבוע ללא מקורות מציג הודעה', () => {
@@ -103,6 +150,15 @@ describe('SourcePane — שגיאות והגדרות', () => {
     render(<SourcePane week={weekWithSources()} />);
     await waitFor(() => expect(screen.getAllByText(/לא נמצא בספרייה/).length).toBeGreaterThan(0));
     expect(screen.getAllByRole('button', { name: 'הגדר ספר' }).length).toBeGreaterThan(0);
+  });
+
+  it('סימן שחסר בספר מציג שגיאה בלי כפתור "הגדר ספר"', async () => {
+    refCounter++;
+    // הספר קיים אבל הסימן המבוקש (אחרי כל הסימנים שבו) אינו בתוכן העניינים
+    const week = makeWeek({ sourceRefs: { biurHalacha: { startRef: siman(500 + refCounter) } } });
+    render(<SourcePane week={week} />);
+    await waitFor(() => expect(screen.getByText(/לא נמצא בתוכן העניינים/)).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'הגדר ספר' })).not.toBeInTheDocument();
   });
 
   it('לחיצה על "הגדר ספר" פותחת את חלון ההגדרות', async () => {

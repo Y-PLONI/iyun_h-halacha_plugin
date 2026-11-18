@@ -1,6 +1,6 @@
 // דיאלוג מילוי לפני שליחה: ממלא אוטומטית מה שידוע (שם, קוד, גליון, פרשיות, שבועות
 // שנענו), ומאפשר להשלים/לאשר את שאר השדות (כולל, צורת תשלום, פלפולא). בעת שליחה:
-// מייצא את קובץ התשובות של כל הגליון + טופס סימון התשובות הממולא לתיקיית ההורדות,
+// מייצא את קובץ התשובות של כל הגליון + טופס סימון התשובות הממולא (דיאלוג שמירה לכל קובץ),
 // ופותח מייל. התשובות נשלחות בקובץ אחד, בהתאם לדרישת המערכת.
 
 import { useMemo, useState } from 'react';
@@ -8,11 +8,13 @@ import type { ExamEntry, ScheduleWeek } from '../data/types';
 import { useSettings, updateSettings } from '../state/settingsStore';
 import { getWeeksForIssue } from '../data/localData';
 import { getAnswer, saveAnswersNow } from '../state/answersStore';
-import { exportIssueDocx, downloadBlob } from '../export/docx';
+import { exportIssueDocx } from '../export/docx';
+import { saveBlobAs, describeOutcome, type SaveOutcome } from '../export/saveFile';
 import { buildAnswerFormDocx, toGematria, type FormFieldValues } from '../export/formDocx';
 import { sendMail } from '../otzaria/mail';
 import { toast } from './Toast';
 import { Icon } from './Icon';
+import { useEscape } from './useEscape';
 
 interface Props {
   week: ScheduleWeek;
@@ -50,18 +52,21 @@ export function SendDialog({ week, exam, onClose }: Props) {
   const [pilpula, setPilpula] = useState(false);
   const [weeks, setWeeks] = useState(String(completedWeeks || ''));
   const [sending, setSending] = useState(false);
+  // לא סוגרים באמצע שליחה (דיאלוגי השמירה פתוחים)
+  useEscape(onClose, !sending);
 
   const handleSend = async () => {
     setSending(true);
     try {
       // שמירת הערכים הקבועים בהגדרות (כולל נשמר; שם/קוד מתעדכנים אם נערכו)
       updateSettings({ name: name.trim(), personalCode: code.trim(), kollel: kollel.trim() });
-      await saveAnswersNow();
+      // שמירה לאחסון ברקע — לא ממתינים לה כדי שדיאלוג שמירת הקובץ ייפתח סמוך ללחיצה
+      void saveAnswersNow();
 
       // 1) קובץ התשובות — כל שבועות הגליון בקובץ אחד, כפי שנדרש לשליחה
-      let answersFile = '';
+      let answersOutcome: SaveOutcome | null = null;
       try {
-        answersFile = exportIssueDocx(
+        answersOutcome = await exportIssueDocx(
           {
             weeks: issueWeeks,
             settings: { ...settings, name: name.trim(), personalCode: code.trim() },
@@ -76,7 +81,7 @@ export function SendDialog({ week, exam, onClose }: Props) {
       }
 
       // 2) טופס סימון התשובות הממולא
-      let formFile = '';
+      let formOutcome: SaveOutcome | null = null;
       try {
         const values: FormFieldValues = {
           name: name.trim(),
@@ -89,8 +94,11 @@ export function SendDialog({ week, exam, onClose }: Props) {
           pilpula,
         };
         const blob = buildAnswerFormDocx(values);
-        formFile = `טופס סימון תשובות - גליון ${exam?.issueNumber ?? ''}.docx`;
-        downloadBlob(blob, formFile);
+        formOutcome = await saveBlobAs(
+          blob,
+          `טופס סימון תשובות - גליון ${exam?.issueNumber ?? ''}.docx`,
+          'שמירת טופס סימון התשובות',
+        );
       } catch (e) {
         toast('שגיאה בהפקת טופס הסימון: ' + (e instanceof Error ? e.message : ''));
       }
@@ -103,9 +111,15 @@ export function SendDialog({ week, exam, onClose }: Props) {
         `גליון ${exam?.issueNumber ?? ''}`,
       ].join(' | ');
 
+      // מצרפים להנחיה רק קבצים שנשמרו/ירדו בפועל (לא כאלה שהמשתמש ביטל או שנכשלו)
+      const kept = (o: SaveOutcome | null) => (o && o.status !== 'cancelled' ? o : null);
+      const answersKept = kept(answersOutcome);
+      const formKept = kept(formOutcome);
+      const where = (o: SaveOutcome) =>
+        o.status === 'saved' ? 'ששמרת' : 'שירד לתיקיית ההורדות';
       const attachLines = [
-        answersFile ? `• צרף את קובץ התשובות שירד לתיקיית ההורדות (${answersFile}).` : '',
-        formFile ? `• צרף את טופס סימון התשובות שירד לתיקיית ההורדות (${formFile}).` : '',
+        answersKept ? `• צרף את קובץ התשובות ${where(answersKept)} (${answersKept.filename}).` : '',
+        formKept ? `• צרף את טופס סימון התשובות ${where(formKept)} (${formKept.filename}).` : '',
       ].filter(Boolean);
 
       const body = [
@@ -123,12 +137,17 @@ export function SendDialog({ week, exam, onClose }: Props) {
 
       await sendMail({ to: settings.recipientEmail, subject, body });
 
-      const downloaded = [answersFile, formFile].filter(Boolean).length;
-      toast(
-        downloaded
-          ? `${downloaded} קבצים ירדו לתיקיית ההורדות — צרף אותם למייל שנפתח.`
-          : 'נפתח חלון מייל.',
-      );
+      const outcomes = [answersOutcome, formOutcome].filter((o): o is SaveOutcome => !!o);
+      const kept2 = outcomes.filter((o) => o.status !== 'cancelled');
+      if (kept2.length === 0) {
+        toast(outcomes.length ? 'הקבצים לא נשמרו — נפתח חלון מייל ללא קבצים לצירוף.' : 'נפתח חלון מייל.');
+      } else if (kept2.every((o) => o.status === 'saved')) {
+        toast(`${kept2.length} קבצים נשמרו — צרף אותם למייל שנפתח.`);
+      } else if (kept2.every((o) => o.status === 'downloaded')) {
+        toast(`${kept2.length} קבצים ירדו לתיקיית ההורדות — צרף אותם למייל שנפתח.`);
+      } else {
+        toast(kept2.map(describeOutcome).join(' · ') + ' — צרף למייל שנפתח.');
+      }
       onClose();
     } finally {
       setSending(false);
@@ -136,36 +155,37 @@ export function SendDialog({ week, exam, onClose }: Props) {
   };
 
   return (
-    <div className="overlay-scrim" onClick={onClose}>
-      <div className="overlay-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="overlay-scrim" onClick={sending ? undefined : onClose}>
+      <div className="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="send-title" onClick={(e) => e.stopPropagation()}>
         <div className="settings-head">
-          <h2>שליחת תשובות במייל</h2>
-          <button className="icon-btn square" title="סגור" aria-label="סגור" onClick={onClose}>
+          <h2 id="send-title">שליחת תשובות במייל</h2>
+          <button className="icon-btn square" title="סגור" aria-label="סגור" onClick={onClose} disabled={sending}>
             <Icon name="dismiss" />
           </button>
         </div>
 
         <p className="hint">
           הפרטים הידועים מולאו אוטומטית. השלם את החסר ולחץ "שלח" — קובץ התשובות (כל
-          שבועות הגליון שנענו) וטופס סימון התשובות הממולא ירדו לתיקיית ההורדות, וייפתח
-          חלון מייל לצירופם.
+          שבועות הגליון שנענו) וטופס סימון התשובות הממולא יישמרו (ייפתח דיאלוג "שמירה" לכל קובץ),
+          וייפתח חלון מייל לצירופם.
         </p>
 
         <div className="field">
-          <label>שם פרטי ומשפחה</label>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="send-name">שם פרטי ומשפחה</label>
+          <input id="send-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="field">
-          <label>קוד אישי</label>
-          <input className="input" value={code} onChange={(e) => setCode(e.target.value)} />
+          <label htmlFor="send-code">קוד אישי</label>
+          <input id="send-code" className="input" value={code} onChange={(e) => setCode(e.target.value)} />
         </div>
         <div className="field">
-          <label>כולל</label>
-          <input className="input" value={kollel} onChange={(e) => setKollel(e.target.value)} />
+          <label htmlFor="send-kollel">כולל</label>
+          <input id="send-kollel" className="input" value={kollel} onChange={(e) => setKollel(e.target.value)} />
         </div>
         <div className="field">
-          <label>צורת התשלום על הגליון</label>
+          <label htmlFor="send-payment">צורת התשלום על הגליון</label>
           <input
+            id="send-payment"
             className="input"
             value={payment}
             placeholder="לדוגמה: נדרים פלוס"
@@ -173,8 +193,9 @@ export function SendDialog({ week, exam, onClose }: Props) {
           />
         </div>
         <div className="field">
-          <label>מספר שבועות שנענו</label>
+          <label htmlFor="send-weeks">מספר שבועות שנענו</label>
           <input
+            id="send-weeks"
             className="input"
             type="number"
             min={0}

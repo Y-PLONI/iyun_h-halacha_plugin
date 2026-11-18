@@ -255,4 +255,10 @@ describe('SendDialog — שליחה ללא תשובות', () => {
     const { body } = host.callsTo('feedback.sendEmail')[0].payload as Record<string, string>;
     expect(body).not.toContain('תשובות עיון ההלכה');
   });
+
+  it('Escape סוגר את הדיאלוג', () => {
+    const { onClose } = renderDialog();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
+  });
 });

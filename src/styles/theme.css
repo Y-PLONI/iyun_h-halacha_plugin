@@ -59,6 +59,7 @@
   --color-on-inverse-surface: #f5eff7;
   --color-inverse-primary: #d0bcff;
   --color-scrim: #000000;
+  --color-shadow: #000000;
 
   /* Derived (שקיפות) */
   --color-primary-subtle: rgba(103, 80, 164, 0.12);

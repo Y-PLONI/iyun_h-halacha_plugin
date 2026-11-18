@@ -7,6 +7,7 @@ import {
   hasWrittenAnswer,
   type ExportWeekInput,
 } from './answerHtml';
+import { saveBlobAs, type SaveOutcome } from './saveFile';
 import type { ScheduleWeek, SettingsState } from '../data/types';
 
 export function buildAnswersDocx(html: string): Blob {
@@ -14,24 +15,12 @@ export function buildAnswersDocx(html: string): Blob {
   return packageDocx(body);
 }
 
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-/** מייצא את תשובות השבוע ומוריד קובץ DOCX. מחזיר את שם הקובץ. */
-export function exportWeekDocx(input: ExportWeekInput, issueNumber: number): string {
+/** מייצא את תשובות השבוע ושומר קובץ DOCX (דיאלוג שמירה באוצריא). מחזיר את תוצאת השמירה. */
+export async function exportWeekDocx(input: ExportWeekInput, issueNumber: number): Promise<SaveOutcome> {
   const html = buildWeekAnswersHtml(input);
   const blob = buildAnswersDocx(html);
   const filename = `תשובות עיון ההלכה - גליון ${issueNumber} - שבוע ${input.week.weekNumber}.docx`;
-  downloadBlob(blob, filename);
-  return filename;
+  return saveBlobAs(blob, filename, 'שמירת תשובות עיון ההלכה');
 }
 
 export interface ExportIssueInput {
@@ -43,19 +32,19 @@ export interface ExportIssueInput {
 }
 
 /**
- * מייצא את תשובות כל שבועות הגליון לקובץ DOCX אחד ומוריד אותו. מחזיר את שם הקובץ.
+ * מייצא את תשובות כל שבועות הגליון לקובץ DOCX אחד ושומר אותו. מחזיר את תוצאת השמירה.
  * נכללים רק שבועות שנכתבה בהם תשובה — קובץ שנשלח באמצע הגליון לא יכיל שבועות ריקים.
  * זורק שגיאה אם אין אף תשובה כתובה בגליון.
  */
-export function exportIssueDocx(input: ExportIssueInput, issueNumber: number): string {
+export async function exportIssueDocx(input: ExportIssueInput, issueNumber: number): Promise<SaveOutcome> {
   const { weeks, settings, issueTitle, hebrewMonth, dateLabel } = input;
   const answered = weeks.filter((w) => hasWrittenAnswer(w.weekId));
   if (answered.length === 0) throw new Error('אין תשובות כתובות בגליון זה');
   const html = buildIssueAnswersHtml(answered, { issueTitle, hebrewMonth, dateLabel, settings });
   const blob = buildAnswersDocx(html);
   const filename = `תשובות עיון ההלכה - גליון ${issueNumber} - כל השבועות.docx`;
-  downloadBlob(blob, filename);
-  return filename;
+  return saveBlobAs(blob, filename, 'שמירת תשובות עיון ההלכה');
 }
 
+export type { SaveOutcome };
 export type { ExportWeekInput };
