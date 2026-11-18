@@ -250,6 +250,9 @@ describe('App — תיאום תזכורות ב-boot', () => {
     });
     // מודולים טריים: initReminders מאתחל פעם אחת בלבד לכל חיי המודול
     vi.resetModules();
+    // איפוס המודולים מרוקן את מטמון המבחנים. טוענים אותם לפני בדיקת האתחול.
+    const { loadExams } = await import('../src/data/examLoader');
+    await loadExams();
     const { App: FreshApp } = await import('../src/App');
     render(<FreshApp />);
     await act(async () => {
